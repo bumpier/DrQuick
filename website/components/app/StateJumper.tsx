@@ -6,9 +6,11 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useDataMode, usePersistedQuery } from '@/lib/data-mode';
-import { ADMIN_JUMPS, DOCTOR_JUMPS, isCurrentJump, jumpHref, type JumpLocation } from './jumps';
+import { ADMIN_JUMPS, DOCTOR_JUMPS, PATIENT_JUMPS, isCurrentJump, jumpHref, type JumpLocation } from './jumps';
 
-export function StateJumper({ surface }: { surface: 'doctor' | 'admin' }) {
+const GROUPS = { doctor: DOCTOR_JUMPS, admin: ADMIN_JUMPS, patient: PATIENT_JUMPS } as const;
+
+export function StateJumper({ surface }: { surface: 'doctor' | 'admin' | 'patient' }) {
   const pathname = usePathname();
   const { mode } = useDataMode();
   const [jumper] = usePersistedQuery('jumper');
@@ -37,7 +39,7 @@ export function StateJumper({ surface }: { surface: 'doctor' | 'admin' }) {
   }, [show]);
 
   if (!show) return null;
-  const groups = surface === 'doctor' ? DOCTOR_JUMPS : ADMIN_JUMPS;
+  const groups = GROUPS[surface];
   return (
     <nav
       ref={ref}

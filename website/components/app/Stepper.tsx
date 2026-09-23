@@ -8,9 +8,19 @@ export type Step = { id: string; label: string; status: StepStatus };
 // reader, whether it is done; the current step is the one with aria-current.
 // Below the phone line only the current label is visible — six labels do not
 // fit in 358px — the rest stay in the accessible name.
-export function Stepper({ steps }: { steps: readonly Step[] }) {
+// `label` names the list for a screen reader (the doctor's onboarding and the
+// patient's booking share the component); `className` lets a caller that
+// sets its own spacing drop the default margin; `labels="current"` shows only
+// the current step's word at every width, for a rail too narrow to carry all
+// of them (the rest stay in the accessible name).
+export function Stepper({ steps, label = 'Onboarding steps', className, labels = 'all' }: {
+  steps: readonly Step[];
+  label?: string;
+  className?: string;
+  labels?: 'all' | 'current';
+}) {
   return (
-    <ol aria-label="Onboarding steps" data-slot="stepper" className="mb-6 flex gap-1">
+    <ol aria-label={label} data-slot="stepper" className={cn('mb-6 flex gap-1', className)}>
       {steps.map((step) => (
         <li
           key={step.id}
@@ -26,7 +36,7 @@ export function Stepper({ steps }: { steps: readonly Step[] }) {
               // current label renders, and its own sixth of 358px would clip it
               // to "Regi…" — so there it overflows its cell, which is empty.
               'mt-2 block whitespace-nowrap text-fine sm:truncate',
-              step.status === 'current' ? 'font-semibold text-ink' : 'text-ink-2 max-phone:sr-only',
+              step.status === 'current' ? 'font-semibold text-ink' : cn('text-ink-2 max-phone:sr-only', labels === 'current' && 'sr-only'),
             )}
           >
             {step.label}

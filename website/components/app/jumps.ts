@@ -55,6 +55,43 @@ export const DOCTOR_JUMPS: JumpGroup[] = [
   DATA_JUMPS,
 ];
 
+const book = (screen: string) => `/patient/book/${screen}`;
+
+// preview/js/patient.js:37-66, as URLs. The booking's steps and states are
+// full loads like every jump, so each lands on a freshly seeded booking; the
+// Detail item opens the seeded mode's latest consultation (the honest
+// placeholder in blank mode).
+export const PATIENT_JUMPS: JumpGroup[] = [
+  { label: 'Account', items: [
+    { href: '/patient', label: 'Home', kind: 'screen' },
+    { href: '/patient/consultations', label: 'Consultations', kind: 'screen' },
+    { href: '/patient/consultations/C-0031', label: 'Detail', kind: 'screen' },
+    { href: '/patient/prescriptions', label: 'Prescriptions', kind: 'screen' },
+    { href: '/patient/account', label: 'Account', kind: 'screen' },
+  ] },
+  { label: 'Flow', items: [
+    { href: book('symptoms'), label: 'Symptoms', kind: 'screen' },
+    { href: book('safety-check'), label: 'Safety', kind: 'screen' },
+    { href: book('identity'), label: 'ID', kind: 'screen' },
+    { href: book('nhs-gp'), label: 'NHS GP', kind: 'screen' },
+    { href: book('quote'), label: 'Price', kind: 'screen' },
+    { href: book('finding'), label: 'Finding', kind: 'screen' },
+    { href: book('ready'), label: 'Ready', kind: 'screen' },
+    { href: book('call'), label: 'Call', kind: 'screen' },
+    { href: book('outcome'), label: 'Outcome', kind: 'screen' },
+    { href: book('done'), label: 'Done', kind: 'screen' },
+  ] },
+  { label: 'States', items: [
+    { href: book('red-flag'), label: '999', kind: 'state' },
+    { href: book('consent-refused'), label: 'Consent refused', kind: 'state' },
+    { href: book('no-gp-available'), label: 'No GP', kind: 'state' },
+    { href: book('cancelled'), label: 'Cancelled', kind: 'state' },
+    { href: book('payment-failed'), label: 'Payment failed', kind: 'state' },
+    { href: book('ended-early'), label: 'Ended early', kind: 'state' },
+  ] },
+  DATA_JUMPS,
+];
+
 export const ADMIN_JUMPS: JumpGroup[] = [
   { label: 'Sections', items: [
     { href: '/admin', label: 'Live floor', kind: 'screen' },
