@@ -3,6 +3,8 @@
    twice into markup — the doctor dashboard and the earnings screen read the
    same numbers because they read the same export. */
 import { CREDENTIAL_LABELS } from '@/lib/alerts';
+import type { ConsultationRow } from '@/lib/booking';
+import type { PrescriptionRow } from '@/lib/patient';
 
 export type CredentialStatus = 'valid' | 'expiring' | 'expired' | 'pending' | 'rejected';
 export type Credential = { status: CredentialStatus; daysRemaining: number | null };
@@ -34,6 +36,7 @@ export type Application = { ref: string; stage: string };
 --------------------------------------------------------------------------- */
 
 export const TODAY = '2026-08-28';
+export const TODAY_LABEL = '28 August 2026';
 
 /* 15–28 August 2026, one entry per day, ending today. Fees move with demand
    through the day, so each day carries what it actually paid rather than a
@@ -243,6 +246,8 @@ export const PATIENT_ACCOUNT = {
   memberSince: 'March 2026',
   identityVerified: true,
   nhsPractice: 'Example Medical Centre, London',
+  nhsPostcode: 'N1 9AA',
+  pharmacy: 'Example Pharmacy, London N1',
   nhsShareConsent: true,
   cardBrand: 'Visa',
   cardLast4: '4242',
@@ -251,7 +256,7 @@ export const PATIENT_ACCOUNT = {
 
 // Reasons are the patient's own words on the triage screen, never a diagnosis
 // and never a medicine — this surface must not read as a clinical record.
-export const CONSULTATIONS = [
+export const CONSULTATIONS: ConsultationRow[] = [
   {
     id: 'C-0031', date: '12 August 2026', at: '2026-08-12', gp: 'GP-002',
     reason: 'Sore throat and fever', minutes: 9, status: 'completed', cost: 46,
@@ -276,10 +281,10 @@ export const CONSULTATIONS = [
 // The step a prescription is actually on, not a single status word. The
 // pharmacy charge is named on every one of them: the fee covers writing the
 // prescription, never the medicine.
-export const PRESCRIPTIONS = [
+export const PRESCRIPTIONS: PrescriptionRow[] = [
   {
     id: 'RX-0031', consultation: 'C-0031', issued: '12 August 2026',
-    pharmacy: 'Example Pharmacy, London N1',
+    pharmacy: PATIENT_ACCOUNT.pharmacy,
     steps: [
       { label: 'Written by your GP', when: '12 August, 14:20', done: true },
       { label: 'Sent to your pharmacy', when: '12 August, 14:22', done: true },
@@ -289,7 +294,7 @@ export const PRESCRIPTIONS = [
   },
   {
     id: 'RX-0014', consultation: 'C-0014', issued: '19 May 2026',
-    pharmacy: 'Example Pharmacy, London N1',
+    pharmacy: PATIENT_ACCOUNT.pharmacy,
     steps: [
       { label: 'Written by your GP', when: '19 May, 09:40', done: true },
       { label: 'Sent to your pharmacy', when: '19 May, 09:41', done: true },

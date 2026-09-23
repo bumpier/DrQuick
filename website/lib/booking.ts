@@ -8,6 +8,23 @@ export const SECONDS_PER_PLACE = 45;
 export type Outcome = { prescription: boolean; referral: boolean; fitNote: boolean };
 export type Complaint = { label: string; outcome: Outcome; note: string };
 
+/* The record a consultation leaves in the patient's history. The fixtures'
+   CONSULTATIONS rows and this session's records share the shape, so no list
+   can tell one from the other. */
+export type ConsultationOutcome = Outcome & { sharedWithNhsGp: boolean; note?: string };
+export type ConsultationRow = {
+  id: string;
+  date: string;
+  at: string | null;
+  gp: string | null;
+  reason: string;
+  minutes: number;
+  status: 'completed' | 'cancelled';
+  cost: number;
+  outcome: ConsultationOutcome | null;
+  isNew?: boolean;
+};
+
 /* Ordinary presenting complaints, in the patient's own words. Never a
    diagnosis, never a medicine. The `outcome` is the decision this prototype
    simulates a GP making — it differs per complaint on purpose, because a
@@ -16,7 +33,9 @@ export const COMPLAINTS: Record<'sore-throat' | 'stomach' | 'skin' | 'other', Co
   'sore-throat': {
     label: 'Sore throat or cough',
     outcome: { prescription: true, referral: false, fitNote: false },
-    note: 'Your GP has written a prescription and sent it to your pharmacy.',
+    // Where it went is the screen's to say: the flow does not nominate a
+    // pharmacy yet, so a first patient may have none saved.
+    note: 'Your GP has written a prescription.',
   },
   stomach: {
     label: 'Stomach pain',
@@ -117,7 +136,9 @@ export function matchGp(
       'Every credential in date',
       'Fewest consultations on shift today',
     ],
-    limitedPrescribing: booking?.nhsGpConsent === false,
+    // Anything but an explicit yes is a record the GP does not have, which is
+    // the rule outcomeFor applies too, so a consent never asked for limits them.
+    limitedPrescribing: booking?.nhsGpConsent !== true,
   };
 }
 
@@ -174,7 +195,7 @@ type ConsultationInput = {
 
 /* The record the consultation leaves behind. Same shape as the fixtures, so
    the history list cannot tell a new consultation from an old one. */
-export function consultationRecord(booking: ConsultationInput, { id, date, fee }: { id: string; date: string; fee: number }) {
+export function consultationRecord(booking: ConsultationInput, { id, date, fee }: { id: string; date: string; fee: number }): ConsultationRow {
   const cancelled = booking.status === 'cancelled';
   return {
     id,

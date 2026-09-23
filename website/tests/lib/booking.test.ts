@@ -58,6 +58,20 @@ test('a matched GP carries the refused-consent limit through to the patient', ()
   assert.equal(matchGp(FLOOR_GPS, LOAD, { nhsGpConsent: true })!.limitedPrescribing, false);
 });
 
+// A consent never asked for (a patient who landed on the queue by URL) is a
+// record the GP does not have, exactly as outcomeFor treats it.
+test('a consent never given limits the GP as a refused one does', () => {
+  assert.equal(matchGp(FLOOR_GPS, LOAD, { nhsGpConsent: null })!.limitedPrescribing, true);
+  assert.equal(outcomeFor({ complaint: 'sore-throat', nhsGpConsent: null }).prescription, false);
+});
+
+// Where a prescription went is the screen's to say: a first patient may have
+// no pharmacy saved, so the outcome note must not claim it was sent anywhere.
+test('the prescription note says it was written, not where it went', () => {
+  assert.equal(COMPLAINTS['sore-throat'].note, 'Your GP has written a prescription.');
+  assert.doesNotMatch(COMPLAINTS['sore-throat'].note, /pharmacy/i);
+});
+
 // A consultation is not a prescription. Different complaints end differently,
 // and the surface must never imply that paying the fee buys a medicine.
 test('the outcome differs by complaint, so no path guarantees a prescription', () => {
