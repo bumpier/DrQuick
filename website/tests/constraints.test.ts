@@ -169,3 +169,168 @@ test('app source has no dark: variant and no .dark theme block', () => {
     }
   }
 });
+
+/* ---------------------------------------------------------------------------
+   The patient surface. Scoped to its own source, comments included, because
+   the booking flow is where pricing, urgency and recording claims would do
+   the most harm: a nudge beside a live price is the ASA's time-pressure
+   finding, a "priority" is paid-for clinical priority, a count of GPs online
+   is a claim about a floor that does not exist, and a literal amount is a
+   price that did not come from the frozen quote. Money reaches a patient
+   screen only through money() over the booking's quote or a record's cost.
+--------------------------------------------------------------------------- */
+// Import declarations are hoisted, so these sit with the block that uses them.
+import { existsSync } from 'node:fs';
+import { BOOKING_SCREENS } from '@/lib/booking-flow';
+import { CONSULTATIONS } from '@/lib/fixtures';
+import { PATIENT_JUMPS } from '@/components/app/jumps';
+
+const PATIENT_SOURCES = [
+  ...walk(join(ROOT, 'app', '(app)', 'patient')),
+  ...walk(join(ROOT, 'components', 'patient')),
+  ...['booking-flow.ts', 'pricing.ts', 'patient.ts'].map((file) => join(ROOT, 'lib', file)),
+].filter((file) => EXTS.has(extname(file)));
+
+// Each pattern with a sample it must catch. The lookbehind on "busy" lets
+// aria-busy through; "not recorded" and "never recorded" are the honest
+// sentences and do not match the recording claim.
+const PATIENT_PRESSURE_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(?<![-\w])busy\b/i, 'Our GPs are busy right now'],
+  [/\bbusier\b/i, 'Busier than usual'],
+  [/\bsurge\b/i, 'Surge pricing applies'],
+  [/\bpriority\b/i, 'Priority queue'],
+  [/\bhurry\b/i, 'Hurry, prices rise soon'],
+  [/\bact now\b/i, 'Act now to hold this price'],
+  [/\blimited time\b/i, 'For a limited time'],
+  [/\bjump the queue\b/i, 'Pay more to jump the queue'],
+  [/\bskip the queue\b/i, 'Skip the queue'],
+  [/\bfrom £\d/i, 'Consultations from £32'],
+  [/\bup to £\d/i, 'Pay up to £48'],
+  [/\b(urgency|triage|severity|risk) score\b/i, 'Your triage score is 4'],
+  [/\d+\s*GPs?\s+online/i, '3 GPs online'],
+];
+const PATIENT_CLAIM_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/\bguarantee/i, 'Guaranteed prescription'],
+  [/\bprescriptions included\b/i, 'Prescriptions included'],
+  [/\bUK-wide\b/i, 'A UK-wide service'],
+  [/\bacross the UK\b/i, 'Available across the UK'],
+  [/\bany UK pharmacy\b/i, 'Collect from any UK pharmacy'],
+  [/\b(is|are|will be|being) recorded\b/i, 'This call is recorded for training'],
+  [/\bCQC\b/i, 'CQC registered'],
+];
+// Case-sensitive on purpose: a named doctor is a capitalised surname.
+const PATIENT_NAMED_DOCTOR: readonly [RegExp, string] = [/\bDr\.? (?!Quick\b)[A-Z][a-z]+/, 'Dr Patel has accepted'];
+const PATIENT_LITERAL_MONEY: readonly [RegExp, string] = [/£\d/, 'Request a GP for £40'];
+
+const PATIENT_PATTERNS = [
+  ...PATIENT_PRESSURE_PATTERNS, ...PATIENT_CLAIM_PATTERNS, PATIENT_NAMED_DOCTOR, PATIENT_LITERAL_MONEY,
+];
+
+function patientHits(patterns: ReadonlyArray<readonly [RegExp, string]>): string[] {
+  return PATIENT_SOURCES.flatMap((file) => {
+    const text = readFileSync(file, 'utf8');
+    return patterns.flatMap(([pattern]) => {
+      const hit = text.match(pattern);
+      return hit ? [`${file}: ${pattern} matched "${hit[0]}"`] : [];
+    });
+  });
+}
+
+describe('the patient checkers bite', () => {
+  test.each(PATIENT_PATTERNS.map(([pattern, sample]) => [String(pattern), pattern, sample] as const))(
+    '%s catches its sample',
+    (_name, pattern, sample) => {
+      expect(pattern.test(sample)).toBe(true);
+    },
+  );
+
+  test('none of them fires on aria-busy, surgery or Dr Quick', () => {
+    const innocents = ['aria-busy', 'aria-busy={check.pending || undefined}', 'surgery', 'GP surgery', 'Dr Quick', 'Dr. Quick', 'DrQuick'];
+    for (const [pattern] of PATIENT_PATTERNS) {
+      for (const innocent of innocents) {
+        expect(pattern.test(innocent), `${pattern} fired on "${innocent}"`).toBe(false);
+      }
+    }
+  });
+
+  test('the honest sentences pass: not recorded, never recorded, GPs online now, skip the wait, money()', () => {
+    const honest = [
+      'This call is not recorded.', 'Calls are never recorded', 'The call was not recorded',
+      'GPs online now', 'Prototype: skip the wait', 'Request a GP for ${money(state.quote ?? 0)}',
+      'a base off-peak price of 32 pounds', 'Your GP is ready', 'GP-002 has accepted your consultation.',
+    ];
+    for (const [pattern] of PATIENT_PATTERNS) {
+      for (const sentence of honest) {
+        expect(pattern.test(sentence), `${pattern} fired on "${sentence}"`).toBe(false);
+      }
+    }
+  });
+});
+
+test('there is patient source to scan: the routes, the components and the three libraries', () => {
+  const scanned = PATIENT_SOURCES.map((file) => file.split(/[\\/]/).slice(-2).join('/'));
+  expect(scanned).toEqual(expect.arrayContaining([
+    'patient/layout.tsx', 'patient/PatientHome.tsx', 'steps/Quote.tsx', 'states/RedFlag.tsx',
+    'lib/booking-flow.ts', 'lib/pricing.ts', 'lib/patient.ts',
+  ]));
+});
+
+test('the patient scan reads comments as well as code', () => {
+  // Block and line comments reach the patterns: nothing is stripped first.
+  const commented = patientHits([[/\/\*[\s\S]*?\*\/|\/\/ \S/, '']]);
+  expect(commented.length).toBeGreaterThan(PATIENT_SOURCES.length / 2);
+  expect(commented.some((hit) => /pricing\.ts/.test(hit))).toBe(true);
+});
+
+test('the patient surface uses no time-pressure, priority, price-range, score or GP-count wording', () => {
+  expect(patientHits(PATIENT_PRESSURE_PATTERNS)).toEqual([]);
+});
+
+test('the patient surface makes no guarantee, UK-wide, recording or CQC claim', () => {
+  expect(patientHits(PATIENT_CLAIM_PATTERNS)).toEqual([]);
+});
+
+test('the patient surface names no doctor', () => {
+  expect(patientHits([PATIENT_NAMED_DOCTOR])).toEqual([]);
+});
+
+test('the patient surface types no amount: money comes only through money() and the frozen quote', () => {
+  expect(patientHits([PATIENT_LITERAL_MONEY])).toEqual([]);
+});
+
+describe('the patient state jumper', () => {
+  const PATIENT_APP = join(ROOT, 'app', '(app)', 'patient');
+  const jumpPaths = PATIENT_JUMPS
+    .flatMap((group) => group.items.map((item) => item.href))
+    .filter((href) => !href.startsWith('?'))
+    .map((href) => href.split('?')[0]);
+
+  test('every PATIENT_JUMPS href resolves to a real route', () => {
+    expect(jumpPaths.length).toBeGreaterThan(0);
+    for (const path of jumpPaths) {
+      if (path.startsWith('/patient/book/')) {
+        expect(BOOKING_SCREENS as readonly string[], path).toContain(path.slice('/patient/book/'.length));
+        expect(existsSync(join(PATIENT_APP, 'book', '[[...step]]', 'page.tsx')), path).toBe(true);
+      } else if (path.startsWith('/patient/consultations/')) {
+        expect(CONSULTATIONS.map((c) => c.id), path).toContain(path.slice('/patient/consultations/'.length));
+        expect(existsSync(join(PATIENT_APP, 'consultations', '[id]', 'page.tsx')), path).toBe(true);
+      } else {
+        expect(path === '/patient' || path.startsWith('/patient/'), path).toBe(true);
+        const segments = path.split('/').filter(Boolean).slice(1);
+        expect(existsSync(join(PATIENT_APP, ...segments, 'page.tsx')), `${path} has no page file`).toBe(true);
+      }
+    }
+  });
+
+  test('the only jumps without a path are the data modes', () => {
+    const queryOnly = PATIENT_JUMPS.flatMap((group) =>
+      group.items.filter((item) => item.href.startsWith('?')).map((item) => item.href));
+    expect(queryOnly).toEqual(['?data=', '?data=seeded']);
+  });
+
+  test('every BOOKING_SCREENS entry has a jump', () => {
+    for (const screen of BOOKING_SCREENS) {
+      expect(jumpPaths, screen).toContain(`/patient/book/${screen}`);
+    }
+  });
+});
