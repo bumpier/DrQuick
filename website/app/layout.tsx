@@ -19,10 +19,9 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-// The head describes whichever audience the page is actually serving. With
-// PATIENT_MODE off the only page is the GP one, so a patient title would promise
-// a page that no longer exists to anyone who shares the link or finds it in a
-// search result. No figure appears in either set: pricing is dynamic, and a
+// The head describes the audience the page opens on. With both modes live that
+// is the patient page; with PATIENT_MODE off the only page is the GP one, and a
+// patient title would promise a page that no longer exists. No figure appears in either set: pricing is dynamic, and a
 // number cached in a share card is a number we cannot change.
 const HEAD = PATIENT_MODE
   ? {
@@ -56,9 +55,9 @@ export const metadata: Metadata = {
     title: HEAD.social,
     description: HEAD.socialDescription,
     locale: 'en_GB',
-    // DEPLOY: assets/og.png is still the patient share card ("See a GP in
-    // minutes"). While PATIENT_MODE is off the card and the page disagree —
-    // draw a GP card before this link is shared anywhere that matters.
+    // assets/og.png is the patient share card ("See a GP in minutes"), which
+    // matches the default mode. If PATIENT_MODE goes off again the card and the
+    // page disagree — draw a GP card before sharing the link.
     images: [{ url: '/assets/og.png', width: 1200, height: 630 }],
   },
   twitter: {

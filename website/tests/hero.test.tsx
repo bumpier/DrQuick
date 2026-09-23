@@ -54,7 +54,7 @@ test.skipIf(!PATIENT_MODE)('the nav carries the switch, both CTA labels and the 
   expect(container.querySelector('[data-mode-link="patient"]')).toHaveAttribute('aria-current', 'page');
   expect(container.querySelector('#nav-cta')).toHaveAttribute('href', '#join');
   expect(container.querySelector('.cta-p .cta-long')).toHaveTextContent('Join the waitlist');
-  expect(container.querySelector('.cta-g .cta-long')).toHaveTextContent('Register interest');
+  expect(container.querySelector('.cta-g .cta-long')).toHaveTextContent('Sign up');
 });
 
 // With one audience there is nothing to switch between, and the CTA is authored

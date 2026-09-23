@@ -8,9 +8,8 @@ import Page from '@/app/page';
 import { installIOStub } from './helpers/io-stub';
 import { DEFAULT_ROLE, PATIENT_MODE } from '@/lib/site-mode';
 
-// Dr Quick is signing up doctors first, so only the GP mode ships. The patient
-// assertions are kept and skipped rather than deleted: they are the contract that
-// has to hold again the moment PATIENT_MODE goes back to true.
+// Both modes ship at launch. The patient assertions skip only if PATIENT_MODE
+// is switched off again; the GP-only assertions are the contract for that case.
 const patientTest = test.skipIf(!PATIENT_MODE);
 
 beforeEach(() => {

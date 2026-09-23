@@ -32,7 +32,7 @@ export function Nav() {
           {PATIENT_MODE ? (
             <a id="nav-cta" href="#join" data-focus="join">
               <span className="cta-p"><span className="cta-long">Join the waitlist</span><span className="cta-short">Join</span></span>
-              <span className="cta-g"><span className="cta-long">Register interest</span><span className="cta-short">Register</span></span>
+              <span className="cta-g"><span className="cta-long">Sign up</span><span className="cta-short">Sign up</span></span>
             </a>
           ) : (
             <a id="nav-cta" href="#gp-join" data-focus="gp-join">

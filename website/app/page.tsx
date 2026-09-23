@@ -26,11 +26,10 @@ export const dynamic = 'force-static';
 // what each one promises is that the number is shown before you commit. The
 // footer is shared.
 //
-// Only the GP mode ships today: Dr Quick is signing up doctors first, so
-// PATIENT_MODE (lib/site-mode.ts) holds the patient mode out of the document
-// entirely rather than hiding it with CSS — a mode that is not being offered
-// should not be in the DOM for a crawler or a screen reader to find. Flip that
-// one constant back to true and both audiences return, switch and all.
+// Both modes ship at launch. PATIENT_MODE (lib/site-mode.ts) can still hold the
+// patient mode out of the document entirely rather than hiding it with CSS — a
+// mode that is not being offered should not be in the DOM for a crawler or a
+// screen reader to find.
 export default function Page() {
   return (
     <>
