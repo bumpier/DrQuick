@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" role="img" aria-label="Illustration of a GP working online">
+  <!-- PLACEHOLDER — replace with a Storyset illustration of your choice, e.g.
+       https://storyset.com/illustration/doctors/rafiki  (download SVG, save as doctor-online.svg) -->
+  <circle cx="250" cy="250" r="210" fill="#16223A" opacity="0.08"/>
+  <circle cx="250" cy="250" r="170" fill="#16223A" opacity="0.10"/>
+  <!-- laptop -->
+  <rect x="140" y="270" width="220" height="14" rx="7" fill="#16223A"/>
+  <path d="M165 160 h170 a12 12 0 0 1 12 12 v98 h-194 v-98 a12 12 0 0 1 12 -12 z" fill="#16223A"/>
+  <rect x="167" y="174" width="166" height="82" rx="6" fill="#F6F5EF"/>
+  <!-- doctor on screen -->
+  <circle cx="250" cy="205" r="20" fill="#E8A33D"/>
+  <path d="M230 205 a20 20 0 0 1 40 0 v-10 a20 16 0 0 0 -40 0 z" fill="#16223A"/>
+  <path d="M222 256 q28 -26 56 0 z" fill="#FFFFFF" stroke="#16223A" stroke-width="4"/>
+  <!-- online badge -->
+  <circle cx="330" cy="180" r="10" fill="#E8A33D"/>
+  <!-- clock -->
+  <circle cx="380" cy="330" r="26" fill="none" stroke="#E8A33D" stroke-width="7"/>
+  <path d="M380 318 v14 l10 6" fill="none" stroke="#E8A33D" stroke-width="6" stroke-linecap="round"/>
+  <!-- pound sign card -->
+  <rect x="90" y="320" width="56" height="40" rx="8" fill="#E8A33D"/>
+  <text x="118" y="349" font-family="Georgia, serif" font-size="26" font-weight="bold" fill="#16223A" text-anchor="middle">£</text>
+</svg>

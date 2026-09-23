@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Dr Quick — role prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="is-first-paint" data-area="dash">
+
+<header class="stick">
+  <p class="ribbon">Prototype. Not a live service — no real patients, GPs, or data.</p>
+  <div class="topbar">
+    <span class="brand">Dr<b>Quick</b></span>
+    <div class="topbar__end">
+      <div class="who"><b>Role prototype</b><span>Fake data throughout</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page__head">
+    <div>
+      <h1 data-reveal>Pick a role</h1>
+      <p class="page__lead" data-reveal>Three surfaces, fake data throughout. Every screen and every
+        awkward state is one click away on the rail at the bottom of each page.</p>
+    </div>
+  </div>
+
+  <div class="bento" data-stagger>
+    <a class="card card--fill card--bottom span-4" href="patient.html" style="text-decoration:none;color:inherit">
+      <div class="card__head">
+        <h2 class="card__title">Patient</h2>
+        <span class="card__meta">11 screens, 6 states</span>
+      </div>
+      <p style="color:var(--ink-2-dark);max-width:34ch;margin:0 0 var(--s-6)">
+        A dashboard of past consultations, prescriptions and receipts — and the whole
+        booking flow from triage to outcome, including the 999 fork.
+      </p>
+      <span class="btn btn--block">Open the patient surface</span>
+    </a>
+
+    <a class="card card--bottom" href="doctor.html" style="text-decoration:none;color:inherit">
+      <div class="card__head">
+        <h2 class="card__title">Doctor</h2>
+      </div>
+      <p style="color:var(--ink-2);margin:0 0 var(--s-6)">
+        Earnings, demand, a shift calendar and the credential alerts that decide
+        whether a GP can work at all.
+      </p>
+      <span class="btn btn--block btn--sm">Open</span>
+    </a>
+
+    <a class="card span-6" href="admin.html" style="text-decoration:none;color:inherit">
+      <div class="card__head">
+        <h2 class="card__title">Admin</h2>
+        <span class="card__meta">Live floor · Governance · GP supply · Business</span>
+      </div>
+      <p style="color:var(--ink-2);margin:0;max-width:60ch">
+        The operations view: cover against demand, the restricted-items register with a
+        per-prescriber breach count, every GP credential with days remaining, and the two
+        business numbers that drift first.
+      </p>
+    </a>
+  </div>
+</main>
+</body>
+</html>

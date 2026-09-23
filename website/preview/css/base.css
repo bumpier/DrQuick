@@ -1,0 +1,133 @@
+:root {
+  --white: #FFFFFF;
+  --black: #000000;
+  --blue: #1447E6;
+  --blue-lift: #6E9BFF;
+  --ink-2: #767676;
+  --ink-2-dark: #A3A3A3;
+  --fill: #F1F1F1;
+  --fill-2: #E4E4E4;
+  --rule: rgba(0, 0, 0, .13);
+  --tile-edge: #D2D2D2;
+  --rule-dark: rgba(255, 255, 255, .22);
+
+  /* Chart tints. Data needs more than one weight of grey to separate series,
+     and the palette is closed — these three are the only greys between
+     --tile-edge and --black that the compliance guard permits. */
+  --c-soft: #C9C9C9;
+  --c-mid: #8A8A8A;
+  --c-deep: #595959;
+
+  --r-control: 8px;
+  --r-tile: 16px;
+
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-6: 24px; --s-8: 32px; --s-12: 48px; --s-16: 64px;
+
+  --ease: cubic-bezier(.22, .61, .36, 1);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+
+  --rail-h: 44px;
+  --topbar-h: 64px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--white);
+  color: var(--black);
+  font-family: Archivo, system-ui, -apple-system, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: var(--rail-h);
+}
+
+h1, h2, h3 { margin: 0; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+h1 { font-size: clamp(28px, 5vw, 44px); }
+h2 { font-size: clamp(22px, 3vw, 30px); }
+h3 { font-size: 18px; letter-spacing: -.02em; }
+
+a { color: var(--blue); }
+
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* --- prototype chrome: deliberately not the product ------------------- */
+
+.ribbon {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--black);
+  color: var(--white);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: var(--s-2) var(--s-4);
+}
+
+.rail {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 50;
+  height: var(--rail-h);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  overflow-x: auto;
+  background: var(--black);
+  color: var(--white);
+  border-top: 1px solid var(--rule-dark);
+  padding: 0 var(--s-3);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+.rail__group { display: flex; align-items: center; gap: var(--s-2); white-space: nowrap; }
+.rail__label { color: var(--ink-2-dark); text-transform: uppercase; letter-spacing: .06em; }
+
+.rail__btn {
+  background: transparent;
+  color: var(--white);
+  border: 1px solid var(--rule-dark);
+  border-radius: var(--r-control);
+  padding: var(--s-1) var(--s-2);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rail__btn[aria-current="true"] { background: var(--white); color: var(--black); }
+.rail__btn[data-kind="state"] { border-style: dashed; }
+
+/* --- screens ---------------------------------------------------------- */
+
+[data-screen] { display: none; }
+[data-screen].is-active { display: block; }
+
+/* Arrival grammar fires on first paint only, never on later screen changes. */
+@media (prefers-reduced-motion: no-preference) {
+  body.is-first-paint [data-screen].is-active [data-reveal] {
+    animation: rise 320ms var(--ease-out) both;
+  }
+}
+/* The Capped Stagger Rule: siblings inside [data-stagger] inherit the same
+   16px rise, 70ms apart, and the stagger stops growing at 300ms — a tile row
+   of eight must not take three times as long to arrive as a row of three. */
+@media (prefers-reduced-motion: no-preference) {
+  body.is-first-paint [data-screen].is-active [data-stagger] > * {
+    animation: rise 320ms var(--ease-out) both;
+  }
+  body.is-first-paint [data-screen].is-active [data-stagger] > *:nth-child(2) { animation-delay: 70ms; }
+  body.is-first-paint [data-screen].is-active [data-stagger] > *:nth-child(3) { animation-delay: 140ms; }
+  body.is-first-paint [data-screen].is-active [data-stagger] > *:nth-child(4) { animation-delay: 210ms; }
+  body.is-first-paint [data-screen].is-active [data-stagger] > *:nth-child(n+5) { animation-delay: 280ms; }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}

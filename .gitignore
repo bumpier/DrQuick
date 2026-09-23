@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Test output
+coverage/
+
+# Local environment — .env.example is the tracked template
+.env
+.env.*
+!.env.example
+
+# Screenshot scratch
+.shots-tmp/
+
+# macOS
+.DS_Store

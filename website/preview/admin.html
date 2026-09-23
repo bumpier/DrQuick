@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Dr Quick — admin prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="is-first-paint" data-area="dash">
+<header class="stick">
+  <p class="ribbon">Prototype. Not a live service — no real patients, GPs, or data.</p>
+  <div class="topbar">
+    <span class="brand">Dr<b>Quick</b></span>
+    <nav class="topnav" aria-label="Admin sections">
+      <button type="button" data-goto="floor">Live floor</button>
+      <button type="button" data-goto="governance">Governance</button>
+      <button type="button" data-goto="supply">GP supply</button>
+      <button type="button" data-goto="business">Business</button>
+    </nav>
+    <div class="topbar__end">
+      <div class="who"><b>Operations</b><span>England</span></div>
+      <span class="avatar">OP</span>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+      <section data-screen="floor" class="page is-active">
+        <div class="page__head">
+          <div>
+            <h1 data-reveal>Live operations</h1>
+          </div>
+        </div>
+
+        <div class="bento" data-stagger>
+          <div class="card card--fill card--bottom span-4">
+            <div class="card__head">
+              <h2 class="card__title">Right now</h2>
+              <span class="card__meta">England</span>
+            </div>
+            <div class="grid grid--3">
+              <div class="stat"><span class="stat__value" data-floor="waiting">–</span><span class="stat__label">Patients waiting</span></div>
+              <div class="stat"><span class="stat__value"><span data-floor="gpsOnline">–</span> of <span data-floor="gpsNeeded">–</span></span><span class="stat__label">GPs online vs needed</span></div>
+              <div class="stat"><span class="stat__value" data-floor="inProgress">–</span><span class="stat__label">Consults in progress</span></div>
+            </div>
+          </div>
+          <div class="card card--bottom">
+            <div class="card__head"><h2 class="card__title">Cover gap</h2></div>
+            <p style="margin:0 0 var(--s-4);color:var(--ink-2);font-size:14px" data-cover-note>–</p>
+            <div class="meter" data-tone="accent"><i data-cover-bar></i></div>
+          </div>
+          <div class="card span-6">
+            <div class="card__head">
+              <h2 class="card__title">Where supply thins first</h2>
+            </div>
+            <div class="grid grid--4" data-stagger>
+              <div class="stat"><span class="stat__value" data-floor="offersDeclined">–</span><span class="stat__label">Offers declined</span></div>
+              <div class="stat"><span class="stat__value" data-floor="offersTimedOut">–</span><span class="stat__label">Offers timed out</span></div>
+              <div class="stat"><span class="stat__value" data-floor="failedMatches">–</span><span class="stat__label">Failed matches</span></div>
+              <div class="stat"><span class="stat__value" data-floor="noShows">–</span><span class="stat__label">No-shows</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section__head">
+            <h2>Demand against cover, by hour</h2>
+          </div>
+          <div class="card">
+            <div data-chart="demand"></div>
+            <div class="legend"><span><i></i>Patients waiting</span><span><i data-key="accent"></i>GPs online</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section data-screen="governance" class="page">
+        <div class="page__head"><div>
+          <h1 data-reveal>Clinical governance and safety</h1>
+        </div></div>
+        <div class="grid grid--3" data-stagger style="margin-top:var(--s-6)">
+          <div class="stat"><span class="stat__value stat__value--sm" data-governance="incidents"></span><span class="stat__label">Incidents</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-governance="safeguarding"></span><span class="stat__label">Safeguarding referrals</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-governance="redFlagEscalations"></span><span class="stat__label">Red-flag escalations</span></div>
+        </div>
+        <div class="grid grid--2" data-stagger style="margin-top:var(--s-4)">
+          <div class="stat"><span class="stat__value stat__value--sm" data-governance="complaints"></span><span class="stat__label">Complaints</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-governance="breakGlass"></span><span class="stat__label">Break-glass access events</span></div>
+        </div>
+
+        <h2 style="margin-top:var(--s-8)">Restricted items register</h2>
+        <p style="color:var(--ink-2)">Schedule 2 and Schedule 3 controlled drugs are prohibited
+          platform-wide. Every breach against this register is counted.</p>
+        <div class="table-scroll card" style="margin-top:var(--s-4)">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Category</th>
+                <th scope="col">Status</th>
+                <th scope="col">Breaches</th>
+              </tr>
+            </thead>
+            <tbody data-register-rows></tbody>
+          </table>
+        </div>
+
+        <h2 style="margin-top:var(--s-8)">Prescribing against the register, per prescriber</h2>
+        <div class="table-scroll card" style="margin-top:var(--s-4)">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">GP</th>
+                <th scope="col">Consults</th>
+                <th scope="col">Flagged against register</th>
+                <th scope="col">Rate</th>
+              </tr>
+            </thead>
+            <tbody data-outlier-rows></tbody>
+          </table>
+        </div>
+
+        <h2 style="margin-top:var(--s-8)">Break-glass access log</h2>
+        <div class="table-scroll card" style="margin-top:var(--s-4)">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Event</th>
+                <th scope="col">Count this period</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Break-glass record access</th><td data-governance="breakGlass"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section data-screen="supply" class="page">
+        <div class="page__head"><div>
+          <h1 data-reveal>GP supply operations</h1>
+        </div></div>
+        <div class="table-scroll card" style="margin-top:var(--s-6)">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">GP</th>
+                <th scope="col">GMC</th>
+                <th scope="col">Licence</th>
+                <th scope="col">CCT</th>
+                <th scope="col">DBS</th>
+                <th scope="col">Right to work</th>
+                <th scope="col">Indemnity</th>
+                <th scope="col">Revalidation</th>
+              </tr>
+            </thead>
+            <tbody data-supply-rows>
+              <tr><th scope="row">Loading…</th><td colspan="7"><span class="pill" data-status="pending">Pending</span> Days remaining will appear once credentials load.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section data-screen="business" class="page">
+        <div class="page__head"><div>
+          <h1 data-reveal>Business</h1>
+        </div></div>
+        <div class="grid grid--2" data-stagger style="margin-top:var(--s-6)">
+          <div class="stat">
+            <span class="stat__value" data-cac>–</span>
+            <span class="stat__label">Real CAC</span>
+            <span class="stat__against" data-cac-against>–</span>
+          </div>
+          <div class="stat">
+            <span class="stat__value" data-repeat>–</span>
+            <span class="stat__label">Repeat consults per patient per year</span>
+            <span class="stat__against" data-repeat-against>–</span>
+          </div>
+        </div>
+        <div class="grid grid--4" data-stagger style="margin-top:var(--s-8)">
+          <div class="stat"><span class="stat__value stat__value--sm" data-business="consults"></span><span class="stat__label">Consults</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-business="revenue"></span><span class="stat__label">Revenue</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-business="refunds"></span><span class="stat__label">Refunds</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-business="waitlist"></span><span class="stat__label">Waitlist — patients / GPs</span></div>
+        </div>
+      </section>
+
+</main>
+
+<script type="module">
+  import { initRouter } from './js/router.js';
+  import { buildRailModel, renderRail } from './js/rail.js';
+  import { mountShell } from './js/shell.js';
+  import { svgLines, mountChart } from './js/charts.js';
+  import {
+    DASH, dataModeFromLocation, shown, seed, emptyState, isSeeded,
+  } from './js/placeholder.js';
+
+  dataModeFromLocation();
+  import { GPS, FLOOR, GOVERNANCE, PRESCRIBING, BUSINESS, DOCTOR_DASHBOARD } from './js/fixtures.js';
+
+  const router = initRouter(document, 'floor');
+  mountShell(document, router, { dash: router.ids() });
+
+  renderRail(document, buildRailModel([
+    { label: 'Sections', items: [
+      { id: 'floor', label: 'Live floor', kind: 'screen' },
+      { id: 'governance', label: 'Governance', kind: 'screen' },
+      { id: 'supply', label: 'GP supply', kind: 'screen' },
+      { id: 'business', label: 'Business', kind: 'screen' },
+    ] },
+  ], router.ids()), router);
+
+  const set = (key, value) => {
+    const node = document.querySelector(`[data-floor="${key}"]`);
+    if (node) node.textContent = shown(value);
+  };
+  for (const [key, value] of Object.entries(FLOOR)) set(key, value);
+
+  const gps = seed(GPS);
+  const rows = document.querySelector('[data-supply-rows]');
+  rows.innerHTML = gps.map((gp) => {
+    const cells = Object.entries(gp.credentials).map(([name, c]) => {
+      const days = c.daysRemaining === null ? '—' : `${c.daysRemaining} days`;
+      return `<td><span class="pill" data-status="${c.status}">${c.status}</span> ${days}</td>`;
+    }).join('');
+    const severity = Object.values(gp.credentials).some((c) => c.status === 'expired') ? 'high' : 'normal';
+    return { severity, html: `<tr data-severity="${severity}"><th scope="row">${gp.ref}</th>${cells}</tr>` };
+  })
+    // The point of the matrix is the fortnight of warning before a lapse —
+    // an expired credential must be unmissable, so its row leads.
+    .sort((a, b) => (b.severity === 'high') - (a.severity === 'high'))
+    .map((r) => r.html)
+    .join('')
+    || '<tr><th scope="row">—</th><td colspan="7">No GPs verified yet.</td></tr>';
+
+  // The register itself is policy, not activity — the categories are real
+  // before a single consultation happens. Only the breach count is a figure.
+  document.querySelector('[data-register-rows]').innerHTML = GOVERNANCE.restrictedRegister
+    .map((r) => `<tr><th scope="row">${r.category}</th><td>${r.status}</td>`
+      + `<td>${shown(r.breaches, (n) => `${n} breaches`)}</td></tr>`)
+    .join('');
+
+  // The load-bearing view: an aggregate breach count hides which prescriber is
+  // the outlier, so every GP carries a rate against the register and a flagged
+  // GP sorts to the top — the same "expired sorts first" treatment as supply.
+  document.querySelector('[data-outlier-rows]').innerHTML = seed(PRESCRIBING)
+    .map((gp) => {
+      const severity = gp.restrictedFlagged > 0 ? 'high' : 'normal';
+      const rate = gp.consults === 0 ? '—' : `${((gp.restrictedFlagged / gp.consults) * 100).toFixed(1)}%`;
+      const html = `<tr data-severity="${severity}"><th scope="row">${gp.ref}</th>`
+        + `<td>${gp.consults}</td><td>${gp.restrictedFlagged} flagged</td><td>${rate}</td></tr>`;
+      return { severity, html };
+    })
+    .sort((a, b) => (b.severity === 'high') - (a.severity === 'high'))
+    .map((r) => r.html)
+    .join('')
+    || '<tr><th scope="row">—</th><td colspan="3">No prescribing recorded yet.</td></tr>';
+
+  // Governance's headline counts appear in two places (a stat tile and, for
+  // break-glass, the audit-log row too) — querySelectorAll so both stay wired
+  // to the same fixture value rather than a second, independently-typed copy.
+  for (const [key, value] of Object.entries(GOVERNANCE)) {
+    if (key === 'restrictedRegister') continue;
+    for (const node of document.querySelectorAll(`[data-governance="${key}"]`)) {
+      node.textContent = shown(value);
+    }
+  }
+
+  // The actuals are traction; the plan assumptions are a decision already
+  // taken and stay visible, so the pair reads as "target, nothing measured yet".
+  document.querySelector('[data-cac]').textContent = shown(BUSINESS.cac.actual, (v) => `£${v}`);
+  document.querySelector('[data-cac-against]').textContent = `plan assumed £${BUSINESS.cac.assumption}`;
+  document.querySelector('[data-repeat]').textContent =
+    shown(BUSINESS.repeatRate.actual, (v) => v.toFixed(1));
+  document.querySelector('[data-repeat-against]').textContent =
+    `plan assumed ${BUSINESS.repeatRate.assumption.toFixed(1)}`;
+
+  const formatBusiness = {
+    consults: (v) => String(v),
+    revenue: (v) => `£${v.toLocaleString('en-GB')}`,
+    refunds: (v) => String(v),
+    waitlist: (v) => `${v.patients} / ${v.gps}`,
+  };
+  for (const [key, value] of Object.entries(BUSINESS)) {
+    const format = formatBusiness[key];
+    if (!format) continue; // cac and repeatRate are wired above, with their own "against" line
+    for (const node of document.querySelectorAll(`[data-business="${key}"]`)) {
+      node.textContent = shown(value, format);
+    }
+  }
+
+  // The cover gap is the floor's load-bearing number: online against needed.
+  // Derived here rather than typed, so it cannot contradict the tiles above it.
+  const covered = Math.min(1, FLOOR.gpsOnline / Math.max(FLOOR.gpsNeeded, 1));
+  document.querySelector('[data-cover-bar]').style.width =
+    isSeeded() ? `${Math.round(covered * 100)}%` : '0%';
+  document.querySelector('[data-cover-note]').textContent = !isSeeded()
+    ? 'No GPs online and no queue yet.'
+    : (FLOOR.gpsOnline >= FLOOR.gpsNeeded
+      ? 'Cover is met for the current queue.'
+      : `${FLOOR.gpsNeeded - FLOOR.gpsOnline} more GP online would clear the queue at the current rate.`);
+
+  const demandNode = document.querySelector('[data-chart="demand"]');
+  if (!isSeeded()) demandNode.innerHTML = emptyState('No demand recorded yet.');
+  else mountChart(demandNode, (width) => svgLines(
+    [
+      { key: 'first', values: DOCTOR_DASHBOARD.demandByHour.map((hour) => hour.waiting) },
+      { key: 'second', values: DOCTOR_DASHBOARD.demandByHour.map((hour) => hour.gps) },
+    ],
+    DOCTOR_DASHBOARD.demandByHour.map((hour) => hour.hour),
+    { width, height: 150, area: true },
+  ));
+</script>
+</body>
+</html>

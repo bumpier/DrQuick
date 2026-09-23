@@ -1,0 +1,270 @@
+/* The signed-in surfaces. base.css holds the tokens and the prototype chrome;
+   components.css holds the pieces the linear flows use. This file is the app
+   shell and the dashboard vocabulary that only the logged-in screens need. */
+
+/* --- sticky head: prototype ribbon and product topbar move as one -------- */
+
+.stick { position: sticky; top: 0; z-index: 40; background: var(--white); }
+/* The ribbon sticks to the viewport on flow-only pages; inside .stick the
+   wrapper does the sticking, so the ribbon must sit still within it. */
+.stick .ribbon { position: static; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-height: var(--topbar-h);
+  padding: 0 var(--s-6);
+  background: var(--white);
+  border-bottom: 1px solid var(--rule);
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -.04em;
+  white-space: nowrap;
+}
+.brand b { color: var(--blue); font-weight: 800; }
+
+.topnav {
+  display: flex;
+  gap: var(--s-1);
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.topnav::-webkit-scrollbar { display: none; }
+.topnav button {
+  height: var(--topbar-h);
+  padding: 0 var(--s-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .15s var(--ease);
+}
+.topnav button:hover { color: var(--black); }
+.topnav button[aria-current="true"] { color: var(--black); border-bottom-color: var(--black); }
+
+.topbar__end { display: flex; align-items: center; gap: var(--s-3); margin-left: auto; }
+
+.avatar {
+  width: 36px; height: 36px; flex: none;
+  display: grid; place-items: center;
+  border-radius: var(--r-control);
+  background: var(--black); color: var(--white);
+  font-weight: 700; font-size: 13px; letter-spacing: -.01em;
+}
+
+.who { line-height: 1.2; text-align: right; }
+.who b { display: block; font-weight: 700; font-size: 14px; }
+.who span { color: var(--ink-2); font-size: 12px; }
+
+/* A square 8px mark, not a dot: the system abandoned fully-rounded ends. */
+.state-mark {
+  display: inline-block; width: 8px; height: 8px;
+  border: 1px solid var(--black); border-radius: 2px;
+  margin-right: 6px; vertical-align: baseline;
+}
+.state-mark[data-on="true"] { background: var(--black); }
+.state-mark[data-on="false"] { background: transparent; }
+
+/* The product nav belongs to the dashboard areas. During a linear flow —
+   triage, a consultation — there is nowhere else to go, and offering four
+   destinations mid-flow is an invitation to abandon it. */
+body[data-area="flow"] .topnav { display: none; }
+
+/* On a phone the top bar becomes two rows rather than one crushed one: the
+   brand and the account on top, the product nav on its own line beneath.
+   Squeezing four destinations and a control onto one 390px row leaves the nav
+   scrolled half out of view, which is the same as not having it. */
+@media (max-width: 560px) {
+  .topbar { flex-wrap: wrap; gap: var(--s-2); padding: 0 var(--s-4); min-height: 56px; }
+  .who { display: none; }
+  .topnav {
+    order: 3; flex-basis: 100%; height: 46px;
+    border-top: 1px solid var(--rule); margin: 0 calc(var(--s-4) * -1); padding: 0 var(--s-4);
+  }
+  .topnav button { height: 46px; font-size: 14px; padding: 0 var(--s-2); }
+  .topbar__end { gap: var(--s-2); }
+}
+
+/* --- page frame --------------------------------------------------------- */
+
+.page { max-width: 1180px; margin: 0 auto; padding: var(--s-8) var(--s-6) var(--s-16); }
+.page--narrow { max-width: 620px; }
+
+.page__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--s-6); flex-wrap: wrap; margin-bottom: var(--s-8);
+}
+.page__lead { color: var(--ink-2); margin: var(--s-2) 0 0; max-width: 52ch; }
+.page__actions { display: flex; gap: var(--s-3); flex-wrap: wrap; }
+
+.section { margin-top: var(--s-12); }
+.section__head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-4); flex-wrap: wrap; margin-bottom: var(--s-4);
+}
+.section__note { color: var(--ink-2); font-size: 14px; margin: 0; max-width: 60ch; }
+
+@media (max-width: 560px) {
+  .page { padding: var(--s-6) var(--s-4) var(--s-16); }
+}
+
+/* --- bento: tiles vary in span, fill and internal layout ---------------- */
+
+.bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--s-4); }
+.bento > * { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+.span-4 { grid-column: span 4; }
+.span-6 { grid-column: span 6; }
+
+@media (max-width: 900px) {
+  .bento { grid-template-columns: repeat(2, 1fr); }
+  .bento > * { grid-column: span 2; }
+}
+@media (max-width: 560px) {
+  .bento { grid-template-columns: 1fr; }
+  .bento > * { grid-column: span 1; }
+}
+
+.card__head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s-4); margin-bottom: var(--s-4);
+}
+.card__title { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+.card__meta { color: var(--ink-2); font-size: 13px; white-space: nowrap; }
+.card--fill .card__meta { color: var(--ink-2-dark); }
+.card--fill .stat__label,
+.card--fill .stat__against { color: var(--ink-2-dark); }
+.card--fill .btn { background: var(--white); color: var(--black); border-color: var(--white); }
+.card--fill a { color: var(--blue-lift); }
+.card--bottom { display: flex; flex-direction: column; justify-content: flex-end; min-height: 220px; }
+
+/* --- alerts: the dashboard's first job is to say what needs doing -------- */
+
+.alerts { display: grid; }
+.alert {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  padding: var(--s-4) 0; border-bottom: 1px solid var(--rule);
+}
+.alert:first-child { padding-top: 0; }
+.alert:last-child { padding-bottom: 0; border-bottom: 0; }
+.alert__icon { flex: none; margin-top: 2px; color: var(--ink-2); }
+/* The accent marks the one state that must be noticed, never decoration. */
+.alert[data-tone="blocking"] .alert__icon,
+.alert[data-tone="act"] .alert__icon { color: var(--blue); }
+.alert__body { flex: 1; min-width: 0; }
+.alert__title { font-weight: 700; }
+.alert__note { color: var(--ink-2); font-size: 14px; margin: 2px 0 0; }
+.alert__end { flex: none; }
+.card--fill .alert { border-color: var(--rule-dark); }
+.card--fill .alert__note, .card--fill .alert__icon { color: var(--ink-2-dark); }
+.card--fill .alert[data-tone="blocking"] .alert__icon,
+.card--fill .alert[data-tone="act"] .alert__icon { color: var(--blue-lift); }
+
+.btn--sm { min-height: 38px; padding: 0 var(--s-3); font-size: 14px; }
+
+/* --- charts: authored SVG, no library, palette-closed ------------------- */
+
+.chart { display: block; width: 100%; height: auto; }
+.chart text { font-family: Archivo, system-ui, sans-serif; font-weight: 500; font-size: 11px; fill: var(--ink-2); }
+.chart .tick { stroke: var(--rule); stroke-width: 1; }
+.chart .baseline { stroke: var(--tile-edge); stroke-width: 1; }
+.chart .bar { fill: var(--c-soft); }
+.chart .bar[data-emph="true"] { fill: var(--black); }
+.chart .bar[data-emph="accent"] { fill: var(--blue); }
+.chart .line { fill: none; stroke: var(--black); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .line[data-key="second"] { stroke: var(--blue); stroke-dasharray: 5 4; }
+.chart .area { fill: var(--fill); }
+.chart .node { fill: var(--black); }
+.card--fill .chart text { fill: var(--ink-2-dark); }
+.card--fill .chart .bar { fill: var(--c-deep); }
+.card--fill .chart .bar[data-emph="true"] { fill: var(--white); }
+.card--fill .chart .baseline { stroke: var(--rule-dark); }
+
+/* A legend is a caption for a picture. With no data there is no picture. */
+body[data-mode="placeholder"] .legend { display: none; }
+
+.legend { display: flex; flex-wrap: wrap; gap: var(--s-4); font-size: 13px; color: var(--ink-2); margin-top: var(--s-3); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; background: var(--black); }
+.legend i[data-key="accent"] { background: var(--blue); }
+.legend i[data-key="soft"] { background: var(--c-soft); }
+
+/* --- timeline: a prescription's journey, not a status word -------------- */
+
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; }
+.timeline li { position: relative; display: grid; grid-template-columns: 12px 1fr; gap: var(--s-3); padding-bottom: var(--s-4); }
+.timeline li::before { content: ""; position: absolute; left: 5px; top: 16px; bottom: 0; width: 1px; background: var(--rule); }
+.timeline li:last-child { padding-bottom: 0; }
+.timeline li:last-child::before { display: none; }
+.timeline__dot { width: 11px; height: 11px; margin-top: 4px; border: 1px solid var(--black); border-radius: 3px; background: var(--white); }
+.timeline li[data-done="true"] .timeline__dot { background: var(--black); }
+.timeline li[data-now="true"] .timeline__dot { background: var(--blue); border-color: var(--blue); }
+.timeline li[data-done="false"][data-now="false"] .timeline__dot { border-color: var(--tile-edge); }
+.timeline__label { font-weight: 700; }
+.timeline li[data-done="false"][data-now="false"] .timeline__label { color: var(--ink-2); font-weight: 500; }
+.timeline__when { display: block; color: var(--ink-2); font-size: 13px; }
+
+/* --- rows: a list that is not a table ----------------------------------- */
+
+.rows { display: grid; }
+.row { display: flex; align-items: center; gap: var(--s-4); padding: var(--s-3) 0; border-bottom: 1px solid var(--rule); text-align: left; }
+.row:last-child { border-bottom: 0; }
+.row__main { flex: 1; min-width: 0; }
+.row__t { display: block; font-weight: 700; }
+.row__s { display: block; color: var(--ink-2); font-size: 13px; }
+.row__end { flex: none; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+button.row { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--rule); font: inherit; cursor: pointer; }
+button.row:hover .row__t { color: var(--blue); }
+
+/* --- meters, tabs, empty states ---------------------------------------- */
+
+.meter { height: 6px; border-radius: 3px; background: var(--fill-2); overflow: hidden; }
+.meter > i { display: block; height: 100%; background: var(--black); }
+.meter[data-tone="accent"] > i { background: var(--blue); }
+
+.tabs { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.tabs button {
+  min-height: 38px; padding: 0 var(--s-3);
+  border: 1px solid var(--tile-edge); border-radius: var(--r-control);
+  background: var(--white); color: var(--ink-2);
+  font: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
+}
+.tabs button[aria-pressed="true"] { background: var(--black); color: var(--white); border-color: var(--black); }
+
+.empty {
+  border: 1px dashed var(--tile-edge); border-radius: var(--r-tile);
+  padding: var(--s-8); text-align: center; color: var(--ink-2);
+}
+
+/* The emergency band keeps body-size type and its accent mark wherever it
+   appears. It is never fine print and never leaves the patient flow. */
+.band {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  padding: var(--s-4) 0;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  font-size: 16px; font-weight: 700;
+}
+.band svg { flex: none; margin-top: 3px; color: var(--blue); }
+.band strong { font-weight: 800; }
+
+.gate--lg { align-items: center; }
+.facts { display: grid; }
+.facts > div {
+  display: grid; grid-template-columns: 16ch 1fr; gap: var(--s-4);
+  padding: var(--s-3) 0; border-bottom: 1px solid var(--rule);
+}
+.facts > div:last-child { border-bottom: 0; }
+.facts b { font-weight: 700; }
+.facts span { color: var(--ink-2); }
+@media (max-width: 560px) { .facts > div { grid-template-columns: 1fr; gap: var(--s-1); } }

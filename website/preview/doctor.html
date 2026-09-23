@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Dr Quick — doctor prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="is-first-paint" data-area="dash">
+
+<header class="stick">
+  <p class="ribbon">Prototype. Not a live service — no real patients, GPs, or data.</p>
+  <div class="topbar">
+    <span class="brand">Dr<b>Quick</b></span>
+    <nav class="topnav" aria-label="Doctor sections">
+      <button type="button" data-goto="dashboard">Dashboard</button>
+      <button type="button" data-goto="earnings">Earnings</button>
+      <button type="button" data-goto="profile">Profile</button>
+    </nav>
+    <div class="topbar__end">
+      <button class="toggle" type="button" data-availability aria-pressed="false">Go online</button>
+      <div class="who"><b data-gp="ref"></b><span data-gp="status"></span></div>
+      <span class="avatar" data-gp="initials"></span>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ===================== dashboard ===================== -->
+
+  <section data-screen="dashboard" class="page is-active">
+    <div class="page__head">
+      <div>
+        <h1 data-reveal>Today</h1>
+      </div>
+      <div class="page__actions" data-reveal>
+        <button class="btn btn--primary" data-goto="offer">Simulate an offer</button>
+      </div>
+    </div>
+
+    <div class="bento" data-stagger>
+      <div class="card card--fill card--bottom span-4">
+        <div class="card__head">
+          <h2 class="card__title" data-live="heading"></h2>
+          <span class="card__meta" data-live="clock"></span>
+        </div>
+        <div class="grid grid--4" style="margin:var(--s-6) 0">
+          <div class="stat"><span class="stat__value stat__value--sm" data-live="waiting"></span><span class="stat__label">Patients waiting</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-live="gps"></span><span class="stat__label">GPs online vs needed</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-live="minutes"></span><span class="stat__label">Time online today</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-live="today"></span><span class="stat__label">Earned today</span></div>
+        </div>
+        <button class="btn btn--block" type="button" data-availability-echo></button>
+      </div>
+
+      <div class="card card--bottom">
+        <div class="card__head">
+          <h2 class="card__title">Next payout</h2>
+        </div>
+        <div class="stat" style="margin-bottom:var(--s-4)">
+          <span class="stat__value" data-payout="amount"></span>
+          <span class="stat__label" data-payout="when"></span>
+        </div>
+        <div class="meter"><i data-payout="progress"></i></div>
+        <p style="margin:var(--s-2) 0 0;color:var(--ink-2);font-size:13px" data-payout="note"></p>
+      </div>
+
+      <div class="card span-6">
+        <div class="card__head">
+          <h2 class="card__title">Before you go online</h2>
+          <span class="card__meta" data-alerts="count"></span>
+        </div>
+        <div class="alerts" data-alerts="list"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2>Consultations, last 14 days</h2>
+      </div>
+      <div class="card">
+        <div class="grid grid--3" style="margin-bottom:var(--s-6)">
+          <div class="stat"><span class="stat__value stat__value--sm" data-fortnight="consults"></span><span class="stat__label">Consultations</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-fortnight="earnings"></span><span class="stat__label">Earned</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-fortnight="busiest"></span><span class="stat__label">Busiest day</span></div>
+        </div>
+        <div data-chart="daily"></div>
+        <div class="legend"><span><i></i>Today</span><span><i data-key="soft"></i>Earlier days</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2>When it is worth being online</h2>
+      </div>
+      <div class="card">
+        <div data-chart="demand"></div>
+        <div class="legend"><span><i></i>Patients waiting</span><span><i data-key="accent"></i>GPs online</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2>Offers today</h2>
+      </div>
+      <div class="grid grid--3" data-stagger>
+        <div class="card">
+          <div class="stat"><span class="stat__value" data-offers="offered"></span><span class="stat__label">Offers received</span></div>
+        </div>
+        <div class="card">
+          <div class="stat"><span class="stat__value" data-offers="accepted"></span><span class="stat__label">Accepted</span></div>
+        </div>
+        <div class="card">
+          <div class="stat"><span class="stat__value" data-offers="declined"></span><span class="stat__label">Declined — passed to another GP</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2>Today's consultations</h2>
+      </div>
+      <div class="table-scroll card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Reference</th>
+              <th scope="col">When</th>
+              <th scope="col">Age band</th>
+              <th scope="col">Length</th>
+              <th scope="col">Outcome</th>
+              <th scope="col">Fee</th>
+            </tr>
+          </thead>
+          <tbody data-recent-rows></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head"><h2>How you are doing</h2></div>
+      <div class="grid grid--3" data-stagger>
+        <div class="card">
+          <div class="stat"><span class="stat__value" data-perf="rating"></span>
+            <span class="stat__label" data-perf="rating-label"></span></div>
+          <div class="meter" style="margin-top:var(--s-4)"><i data-perf="rating-bar"></i></div>
+        </div>
+        <div class="card">
+          <div class="stat"><span class="stat__value" data-perf="acceptance"></span>
+            <span class="stat__label">Offers accepted</span></div>
+          <div class="meter" style="margin-top:var(--s-4)"><i data-perf="acceptance-bar"></i></div>
+        </div>
+        <div class="card">
+          <div class="stat"><span class="stat__value" data-perf="length"></span>
+            <span class="stat__label">Average consultation</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== earnings ===================== -->
+
+  <section data-screen="earnings" class="page">
+    <div class="page__head">
+      <div>
+        <h1 data-reveal>Earnings</h1>
+      </div>
+    </div>
+    <div class="bento" data-stagger>
+      <div class="card card--fill card--bottom span-3">
+        <div class="card__head">
+          <h2 class="card__title">Next payout</h2>
+          <span class="card__meta" data-earn="period"></span>
+        </div>
+        <div class="stat"><span class="stat__value" data-earn="payout"></span>
+          <span class="stat__label" data-earn="payout-when"></span></div>
+      </div>
+      <div class="card span-3">
+        <div class="grid grid--2">
+          <div class="stat"><span class="stat__value stat__value--sm" data-earn="todate"></span><span class="stat__label">Earned to date</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-earn="consults"></span><span class="stat__label">Consultations completed</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-earn="fee"></span><span class="stat__label">Fee per consultation</span></div>
+          <div class="stat"><span class="stat__value stat__value--sm" data-earn="week"></span><span class="stat__label">Earned this week</span></div>
+        </div>
+      </div>
+      <div class="card span-6">
+        <div class="card__head">
+          <h2 class="card__title">Daily earnings, last 14 days</h2>
+          <span class="card__meta" data-earn="range"></span>
+        </div>
+        <div data-chart="earnings"></div>
+        <div class="legend"><span><i></i>Today</span><span><i data-key="soft"></i>Earlier days</span></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section__head">
+        <h2>What is in this payout</h2>
+        <p class="section__note" data-earn="payout-note"></p>
+      </div>
+      <div class="table-scroll card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Reference</th>
+              <th scope="col">When</th>
+              <th scope="col">Length</th>
+              <th scope="col">Outcome</th>
+              <th scope="col">Fee</th>
+            </tr>
+          </thead>
+          <tbody data-payout-rows></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== profile ===================== -->
+
+  <section data-screen="profile" class="page page--narrow">
+    <h1 data-reveal>Profile</h1>
+
+    <div class="section">
+      <div class="section__head">
+        <h2>Credentials</h2>
+      </div>
+      <div class="rows" data-credential-rows></div>
+      <div class="page__actions" style="margin-top:var(--s-4)">
+        <button class="btn btn--sm" data-goto="credentials">Update credentials</button>
+        <button class="btn btn--sm" data-goto="indemnity">Indemnity cover</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2>Clinical skills</h2>
+        <p class="section__note">This decides which consultations you are offered.</p>
+      </div>
+      <div class="rows" data-skills-list></div>
+      <div class="page__actions" style="margin-top:var(--s-4)">
+        <button class="btn btn--sm" data-goto="skills">Change skills</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head"><h2>Account</h2></div>
+      <div class="facts" data-gp-facts></div>
+    </div>
+  </section>
+
+  <!-- ===================== onboarding ===================== -->
+
+  <section data-screen="register" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <h1 data-reveal>Join Dr Quick</h1>
+    <p data-reveal style="color:var(--ink-2)">For GMC-registered doctors picking up private GP shifts.</p>
+    <div class="field">
+      <label for="reg-email">Email</label>
+      <input id="reg-email" name="email" type="email" value="dr.locum@example.com">
+    </div>
+    <div class="field">
+      <label for="reg-gmc">GMC number</label>
+      <input id="reg-gmc" name="gmc" type="text" placeholder="7 digits" value="4567890">
+    </div>
+    <button class="btn btn--primary btn--block" data-goto="identity">Continue</button>
+  </section>
+
+  <section data-screen="identity" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span></span><span></span><span></span><span></span>
+    </div>
+    <h1 data-reveal>Verify it's you</h1>
+    <p>We use Stripe Identity to check a photo ID — a passport or driving licence.</p>
+    <div class="card" style="margin-block:var(--s-6)">
+      <p style="margin:0">You'll be asked to photograph your ID and take a quick selfie. This takes about a minute.</p>
+    </div>
+    <button class="btn btn--primary btn--block" data-goto="credentials">Verify identity</button>
+  </section>
+
+  <section data-screen="credentials" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span></span><span></span><span></span>
+    </div>
+    <h1 data-reveal>Credentials</h1>
+    <p style="color:var(--ink-2)">We verify these before you can take your first shift.</p>
+    <div class="gate"><span>GMC registration</span><span class="pill" data-status="pending">Pending</span></div>
+    <div class="gate"><span>Licence to practise</span><span class="pill" data-status="pending">Pending</span></div>
+    <div class="gate"><span>CCT / specialist registration</span><span class="pill" data-status="pending">Pending</span></div>
+    <div class="gate"><span>DBS check</span><span class="pill" data-status="pending">Pending</span></div>
+    <div class="gate"><span>Right to work</span><span class="pill" data-status="valid">Verified</span></div>
+    <button class="btn btn--primary btn--block" style="margin-top:var(--s-6)" data-goto="indemnity">Continue</button>
+  </section>
+
+  <section data-screen="indemnity" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span></span><span></span>
+    </div>
+    <h1 data-reveal>Indemnity cover</h1>
+    <p style="color:var(--ink-2)">State-backed NHS indemnity does not cover private telehealth. You need separate cover to consult here.</p>
+    <div class="card">
+      <h3 style="margin:0 0 var(--s-2)">Dr Quick block cover</h3>
+      <p style="margin:0">Included for shifts booked through Dr Quick. No paperwork.</p>
+      <button class="btn btn--primary btn--block" style="margin-top:var(--s-4)" data-goto="skills">Use Dr Quick cover</button>
+    </div>
+    <p style="text-align:center;color:var(--ink-2);margin-block:var(--s-4)">or</p>
+    <div class="card">
+      <h3 style="margin:0 0 var(--s-2)">Your own certificate</h3>
+      <div class="field">
+        <label for="indemnity-file">Certificate of cover</label>
+        <input id="indemnity-file" name="indemnity-file" type="file">
+      </div>
+      <div class="field">
+        <label for="indemnity-expiry">Expiry date</label>
+        <input id="indemnity-expiry" name="indemnity-expiry" type="date">
+      </div>
+      <button class="btn btn--block" data-goto="skills">Upload certificate</button>
+    </div>
+  </section>
+
+  <section data-screen="skills" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span></span>
+    </div>
+    <h1 data-reveal>Clinical skills</h1>
+    <p style="color:var(--ink-2)">This determines which consultations you're offered.</p>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:var(--s-2);padding:var(--s-2) 0">
+        <input type="checkbox" name="skill" value="general-adult" checked> General adult medicine
+      </label>
+      <label style="display:flex;align-items:center;gap:var(--s-2);padding:var(--s-2) 0">
+        <input type="checkbox" name="skill" value="minor-illness" checked> Minor illness
+      </label>
+      <label style="display:flex;align-items:center;gap:var(--s-2);padding:var(--s-2) 0">
+        <input type="checkbox" name="skill" value="womens-health"> Women's health
+      </label>
+      <label style="display:flex;align-items:center;gap:var(--s-2);padding:var(--s-2) 0">
+        <input type="checkbox" name="skill" value="mental-health"> Mental health
+      </label>
+      <label style="display:flex;align-items:center;gap:var(--s-2);padding:var(--s-2) 0">
+        <input type="checkbox" name="skill" value="paediatrics"> Paediatrics (age 5+)
+      </label>
+      <label style="display:flex;align-items:center;gap:var(--s-2);padding:var(--s-2) 0">
+        <input type="checkbox" name="skill" value="dermatology"> Dermatology
+      </label>
+    </div>
+    <button class="btn btn--primary btn--block" data-goto="onboarding-done">Continue</button>
+  </section>
+
+  <section data-screen="onboarding-done" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span>
+    </div>
+    <h1 data-reveal>You're ready</h1>
+    <p>Your application is under review. We'll email you once your credentials are verified — most GPs hear back within two working days.</p>
+    <button class="btn btn--primary btn--block" data-goto="dashboard">Go to your dashboard</button>
+  </section>
+
+  <!-- ===================== availability ===================== -->
+
+  <section data-screen="offline" class="page page--narrow">
+    <h1 data-reveal>You're offline</h1>
+    <p class="page__lead" data-reveal>No offers will reach you until you go online.</p>
+    <div class="card" style="margin-top:var(--s-6)">
+      <div class="grid grid--2">
+        <div class="stat"><span class="stat__value stat__value--sm" data-doctor="earningsToDate"></span><span class="stat__label">Earnings to date</span></div>
+        <div class="stat"><span class="stat__value stat__value--sm" data-doctor="consultsCompleted"></span><span class="stat__label">Consults completed</span></div>
+        <div class="stat"><span class="stat__value stat__value--sm" data-doctor="credentials"></span><span class="stat__label">Credentials</span></div>
+        <div class="stat"><span class="stat__value stat__value--sm" data-doctor="daysToRevalidation"></span><span class="stat__label">Next revalidation</span></div>
+      </div>
+      <button class="btn btn--primary btn--block" style="margin-top:var(--s-6)" data-goto="online-idle">Go online</button>
+    </div>
+    <button class="btn btn--block" style="margin-top:var(--s-3)" data-goto="dashboard">Back to dashboard</button>
+  </section>
+
+  <section data-screen="online-idle" class="page page--narrow">
+    <h1 data-reveal>Waiting for a patient</h1>
+    <p class="page__lead" data-reveal>Offers arrive with a 45-second window to accept or decline.</p>
+    <div class="card" style="margin-top:var(--s-6)">
+      <div class="grid grid--2">
+        <div class="stat"><span class="stat__value stat__value--sm" data-doctor-shift="gpsOnline"></span><span class="stat__label">GPs online</span></div>
+        <div class="stat"><span class="stat__value stat__value--sm" data-doctor-shift="patientsWaiting"></span><span class="stat__label">Patients waiting</span></div>
+        <div class="stat"><span class="stat__value stat__value--sm" data-doctor-shift="minutesOnline"></span><span class="stat__label">Time online</span></div>
+        <div class="stat"><span class="stat__value stat__value--sm" data-doctor-shift="earningsToday"></span><span class="stat__label">Earnings today</span></div>
+      </div>
+    </div>
+    <button class="btn btn--primary btn--block" style="margin-top:var(--s-6)" data-goto="offer">Simulate an offer</button>
+    <button class="btn btn--block" style="margin-top:var(--s-3)" data-goto="offline">Go offline</button>
+  </section>
+
+  <section data-screen="no-patients-waiting" class="page page--narrow">
+    <h1 data-reveal>You're online</h1>
+    <p class="page__lead" data-reveal>Nobody is waiting right now. You'll get an offer the moment a patient needs a GP.</p>
+    <p class="empty" style="margin-top:var(--s-6)">No patients in the queue.</p>
+    <button class="btn btn--block" style="margin-top:var(--s-4)" data-goto="offline">Go offline</button>
+  </section>
+
+  <!-- ===================== an offer, and the consultation ===================== -->
+
+  <section data-screen="offer" class="shell">
+    <h1 data-reveal>New offer</h1>
+    <div class="card">
+      <div class="grid grid--3">
+        <div class="stat"><span class="stat__value stat__value--sm" data-offer-fact="presentingComplaint"></span><span class="stat__label">Presenting complaint</span></div>
+        <div class="stat"><span class="stat__value stat__value--sm" data-offer-fact="ageBand"></span><span class="stat__label">Age band</span></div>
+        <div class="stat"><span class="stat__value stat__value--sm" data-offer-fact="nhsGpConsent"></span><span class="stat__label">NHS GP summary consent</span></div>
+      </div>
+    </div>
+    <div class="countdown" data-offer-countdown aria-live="assertive" style="margin-top:var(--s-6)">45s</div>
+    <button class="btn btn--primary btn--block" style="margin-top:var(--s-6)" data-goto="consultation">Accept</button>
+    <button class="btn btn--block" style="margin-top:var(--s-3)" data-goto="offer-declined">Decline</button>
+  </section>
+
+  <section data-screen="offer-consent-refused" class="shell">
+    <h1 data-reveal>New offer</h1>
+    <div class="card">
+      <div class="grid grid--3">
+        <div class="stat"><span class="stat__value stat__value--sm" data-offer-fact="presentingComplaint"></span><span class="stat__label">Presenting complaint</span></div>
+        <div class="stat"><span class="stat__value stat__value--sm" data-offer-fact="ageBand"></span><span class="stat__label">Age band</span></div>
+        <div class="stat"><span class="stat__value stat__value--sm" data-offer-fact="nhsGpConsent"></span><span class="stat__label">NHS GP summary consent</span></div>
+      </div>
+    </div>
+    <p style="margin-top:var(--s-4)">This patient has not consented to share this consultation with their NHS
+      GP. Without access to their record, you may be unable to prescribe safely — decline if you don't have
+      enough information to treat them.</p>
+    <div class="countdown" data-offer-countdown aria-live="assertive" style="margin-top:var(--s-6)">45s</div>
+    <button class="btn btn--primary btn--block" style="margin-top:var(--s-6)" data-goto="consultation">Accept</button>
+    <button class="btn btn--block" style="margin-top:var(--s-3)" data-goto="offer-declined">Decline</button>
+  </section>
+
+  <section data-screen="consultation" class="page">
+    <h1 data-reveal>Consultation</h1>
+    <div style="display:flex;flex-wrap:wrap;gap:var(--s-6);align-items:flex-start;margin-top:var(--s-6)">
+      <div class="videoframe" style="flex:0 0 320px;max-width:100%">Patient video</div>
+      <div style="flex:1;min-width:280px">
+        <div class="card">
+          <div class="card__head"><h2 class="card__title">Patient context</h2></div>
+          <div class="facts" data-consult-facts></div>
+        </div>
+        <div class="card" style="margin-top:var(--s-4)">
+          <div class="card__head"><h2 class="card__title">Clinical record</h2></div>
+          <p style="margin:0">Notes, prescribing and the consultation outcome are recorded in Semble, not here.</p>
+          <button class="btn btn--block" style="margin-top:var(--s-4)" type="button">Open in Semble</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:var(--s-3);margin-top:var(--s-6);flex-wrap:wrap">
+      <button class="btn btn--primary" data-goto="complete">Finish consultation</button>
+      <button class="btn" data-goto="patient-no-show">Patient didn't join</button>
+    </div>
+  </section>
+
+  <section data-screen="complete" class="shell">
+    <h1 data-reveal>Consultation complete</h1>
+    <div class="card">
+      <p style="margin:0">Outcome recorded in Semble.</p>
+    </div>
+    <div class="card" style="margin-top:var(--s-4)">
+      <p style="margin:0" data-complete-fee></p>
+    </div>
+    <button class="btn btn--primary btn--block" style="margin-top:var(--s-6)" data-goto="online-idle">Back online</button>
+    <button class="btn btn--block" style="margin-top:var(--s-3)" data-goto="dashboard">Back to dashboard</button>
+  </section>
+
+  <!-- ===================== states ===================== -->
+
+  <section data-screen="verification-pending" class="page page--narrow">
+    <h1 data-reveal>Credentials under review</h1>
+    <div class="gate"><span>GMC registration</span><span class="pill" data-status="pending">Pending</span></div>
+    <div class="gate"><span>Licence to practise</span><span class="pill" data-status="pending">Pending</span></div>
+    <div class="gate"><span>CCT / specialist registration</span><span class="pill" data-status="pending">Pending</span></div>
+    <div class="gate"><span>DBS check</span><span class="pill" data-status="pending">Pending</span></div>
+    <div class="gate"><span>Right to work</span><span class="pill" data-status="valid">Verified</span></div>
+    <p style="margin-top:var(--s-6)">We'll email you once every check clears. Most GPs hear back within two working days.</p>
+  </section>
+
+  <section data-screen="verification-rejected" class="page page--narrow">
+    <h1 data-reveal>We couldn't verify a credential</h1>
+    <div class="gate"><span>DBS check</span><span class="pill" data-status="rejected">Rejected</span></div>
+    <p style="margin-top:var(--s-6)">Your DBS certificate could not be confirmed. Upload a new certificate, issued within the last 12 months, to continue.</p>
+    <button class="btn btn--primary btn--block" data-goto="credentials">Resubmit credentials</button>
+  </section>
+
+  <section data-screen="indemnity-expired" class="page page--narrow">
+    <h1 data-reveal>You can't go online</h1>
+    <p class="page__lead">Your indemnity cover expired. State-backed NHS indemnity does not cover private telehealth, so you cannot lawfully take a consultation until it's renewed.</p>
+    <div class="gate gate--lg"><span>Indemnity cover</span><span class="pill" data-status="expired">Expired</span></div>
+    <p style="margin-top:var(--s-4)"><button class="toggle" type="button" disabled>Go online</button></p>
+    <button class="btn btn--primary btn--block" style="margin-top:var(--s-6)" data-goto="indemnity">Renew indemnity cover</button>
+  </section>
+
+  <section data-screen="offer-declined" class="shell">
+    <h1 data-reveal>Offer declined</h1>
+    <p>The patient has been returned to the queue.</p>
+    <button class="btn btn--primary btn--block" data-goto="online-idle">Back online</button>
+  </section>
+
+  <section data-screen="offer-timed-out" class="shell">
+    <h1 data-reveal>Offer window closed</h1>
+    <p>You didn't respond within 45 seconds, so the offer moved to another GP.</p>
+    <button class="btn btn--primary btn--block" data-goto="online-idle">Back online</button>
+  </section>
+
+  <section data-screen="patient-no-show" class="shell">
+    <h1 data-reveal>Patient didn't join</h1>
+    <p>We'll let the patient know and release you back to the queue. No outcome is needed.</p>
+    <button class="btn btn--primary btn--block" data-goto="online-idle">Back online</button>
+  </section>
+
+  <section data-screen="revalidation-due" class="page page--narrow">
+    <h1 data-reveal>Revalidation due soon</h1>
+    <div class="stat" style="margin-top:var(--s-6)"><span class="stat__value" data-doctor="revalidationDueInDays"></span><span class="stat__label">until your GMC revalidation is due</span></div>
+    <p style="margin-top:var(--s-6)">Submit your revalidation portfolio through the GMC before this date, or you won't be able to take further shifts.</p>
+    <button class="btn btn--block" style="margin-top:var(--s-4)" data-goto="profile">See all credentials</button>
+  </section>
+
+</main>
+
+<script type="module" src="js/doctor.js"></script>
+</body>
+</html>

@@ -1,0 +1,587 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-27T00:00:00Z",
+  "title": "Design System: Dr Quick",
+  "extensions": {
+    "colorMeta": {
+      "white": {
+        "role": "neutral",
+        "displayName": "True White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#3D3D3D",
+          "#666666",
+          "#8F8F8F",
+          "#B8B8B8",
+          "#D2D2D2",
+          "#F1F1F1",
+          "#FFFFFF"
+        ]
+      },
+      "black": {
+        "role": "neutral",
+        "displayName": "True Black",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "#000000",
+          "#141414",
+          "#2E2E2E",
+          "#4A4A4A",
+          "#666666",
+          "#8C8C8C",
+          "#B8B8B8",
+          "#E8E8E8"
+        ]
+      },
+      "blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#1447E6",
+        "tonalRamp": [
+          "#050F33",
+          "#0A1F66",
+          "#0F2F9E",
+          "#1447E6",
+          "#3D6BF0",
+          "#6E9BFF",
+          "#A8C3FF",
+          "#DCE7FF"
+        ]
+      },
+      "blue-lift": {
+        "role": "primary",
+        "displayName": "Signal Blue Lift",
+        "canonical": "#6E9BFF",
+        "tonalRamp": [
+          "#0B1A3D",
+          "#12296B",
+          "#1A3D9E",
+          "#2B5AD1",
+          "#4A7AF0",
+          "#6E9BFF",
+          "#A3C0FF",
+          "#D9E5FF"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Quiet Ink",
+        "canonical": "#767676",
+        "tonalRamp": [
+          "#141414",
+          "#2E2E2E",
+          "#4A4A4A",
+          "#5F5F5F",
+          "#767676",
+          "#9A9A9A",
+          "#C4C4C4",
+          "#EDEDED"
+        ]
+      },
+      "ink-2-dark": {
+        "role": "neutral",
+        "displayName": "Quiet Ink on Black",
+        "canonical": "#A3A3A3",
+        "tonalRamp": [
+          "#1F1F1F",
+          "#3B3B3B",
+          "#575757",
+          "#737373",
+          "#8B8B8B",
+          "#A3A3A3",
+          "#C9C9C9",
+          "#F0F0F0"
+        ]
+      },
+      "fill": {
+        "role": "neutral",
+        "displayName": "Input Fill",
+        "canonical": "#F1F1F1",
+        "tonalRamp": [
+          "#242424",
+          "#414141",
+          "#5E5E5E",
+          "#7B7B7B",
+          "#A0A0A0",
+          "#C7C7C7",
+          "#F1F1F1",
+          "#FAFAFA"
+        ]
+      },
+      "fill-2": {
+        "role": "neutral",
+        "displayName": "Input Fill Hover",
+        "canonical": "#E4E4E4",
+        "tonalRamp": [
+          "#1F1F1F",
+          "#3B3B3B",
+          "#585858",
+          "#757575",
+          "#9B9B9B",
+          "#C0C0C0",
+          "#E4E4E4",
+          "#F5F5F5"
+        ]
+      },
+      "tile-edge": {
+        "role": "neutral",
+        "displayName": "Tile Edge",
+        "canonical": "#D2D2D2",
+        "tonalRamp": [
+          "#1C1C1C",
+          "#383838",
+          "#545454",
+          "#707070",
+          "#949494",
+          "#B4B4B4",
+          "#D2D2D2",
+          "#EFEFEF"
+        ]
+      },
+      "placeholder": {
+        "role": "neutral",
+        "displayName": "Placeholder Grey",
+        "canonical": "#666666",
+        "tonalRamp": [
+          "#0F0F0F",
+          "#242424",
+          "#3B3B3B",
+          "#525252",
+          "#666666",
+          "#8E8E8E",
+          "#BCBCBC",
+          "#EBEBEB"
+        ]
+      },
+      "field-fill": {
+        "role": "neutral",
+        "displayName": "Field Input Fill",
+        "canonical": "#1A1A1A",
+        "tonalRamp": [
+          "#000000",
+          "#0D0D0D",
+          "#1A1A1A",
+          "#333333",
+          "#555555",
+          "#828282",
+          "#B5B5B5",
+          "#E6E6E6"
+        ]
+      },
+      "field-fill-2": {
+        "role": "neutral",
+        "displayName": "Field Input Fill Hover",
+        "canonical": "#242424",
+        "tonalRamp": [
+          "#000000",
+          "#121212",
+          "#242424",
+          "#3C3C3C",
+          "#5E5E5E",
+          "#8A8A8A",
+          "#BBBBBB",
+          "#E9E9E9"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "rgba(0,0,0,.13)",
+        "tonalRamp": [
+          "#1B1B1B",
+          "#373737",
+          "#535353",
+          "#6F6F6F",
+          "#939393",
+          "#B6B6B6",
+          "#DEDEDE",
+          "#F2F2F2"
+        ]
+      },
+      "rule-dark": {
+        "role": "neutral",
+        "displayName": "Hairline on Black",
+        "canonical": "rgba(255,255,255,.22)",
+        "tonalRamp": [
+          "#0A0A0A",
+          "#1C1C1C",
+          "#2A2A2A",
+          "#383838",
+          "#5C5C5C",
+          "#8A8A8A",
+          "#BDBDBD",
+          "#E8E8E8"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The hero headline only. One per page, balanced with text-wrap: balance."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section titles — bento heading, price statement, GP field heading. Capped at 18-20ch."
+      },
+      "title-lead": {
+        "displayName": "Title (Lead)",
+        "purpose": "The bento lead tile's heading, sized up because that tile carries more grid weight."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Standard bento tile headings."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "'DrQuick' in the nav, second half in Signal Blue. Sits exactly on the -0.04em tracking floor."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "The paragraph under a display or headline. Held to 40-42ch."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Tile paragraphs, price fine print, the emergency band, field facts. Held to 34ch in tiles."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, nav links, status messages, skip link. Line-height 1 so buttons size from padding."
+      },
+      "fine": {
+        "displayName": "Fine",
+        "purpose": "Form notes and the footer. Never used for anything a visitor must act on."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(.22,.61,.36,1)",
+        "purpose": "The only easing in the system. Every transition and the one keyframe use it."
+      },
+      {
+        "name": "duration-state",
+        "value": "160ms",
+        "purpose": "Button background and transform, input background and border-color, skip-link reveal."
+      },
+      {
+        "name": "duration-nav",
+        "value": "150ms",
+        "purpose": "Nav link underline border-color."
+      },
+      {
+        "name": "settle",
+        "value": "settle .4s cubic-bezier(.22,.61,.36,1) both",
+        "purpose": "The single keyframe: a 6px rise on the success status message after the form row is hidden. from { transform: translateY(6px) } to { transform: none }."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation-duration: .01ms !important; transition-duration: .01ms !important",
+        "purpose": "Global prefers-reduced-motion cut-out; also drops html scroll-behavior to auto. All motion above is optional."
+      },
+      {
+        "name": "ease-draw",
+        "value": "cubic-bezier(.16,1,.3,1)",
+        "purpose": "Confident deceleration for the drawn status marks."
+      },
+      {
+        "name": "ease-exit",
+        "value": "cubic-bezier(.4,0,1,1)",
+        "purpose": "Acceleration for collapses; exits run faster than entrances."
+      },
+      {
+        "name": "duration-collapse",
+        "value": "260ms",
+        "purpose": "Capture collapsing on grid-template-rows after a successful submit."
+      },
+      {
+        "name": "duration-focal",
+        "value": "420ms",
+        "purpose": "The confirmation rise — the page's one authored moment."
+      },
+      {
+        "name": "duration-disclose",
+        "value": "280ms",
+        "purpose": "FAQ answer revealing on open; closing is instant."
+      },
+      {
+        "name": "duration-reveal-opacity",
+        "value": "600ms",
+        "purpose": "Opacity leg of the standard arrival."
+      },
+      {
+        "name": "duration-reveal-travel",
+        "value": "700ms",
+        "purpose": "16px rise leg of the standard arrival."
+      },
+      {
+        "name": "duration-headline-line",
+        "value": "850ms",
+        "purpose": "Masked headline line arriving from below."
+      },
+      {
+        "name": "stagger-step",
+        "value": "70ms",
+        "purpose": "Gap between siblings in a [data-stagger] group."
+      },
+      {
+        "name": "stagger-cap",
+        "value": "300ms",
+        "purpose": "Maximum cumulative stagger delay, however long the list."
+      },
+      {
+        "name": "idle-breathe",
+        "value": "4600ms / 5400ms / 5000ms",
+        "purpose": "Phase-shifted character breathing in the hero illustration."
+      },
+      {
+        "name": "idle-float",
+        "value": "7000ms",
+        "purpose": "Icon cluster drifting 6px in the hero illustration."
+      },
+      {
+        "name": "idle-bg",
+        "value": "16000ms",
+        "purpose": "Background blob scaling 1.8% behind the characters."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "form-stack",
+        "value": "1080px"
+      },
+      {
+        "name": "md",
+        "value": "900px"
+      },
+      {
+        "name": "sm",
+        "value": "560px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Sticky Nav",
+      "kind": "nav",
+      "refersTo": "nav",
+      "description": "Wordmark, one text link, one primary button. Sticky at 76px, closed by a 1px hairline.",
+      "html": "<nav class='ds-nav'><div class='ds-nav-inner'><a class='ds-nav-logo' href='#'>Dr<span>Quick</span></a><a class='ds-nav-link' href='#'>For GPs</a><a class='ds-nav-cta' href='#'>Join the waitlist</a></div></nav>",
+      "css": ".ds-nav { position: sticky; top: 0; z-index: 10; background: var(--white, #FFFFFF); border-bottom: 1px solid var(--rule, rgba(0,0,0,.13)); font-family: Archivo, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; } .ds-nav-inner { display: flex; align-items: center; gap: 32px; height: 76px; max-width: 1200px; margin: 0 auto; padding: 0 24px; } .ds-nav-logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -.04em; text-decoration: none; color: var(--black, #000000); margin-right: auto; } .ds-nav-logo span { color: var(--blue, #1447E6); } .ds-nav-link { font-size: .9375rem; font-weight: 700; text-decoration: none; color: var(--black, #000000); padding: 8px 0; border-bottom: 2px solid transparent; transition: border-color .15s cubic-bezier(.22,.61,.36,1); } .ds-nav-link:hover { border-bottom-color: var(--black, #000000); } .ds-nav-link:focus-visible { outline: 3px solid var(--blue, #1447E6); outline-offset: 3px; border-radius: 2px; } .ds-nav-cta { display: inline-flex; align-items: center; justify-content: center; background: var(--black, #000000); color: var(--white, #FFFFFF); font-weight: 700; font-size: .9375rem; line-height: 1; padding: 15px 22px; border-radius: var(--r-control, 8px); text-decoration: none; white-space: nowrap; transition: background .16s cubic-bezier(.22,.61,.36,1); } .ds-nav-cta:hover { background: var(--blue, #1447E6); } .ds-nav-cta:active { transform: translateY(1px); } .ds-nav-cta:focus-visible { outline: 3px solid var(--blue, #1447E6); outline-offset: 3px; border-radius: 2px; }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The only button in the system. Black at rest, accent blue on hover, pressed into the page on active.",
+      "html": "<button class='ds-btn' type='button'>Join the waitlist</button> <button class='ds-btn' type='button' disabled>Joining&hellip;</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; background: var(--black, #000000); color: var(--white, #FFFFFF); font-family: Archivo, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; font-weight: 700; font-size: .9375rem; line-height: 1; padding: 15px 22px; border: none; border-radius: var(--r-control, 8px); cursor: pointer; white-space: nowrap; transition: background .16s cubic-bezier(.22,.61,.36,1), transform .16s cubic-bezier(.22,.61,.36,1); } .ds-btn:hover:not(:disabled) { background: var(--blue, #1447E6); } .ds-btn:active:not(:disabled) { transform: translateY(1px); } .ds-btn:focus-visible { outline: 3px solid var(--blue, #1447E6); outline-offset: 3px; border-radius: 2px; } .ds-btn:disabled { background: var(--ink-2, #767676); cursor: wait; }"
+    },
+    {
+      "name": "Primary Button on Black",
+      "kind": "button",
+      "refersTo": "button-on-black",
+      "description": "The same button fully inverted for the black field. Hover takes the accent's on-black variant.",
+      "html": "<div class='ds-btn-inv-ground'><button class='ds-btn-inv' type='button'>Register interest</button> <button class='ds-btn-inv' type='button' disabled>Registering&hellip;</button></div>",
+      "css": ".ds-btn-inv-ground { background: var(--black, #000000); padding: 28px; border-radius: var(--r-tile, 16px); } .ds-btn-inv { display: inline-flex; align-items: center; justify-content: center; background: var(--white, #FFFFFF); color: var(--black, #000000); font-family: Archivo, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; font-weight: 700; font-size: .9375rem; line-height: 1; padding: 15px 22px; border: none; border-radius: var(--r-control, 8px); cursor: pointer; white-space: nowrap; transition: background .16s cubic-bezier(.22,.61,.36,1), transform .16s cubic-bezier(.22,.61,.36,1); } .ds-btn-inv:hover:not(:disabled) { background: var(--blue-lift, #6E9BFF); } .ds-btn-inv:active:not(:disabled) { transform: translateY(1px); } .ds-btn-inv:focus-visible { outline: 3px solid var(--blue-lift, #6E9BFF); outline-offset: 3px; border-radius: 2px; } .ds-btn-inv:disabled { background: var(--ink-2-dark, #A3A3A3); color: var(--black, #000000); cursor: wait; }"
+    },
+    {
+      "name": "Email Capture Row",
+      "kind": "input",
+      "refersTo": "input-email",
+      "description": "The page's only input. A filled well at rest that becomes a defined white box on focus; invalid doubles the stroke to black rather than changing hue.",
+      "html": "<form class='ds-capture'><div class='ds-capture-row'><input class='ds-input' type='email' placeholder='Enter your email' aria-label='Email address'><button class='ds-capture-btn' type='button'>Join the waitlist</button></div><p class='ds-capture-note'>Launch updates only. Unsubscribe anytime.</p></form>",
+      "css": ".ds-capture { max-width: 520px; font-family: Archivo, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; } .ds-capture-row { display: flex; gap: 10px; } .ds-input { flex: 1; min-width: 0; font: inherit; font-size: 1rem; font-weight: 500; padding: 15px 18px; border: 1px solid transparent; border-radius: var(--r-control, 8px); background: var(--fill, #F1F1F1); color: var(--black, #000000); outline: none; transition: background .16s cubic-bezier(.22,.61,.36,1), border-color .16s cubic-bezier(.22,.61,.36,1); } .ds-input::placeholder { color: #666666; } .ds-input:hover { background: var(--fill-2, #E4E4E4); } .ds-input:focus { background: var(--white, #FFFFFF); border-color: var(--black, #000000); } .ds-input:focus-visible { outline: 3px solid var(--blue, #1447E6); outline-offset: 3px; } .ds-input[aria-invalid='true'] { border-width: 2px; border-color: var(--black, #000000); background: var(--white, #FFFFFF); } .ds-capture-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 172px; background: var(--black, #000000); color: var(--white, #FFFFFF); font: inherit; font-weight: 700; font-size: .9375rem; line-height: 1; padding: 15px 22px; border: none; border-radius: var(--r-control, 8px); cursor: pointer; white-space: nowrap; transition: background .16s cubic-bezier(.22,.61,.36,1), transform .16s cubic-bezier(.22,.61,.36,1); } .ds-capture-btn:hover { background: var(--blue, #1447E6); } .ds-capture-btn:active { transform: translateY(1px); } .ds-capture-btn:focus-visible { outline: 3px solid var(--blue, #1447E6); outline-offset: 3px; border-radius: 2px; } .ds-capture-note { margin: 14px 0 0; font-size: .8125rem; font-weight: 500; color: var(--ink-2, #767676); } @media (max-width: 560px) { .ds-capture-row { flex-direction: column; } .ds-capture-btn { padding: 16px 22px; } }"
+    },
+    {
+      "name": "Email Capture Row on Black",
+      "kind": "input",
+      "refersTo": "input-email-on-black",
+      "description": "The capture row inside the black field. Dark well, white focus border, and a focus ring in the accent's on-black variant.",
+      "html": "<form class='ds-capture-inv'><div class='ds-capture-inv-row'><input class='ds-input-inv' type='email' placeholder='Your email' aria-label='Email address for doctors'><button class='ds-capture-inv-btn' type='button'>Register interest</button></div></form>",
+      "css": ".ds-capture-inv { max-width: 520px; background: var(--black, #000000); padding: 28px; border-radius: var(--r-tile, 16px); font-family: Archivo, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; } .ds-capture-inv-row { display: flex; gap: 10px; } .ds-input-inv { flex: 1; min-width: 0; font: inherit; font-size: 1rem; font-weight: 500; padding: 15px 18px; border: 1px solid transparent; border-radius: var(--r-control, 8px); background: #1A1A1A; color: var(--white, #FFFFFF); outline: none; transition: background .16s cubic-bezier(.22,.61,.36,1), border-color .16s cubic-bezier(.22,.61,.36,1); } .ds-input-inv::placeholder { color: var(--ink-2-dark, #A3A3A3); } .ds-input-inv:hover { background: #242424; } .ds-input-inv:focus { background: #1A1A1A; border-color: var(--white, #FFFFFF); } .ds-input-inv:focus-visible { outline: 3px solid var(--blue-lift, #6E9BFF); outline-offset: 3px; } .ds-input-inv[aria-invalid='true'] { border-width: 2px; border-color: var(--white, #FFFFFF); } .ds-capture-inv-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 172px; background: var(--white, #FFFFFF); color: var(--black, #000000); font: inherit; font-weight: 700; font-size: .9375rem; line-height: 1; padding: 15px 22px; border: none; border-radius: var(--r-control, 8px); cursor: pointer; white-space: nowrap; transition: background .16s cubic-bezier(.22,.61,.36,1), transform .16s cubic-bezier(.22,.61,.36,1); } .ds-capture-inv-btn:hover { background: var(--blue-lift, #6E9BFF); } .ds-capture-inv-btn:active { transform: translateY(1px); } .ds-capture-inv-btn:focus-visible { outline: 3px solid var(--blue-lift, #6E9BFF); outline-offset: 3px; border-radius: 2px; } @media (max-width: 560px) { .ds-capture-inv-row { flex-direction: column; } }"
+    },
+    {
+      "name": "Status Message",
+      "kind": "custom",
+      "refersTo": "status-ok",
+      "description": "Form feedback on both grounds. Error carries the accent; success is deliberately demoted to neutral. Both marks are filled 4.5px-radius squircles with a knocked-out glyph.",
+      "html": "<div class='ds-status-demo'><p class='ds-status ds-status-ok'><svg class='ds-status-mark' width='16' height='16' viewBox='0 0 16 16' aria-hidden='true'><rect width='16' height='16' rx='4.5' fill='currentColor'/><path d='M4.2 8.4l2.6 2.6L11.8 5.8' stroke='#FFF' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg><span>You&rsquo;re on the list. We&rsquo;ll email you when Dr Quick opens.</span></p><p class='ds-status ds-status-err'><svg class='ds-status-mark' width='16' height='16' viewBox='0 0 16 16' aria-hidden='true'><rect width='16' height='16' rx='4.5' fill='currentColor'/><path d='M8 4.2v4.4' stroke='#FFF' stroke-width='2.1' stroke-linecap='round'/><circle cx='8' cy='11.6' r='1.15' fill='#FFF'/></svg><span>Enter a valid email address, like name@example.com.</span></p></div><div class='ds-status-demo ds-status-demo-inv'><p class='ds-status ds-status-ok-inv'><svg class='ds-status-mark' width='16' height='16' viewBox='0 0 16 16' aria-hidden='true'><rect width='16' height='16' rx='4.5' fill='currentColor'/><path d='M4.2 8.4l2.6 2.6L11.8 5.8' stroke='#000' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg><span>You&rsquo;re on the list. We&rsquo;ll email you when Dr Quick opens.</span></p><p class='ds-status ds-status-err-inv'><svg class='ds-status-mark' width='16' height='16' viewBox='0 0 16 16' aria-hidden='true'><rect width='16' height='16' rx='4.5' fill='currentColor'/><path d='M8 4.2v4.4' stroke='#000' stroke-width='2.1' stroke-linecap='round'/><circle cx='8' cy='11.6' r='1.15' fill='#000'/></svg><span>Couldn&rsquo;t reach the server &mdash; try again in a moment.</span></p></div>",
+      "css": ".ds-status-demo { font-family: Archivo, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; max-width: 520px; } .ds-status-demo-inv { background: var(--black, #000000); color: var(--white, #FFFFFF); padding: 28px; border-radius: var(--r-tile, 16px); margin-top: 16px; } .ds-status { display: flex; align-items: flex-start; gap: 8px; margin: 14px 0 0; font-size: .9375rem; font-weight: 700; min-height: 1.4em; animation: ds-settle .4s cubic-bezier(.22,.61,.36,1) both; } .ds-status-mark { flex: none; margin-top: 3px; display: block; } .ds-status-ok .ds-status-mark { color: var(--black, #000000); } .ds-status-err .ds-status-mark { color: var(--blue, #1447E6); } .ds-status-ok-inv .ds-status-mark { color: var(--white, #FFFFFF); } .ds-status-err-inv .ds-status-mark { color: var(--blue-lift, #6E9BFF); } @keyframes ds-settle { from { transform: translateY(6px); } to { transform: none; } } @media (prefers-reduced-motion: reduce) { .ds-status { animation-duration: .01ms; } }"
+    },
+    {
+      "name": "Bento Tiles",
+      "kind": "card",
+      "refersTo": "tile",
+      "description": "A 6-column grid of three deliberately unlike tiles: a span-4 black-filled lead, a span-2 white tile, and a span-6 wide tile with a two-column interior. Three identical cards is the failure state.",
+      "html": "<div class='ds-bento'><div class='ds-tile ds-tile-lead'><h3>Tell us what&rsquo;s wrong.</h3><p>A two-minute form in plain English, so the GP already knows why you&rsquo;re calling.</p></div><div class='ds-tile ds-tile-narrow'><h3>Get matched.</h3><p>You&rsquo;re handed to the next available GP instead of picking a time slot.</p></div><div class='ds-tile ds-tile-wide'><h3>Talk by video.</h3><p>A secure video consultation, with a prescription, fit note or referral afterwards if you need one.</p></div></div>",
+      "css": ".ds-bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; font-family: Archivo, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; } .ds-tile { border: 1px solid var(--tile-edge, #D2D2D2); border-radius: var(--r-tile, 16px); padding: 28px; background: var(--white, #FFFFFF); color: var(--black, #000000); } .ds-tile h3 { margin: 0; font-size: 1.375rem; font-weight: 800; letter-spacing: -.025em; line-height: 1.2; text-wrap: balance; } .ds-tile p { margin: 10px 0 0; font-size: 1rem; font-weight: 500; line-height: 1.5; color: var(--ink-2, #767676); } .ds-tile-lead { grid-column: span 4; background: var(--black, #000000); border-color: var(--black, #000000); color: var(--white, #FFFFFF); padding: clamp(28px, 3.4vw, 44px); display: flex; flex-direction: column; justify-content: flex-end; min-height: 260px; } .ds-tile-lead h3 { font-size: clamp(1.625rem, 2.6vw, 2.25rem); letter-spacing: -.03em; } .ds-tile-lead p { color: var(--ink-2-dark, #A3A3A3); font-size: 1.0625rem; max-width: 34ch; } .ds-tile-narrow { grid-column: span 2; display: flex; flex-direction: column; justify-content: flex-end; } .ds-tile-wide { grid-column: span 6; display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px 40px; align-items: start; } .ds-tile-wide p { margin-top: 0; } @media (max-width: 900px) { .ds-bento { grid-template-columns: repeat(2, 1fr); } .ds-tile-lead, .ds-tile-narrow, .ds-tile-wide { grid-column: span 2; } .ds-tile-wide { grid-template-columns: 1fr; } }"
+    },
+    {
+      "name": "Black Field",
+      "kind": "custom",
+      "refersTo": "field",
+      "description": "The page's only inverted region. A full-bleed black band giving the second audience a section of equal weight, with a hairline-separated fact list built from a 1px-gap grid rather than per-row borders.",
+      "html": "<section class='ds-field'><div class='ds-field-grid'><div><h2>Are you a GP?</h2><p class='ds-field-sub'>Consult when you want, from wherever you are. Paid per consultation, with no minimum commitment.</p></div><ul class='ds-field-facts'><li><b>Per consult</b><span>You&rsquo;re paid for each consultation you take.</span></li><li><b>Your hours</b><span>Go online when it suits you, for as long as you like.</span></li><li><b>Fully remote</b><span>Secure video from wherever you are.</span></li></ul></div></section>",
+      "css": ".ds-field { background: var(--black, #000000); color: var(--white, #FFFFFF); padding: clamp(64px, 8vw, 112px) 0; font-family: Archivo, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; } .ds-field-grid { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 6vw, 80px); align-items: center; } .ds-field h2 { margin: 0; font-size: clamp(2rem, 4.4vw, 3.25rem); font-weight: 800; letter-spacing: -.035em; line-height: 1.05; text-wrap: balance; } .ds-field-sub { font-size: clamp(1.0625rem, 1.6vw, 1.25rem); font-weight: 500; line-height: 1.5; color: var(--ink-2-dark, #A3A3A3); max-width: 42ch; margin: 20px 0 0; } .ds-field-facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; background: var(--rule-dark, rgba(255,255,255,.22)); border-top: 1px solid var(--rule-dark, rgba(255,255,255,.22)); border-bottom: 1px solid var(--rule-dark, rgba(255,255,255,.22)); } .ds-field-facts li { background: var(--black, #000000); padding: 20px 0; display: grid; grid-template-columns: 13ch 1fr; gap: 20px; align-items: baseline; } .ds-field-facts b { font-size: 1.0625rem; font-weight: 800; letter-spacing: -.02em; } .ds-field-facts span { color: var(--ink-2-dark, #A3A3A3); font-size: 1rem; font-weight: 500; line-height: 1.5; } @media (max-width: 900px) { .ds-field-grid { grid-template-columns: 1fr; } } @media (max-width: 560px) { .ds-field-facts li { grid-template-columns: 1fr; gap: 4px; padding: 18px 0; } }"
+    },
+    {
+      "name": "Emergency Band",
+      "kind": "custom",
+      "refersTo": "band-emergency",
+      "description": "A hairline-bounded full-width strip at body size, never fine print. The one place the accent draws the eye rather than marking a state.",
+      "html": "<aside class='ds-urgent'><div class='ds-urgent-inner'><p><svg width='18' height='18' viewBox='0 0 18 18' fill='none' aria-hidden='true'><circle cx='9' cy='9' r='7.6' stroke='currentColor' stroke-width='2.1'/><path d='M9 5v4.6' stroke='currentColor' stroke-width='2.1' stroke-linecap='round'/><circle cx='9' cy='12.7' r='1.2' fill='currentColor'/></svg><span>Dr Quick is for urgent but non-emergency care. If something is serious or life-threatening, <b>call 999 or go to A&amp;E.</b></span></p></div></aside>",
+      "css": ".ds-urgent { border-top: 1px solid var(--rule, rgba(0,0,0,.13)); border-bottom: 1px solid var(--rule, rgba(0,0,0,.13)); background: var(--white, #FFFFFF); color: var(--black, #000000); font-family: Archivo, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; } .ds-urgent-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; } .ds-urgent p { margin: 0; padding: 20px 0; font-size: 1rem; font-weight: 700; line-height: 1.5; display: flex; gap: 12px; align-items: flex-start; } .ds-urgent svg { flex: none; margin-top: 3px; color: var(--blue, #1447E6); } .ds-urgent b { font-weight: 800; }"
+    },
+    {
+      "name": "Footer",
+      "kind": "custom",
+      "refersTo": "footer",
+      "description": "Hairline-topped, uniformly quiet at 0.8125rem, with exactly one line promoted to black at 700. Links are the only underlined text.",
+      "html": "<footer class='ds-footer'><div class='ds-footer-row'><div><p class='ds-footer-warn'>Not for emergencies &mdash; call 999 or go to A&amp;E.</p><p>&copy; 2026 Dr Quick &middot; CQC-registered clinical service at launch &middot; Available in England at launch</p></div><div><a href='#'>Doctors illustrations by Storyset</a></div></div></footer>",
+      "css": ".ds-footer { border-top: 1px solid var(--rule, rgba(0,0,0,.13)); background: var(--white, #FFFFFF); padding: 48px 0 56px; font-family: Archivo, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; font-size: .8125rem; font-weight: 500; line-height: 1.5; color: var(--ink-2, #767676); } .ds-footer-row { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; justify-content: space-between; gap: 24px 40px; flex-wrap: wrap; } .ds-footer-row p { margin: 0; } .ds-footer-row p + p { margin-top: 8px; } .ds-footer-warn { color: var(--black, #000000); font-weight: 700; } .ds-footer a { color: inherit; text-decoration: underline; text-underline-offset: 2px; } .ds-footer a:hover { color: var(--black, #000000); } .ds-footer a:focus-visible { outline: 3px solid var(--blue, #1447E6); outline-offset: 3px; border-radius: 2px; }"
+    },
+    {
+      "name": "Disclosure Row (FAQ)",
+      "kind": "custom",
+      "refersTo": "faq-details",
+      "description": "Native details/summary row used for the FAQ list. No JavaScript.",
+      "html": "<details class=\"ds-faq\" open><summary>Can I get a prescription?</summary><p>If the GP judges that you need one, yes, and it is covered by the £39.</p></details>",
+      "css": ".ds-faq{border-top:1px solid var(--rule,rgba(0,0,0,.13));border-bottom:1px solid var(--rule,rgba(0,0,0,.13));font-family:Archivo,system-ui,sans-serif}.ds-faq summary{list-style:none;cursor:pointer;padding:24px 44px 24px 0;position:relative;font-size:1.25rem;font-weight:800;letter-spacing:-.02em;color:var(--black,#000)}.ds-faq summary::-webkit-details-marker{display:none}.ds-faq summary::after{content:\"\";position:absolute;right:8px;top:50%;width:14px;height:2px;background:currentColor;transform:translateY(-50%)}.ds-faq summary::before{content:\"\";position:absolute;right:14px;top:50%;width:2px;height:14px;background:currentColor;transform:translateY(-50%);transition:opacity .16s cubic-bezier(.22,.61,.36,1)}.ds-faq[open] summary::before{opacity:0}.ds-faq summary:hover{color:var(--blue,#1447E6)}.ds-faq summary:focus-visible{outline:3px solid var(--blue,#1447E6);outline-offset:3px}.ds-faq p{padding:0 44px 26px 0;margin:0;color:var(--ink-2,#767676);max-width:68ch;font-size:1rem;font-weight:500}"
+    },
+    {
+      "name": "Inclusion List Row",
+      "kind": "custom",
+      "refersTo": "covers-list",
+      "description": "A row in the two-column 'It covers / It doesn't' list. Mark shape carries the meaning; colour never does.",
+      "html": "<ul class=\"ds-covers\"><li><svg viewBox=\"0 0 20 20\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M4 10.6l4 4L16 5.6\" stroke=\"currentColor\" stroke-width=\"2.3\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg><span>A fit note for work.</span></li><li class=\"ds-covers-no\"><svg viewBox=\"0 0 20 20\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M4.6 10h10.8\" stroke=\"currentColor\" stroke-width=\"2.3\" fill=\"none\" stroke-linecap=\"round\"/></svg><span>Anything needing a physical examination.</span></li></ul>",
+      "css": ".ds-covers{list-style:none;margin:0;padding:0;font-family:Archivo,system-ui,sans-serif}.ds-covers li{display:grid;grid-template-columns:20px 1fr;gap:14px;padding:16px 0;border-bottom:1px solid var(--rule,rgba(0,0,0,.13));font-size:1rem;font-weight:500;color:var(--black,#000)}.ds-covers svg{margin-top:3px;color:var(--black,#000)}.ds-covers-no{color:var(--ink-2,#767676)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Category Canon, Played Straight",
+    "overview": "Dr Quick looks the way a competent, modern service company looks — and that is the whole point. Shown a rolled expressive direction and three alternative worlds, the user picked the standing convention deliberately and named Uber as the craft bar. This is a commitment, not a default. A person deciding at 9pm whether to trust a regulated clinical service with their body is not the visitor to surprise. The work here is not to invent a world; it is to execute the convention at a fidelity that makes it read as inevitable.\n\nThe system is built from almost nothing: a true-white ground, true-black ink, one blue, and a set of neutral greys. There are no shadows, no gradients, no glass, no eyebrow labels, no section labels. Depth comes from 1px hairlines and from filling a region solid black. Type is heavy and tightly tracked; the display face and the body face are the same face at different weights, which is what keeps the page reading as one object rather than a kit of parts. Density is generous — sections breathe at 56–112px — but nothing floats. Every element sits on a rule, inside a hairline tile, or on a filled ground.\n\nThe two rejections that shape everything: the previous navy/amber/paper system, replaced wholesale; and NHS visual language, which is banned outright because Dr Quick is a private provider and must never be mistaken for the NHS. Where the world could get decorative it gets quieter instead. The single moment of drama in the page is the full-bleed black field, and it earns that by carrying a whole audience.",
+    "keyCharacteristics": [
+      "Three colours only — white, black, one blue — plus neutral tints of black",
+      "Heavy Archivo at 500/700/800, display tracking down to -0.035em, never past -0.04em",
+      "Zero shadows; depth is hairlines, a #D2D2D2 tile edge, and solid black regions",
+      "Two radii: 8px for controls, 16px for tiles. No pills",
+      "A bento that must vary — span, fill and internal layout all differ per tile",
+      "The accent is reserved for the state that must be noticed",
+      "Motion is one 0.4s settle and a handful of 0.15–0.16s state transitions, all on the same easing"
+    ],
+    "rules": [
+      {
+        "name": "The Not-NHS Rule",
+        "body": "NHS Blue #005EB8 and every hue near it are banned outright. Dr Quick is a private provider; a palette that reads as NHS-branded is a compliance-adjacent failure, not a taste failure. If a new blue is ever proposed, it must be visibly distinguishable from #005EB8 side by side, or it does not ship.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Colour Rule",
+        "body": "White, black, and one blue. Everything else on the page is a neutral tint of black. There is no fourth hue — no green for success, no red for error, no amber for warning. A new colour is not a new token; it is a redesign, and it goes through the user.",
+        "section": "colors"
+      },
+      {
+        "name": "The Noticed-State Rule",
+        "body": "The accent belongs to the state that must be noticed, and to nothing else. Error carries the accent (#1447E6 on white, #6E9BFF on black); success is demoted to neutral — a black mark on white, a white mark on black. Focus outlines are blue. The invalid-field border is deliberately not blue — it is black on white, white on black — so the accent never means two things at once in the same form.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tracking Floor Rule",
+        "body": "Display tracking never goes tighter than -0.04em. The wordmark sits exactly on the floor; headlines sit at -0.035em; tile titles ease back to -0.025em. Tighter than the floor and the counters close up at mobile sizes — the tightness must stay a texture, never a legibility cost.",
+        "section": "typography"
+      },
+      {
+        "name": "The Three Weights Rule",
+        "body": "Archivo ships here at 500, 700 and 800 only. Weight 600 was loaded once, found to be doing nothing, and deliberately removed. font-synthesis-weight: none is set globally so a missing weight fails visibly rather than being faked by the browser. Adding a weight means adding a font request — justify it or use the gap you have.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline Section Rule",
+        "body": "Sections are separated by 1px hairlines, never by alternating background colours. Grey banding is how a page reads as a template; a rule is how it reads as a document.",
+        "section": "layout"
+      },
+      {
+        "name": "The One Inversion Rule",
+        "body": "The page has exactly one inverted region — the full-bleed black field. Its scarcity is what makes it a moment. A second black section would make the first one wallpaper.",
+        "section": "layout"
+      },
+      {
+        "name": "The Varied Bento Rule",
+        "body": "Tiles must vary in span, fill and internal layout. Three identical cards in a row is a failure state, not a neutral outcome — if the content genuinely wants three equal boxes, the content is wrong for a bento. Audit test: can you describe the three tiles without using the same sentence twice?",
+        "section": "layout"
+      },
+      {
+        "name": "The No-Shadow Rule",
+        "body": "If a surface needs to separate from what's behind it, give it a hairline. If it needs to come forward, fill it. Never reach for a shadow — a single soft shadow anywhere in this page would make every hairline look like a mistake.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Quiet Limits Rule",
+        "body": "The list of what the product cannot do is set at the same size and craft as the list of what it can, in black on white with no warning colour. A service people trust with their health states its limits plainly; dressing them as alerts makes them look like fine print.",
+        "section": "components"
+      },
+      {
+        "name": "The One Arrival Rule",
+        "body": "Everything that enters the page enters the same way: a 16px rise on cubic-bezier(.16,1,.3,1), 0.6s opacity and 0.7s travel. The headline is the single exception, arriving by the line from behind a mask. There is no second entrance vocabulary.",
+        "section": "components"
+      },
+      {
+        "name": "The Capped Stagger Rule",
+        "body": "Siblings inside a [data-stagger] group arrive 70ms apart, capped at 300ms cumulative. A longer stagger stops reading as choreography and starts reading as a queue.",
+        "section": "components"
+      },
+      {
+        "name": "The Never-Hidden Rule",
+        "body": "Every reveal start-state is scoped to .js, set by an inline script in <head>. A blocked or failed script leaves the page fully visible, and prefers-reduced-motion forces every revealed element to its end state.",
+        "section": "components"
+      },
+      {
+        "name": "The Living Still Rule",
+        "body": "The hero illustration is never fully static and never obviously animated. Characters breathe on phase-shifted 4.6-5.4s loops with origin at the base; icons float 6px over 7s; the background blob scales 1.8% over 16s. Nothing translates more than a few pixels. Gated on-screen only and on prefers-reduced-motion: no-preference.",
+        "section": "components"
+      },
+      {
+        "name": "The Earned Fill Rule",
+        "body": "In the bento the black fill goes to the step that pays off, never the step that sets up. Steps one and two rank equally and share a span; step three takes the fill, the full width and the larger type while staying third. Varying tiles is not enough — the variation must agree with what the content is worth.",
+        "section": "components"
+      },
+      {
+        "name": "The Registered Rule",
+        "body": "Where two lists sit side by side their rules must land on the same lines. The covers columns use grid-template-rows: subgrid so every hairline registers across both; in a system whose only depth device is a hairline, near-miss alignment reads as a defect.",
+        "section": "layout"
+      },
+      {
+        "name": "The Care-Not-Cheer Rule",
+        "body": "Personality here is competence, never jollity. The visitor is unwell and the ASA treats levity in medical advertising as a hazard: no jokes, no celebration, no mascot. Delight is spent on usefulness - 999 is a tel: link, the confirmation names patient or GP, numbers are tabular, selection is brand blue. A detail that makes someone smile but does not help them does not ship.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do treat the palette as closed: white, black, blue, plus neutral tints of black. On black, the accent becomes #6E9BFF.",
+      "Do spend the accent on the state that must be noticed. Error takes it; success stays neutral.",
+      "Do separate sections with 1px hairlines and fill a whole region when something must come forward.",
+      "Do keep display tracking between -0.025em and the -0.04em floor, and stay on Archivo 500/700/800.",
+      "Do vary bento tiles in span, fill and internal layout — the current build is span-4 filled, span-2 white, span-6 split.",
+      "Do use 8px for controls and 16px for tiles, and nothing in between.",
+      "Do reserve space for state before it appears: the nav link's transparent 2px border, the status region's 1.4em min-height.",
+      "Do author icons as inline SVG at 2.1px stroke, sized 16–18px.",
+      "Do keep motion on cubic-bezier(.22,.61,.36,1) at 0.15–0.16s for state and 0.4s for the one success animation, and keep the prefers-reduced-motion cut-out that disables all of it.",
+      "Do grow the primary action on small screens even as secondary controls shrink."
+    ],
+    "donts": [
+      "Don't use NHS Blue #005EB8 or any near neighbour, ever. Dr Quick is a private provider and must never read as NHS-branded.",
+      "Don't introduce a fourth hue — no green success, no red error, no amber warning. The system has one colour.",
+      "Don't add a shadow, gradient, glass effect, blur, or gradient text. Depth is hairlines and fills.",
+      "Don't make the invalid-input border blue. The accent already means focus and error mark; a third meaning in the same form dissolves all three.",
+      "Don't use pills or fully-rounded ends. They were deliberately abandoned when this world replaced the previous one.",
+      "Don't ship three identical bento tiles.",
+      "Don't band sections with alternating grey backgrounds, or add a second full-bleed black region.",
+      "Don't add a font weight (600 was removed as unused), a second typeface, or a system display face.",
+      "Don't use emoji, unicode glyphs, or icon fonts.",
+      "Don't add eyebrow labels, kickers, section labels, or all-caps micro-headings above a heading. Every heading stands alone.",
+      "Don't shrink the emergency band below body size or move it out of the patient flow."
+    ]
+  }
+}

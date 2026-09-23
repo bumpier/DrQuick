@@ -1,0 +1,194 @@
+.shell { max-width: 480px; margin: 0 auto; padding: var(--s-6) var(--s-4) var(--s-16); }
+.shell--wide { max-width: 1180px; padding-inline: var(--s-6); }
+
+.card {
+  border: 1px solid var(--tile-edge);
+  border-radius: var(--r-tile);
+  padding: var(--s-6);
+  background: var(--white);
+}
+.card--fill { background: var(--black); color: var(--white); border-color: var(--black); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 52px; padding: 0 var(--s-6);
+  border: 1px solid var(--black); border-radius: var(--r-control);
+  background: var(--white); color: var(--black);
+  font: inherit; font-weight: 700; cursor: pointer;
+}
+.btn--primary { background: var(--black); color: var(--white); }
+.btn--block { width: 100%; }
+
+.field { display: grid; gap: var(--s-2); margin-block: var(--s-4); }
+.field > label { font-weight: 700; }
+.field > input, .field > select, .field > textarea {
+  min-height: 52px; padding: 0 var(--s-3); font: inherit;
+  border: 1px solid var(--tile-edge); border-radius: var(--r-control);
+  background: var(--white); color: var(--black);
+}
+
+.stepper { display: flex; gap: var(--s-1); margin-bottom: var(--s-6); }
+.stepper > span { flex: 1; height: 3px; background: var(--fill-2); }
+.stepper > span[data-done="true"] { background: var(--black); }
+
+.stat { display: grid; gap: var(--s-1); }
+.stat__value { font-size: 34px; font-weight: 800; letter-spacing: -.03em; }
+.stat__value--sm { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+.stat__label { color: var(--ink-2); font-size: 13px; }
+.stat__against { color: var(--ink-2); font-size: 13px; }
+
+.pill {
+  display: inline-block; padding: 2px var(--s-2);
+  border: 1px solid var(--black); border-radius: 999px;
+  font-size: 12px; font-weight: 700;
+}
+.pill[data-status="valid"]    { border-color: var(--tile-edge); color: var(--ink-2); }
+.pill[data-status="pending"]  { border-style: dashed; color: var(--ink-2); }
+.pill[data-status="expiring"] { border-color: var(--black); color: var(--black); }
+.pill[data-status="expired"]  { background: var(--black); color: var(--white); }
+.pill[data-status="rejected"] { background: var(--black); color: var(--white); }
+
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th, .table td { text-align: left; padding: var(--s-3); border-bottom: 1px solid var(--rule); }
+.table th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.table tr[data-severity="high"] td { background: var(--fill); font-weight: 700; }
+
+/* A wide table (many columns) must scroll inside its own container, never
+   the page — otherwise the body scrolls sideways on narrow viewports. */
+.table-scroll { overflow-x: auto; }
+.table-scroll .table { white-space: nowrap; }
+
+/* Capped in height so the control that ends the call is always on screen —
+   a patient must never have to scroll to get out of a consultation. */
+.videoframe {
+  width: 100%; aspect-ratio: 3 / 4; max-height: 42vh; margin-top: var(--s-4);
+  border-radius: var(--r-tile);
+  background: var(--fill); border: 1px solid var(--tile-edge);
+  display: grid; place-items: center; color: var(--ink-2);
+}
+
+.countdown { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 40px; }
+
+/* Native controls otherwise paint with the browser's own accent, which is a
+   fourth colour the palette forbids in rendered output. */
+input[type="checkbox"], input[type="radio"], progress, select { accent-color: var(--blue); }
+
+.appbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-4); padding: var(--s-3) var(--s-6);
+  border-bottom: 1px solid var(--rule);
+}
+
+.toggle {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  min-height: 44px; padding: 0 var(--s-4);
+  border: 1px solid var(--black); border-radius: 999px;
+  background: var(--white); color: var(--black);
+  font: inherit; font-weight: 700; cursor: pointer;
+}
+.toggle[aria-pressed="true"] { background: var(--black); color: var(--white); }
+.toggle[disabled] { border-color: var(--tile-edge); color: var(--ink-2); cursor: not-allowed; }
+
+.grid { display: grid; gap: var(--s-4); }
+.grid--2 { grid-template-columns: repeat(2, 1fr); }
+.grid--3 { grid-template-columns: repeat(3, 1fr); }
+.grid--4 { grid-template-columns: repeat(4, 1fr); }
+
+.gate { display: flex; justify-content: space-between; gap: var(--s-4); padding: var(--s-4) 0; border-bottom: 1px solid var(--rule); }
+
+/* A two-column layout: a nav rail alongside its content, for a dense,
+   desktop-first surface. Collapses to a horizontal-scrolling tab strip
+   above the content on narrower viewports. */
+.split { display: flex; gap: var(--s-8); align-items: flex-start; }
+.split__nav {
+  flex: 0 0 200px;
+  display: flex; flex-direction: column; gap: var(--s-1);
+  position: sticky; top: var(--s-6);
+}
+.split__nav button {
+  display: block; width: 100%; text-align: left;
+  min-height: 44px; padding: 0 var(--s-3);
+  border: 1px solid transparent; border-radius: var(--r-control);
+  background: transparent; color: var(--ink-2);
+  font: inherit; font-weight: 700; cursor: pointer;
+}
+.split__nav button[aria-current="true"] { background: var(--fill); color: var(--black); border-color: var(--tile-edge); }
+.split__content { flex: 1; min-width: 0; }
+
+@media (max-width: 900px) {
+  .grid--3, .grid--4 { grid-template-columns: 1fr 1fr; }
+  /* align-items:flex-start (set for the desktop row layout) would otherwise
+     survive into column mode and size .split__content to its own content
+     width — which is wider than the viewport once a wide table is inside it. */
+  .split { flex-direction: column; align-items: stretch; gap: var(--s-4); }
+  .split__nav { flex-direction: row; overflow-x: auto; position: static; width: 100%; flex-basis: auto; }
+  .split__nav button { width: auto; white-space: nowrap; }
+}
+@media (max-width: 560px) {
+  .grid--2, .grid--3, .grid--4 { grid-template-columns: 1fr; }
+}
+
+/* --- the consultation flow --------------------------------------------- */
+
+/* A whole row is the target, not the 13px dot inside it. */
+.choice {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3); margin-bottom: var(--s-2);
+  border: 1px solid var(--tile-edge); border-radius: var(--r-control);
+  cursor: pointer;
+}
+.choice:last-child { margin-bottom: 0; }
+.choice:hover { border-color: var(--black); }
+.choice:has(:checked) { border-color: var(--black); box-shadow: inset 0 0 0 1px var(--black); }
+.choice input { accent-color: var(--blue); width: 18px; height: 18px; flex: none; }
+
+.hint { color: var(--ink-2); font-size: 13px; margin: 0; }
+.err {
+  color: var(--black); font-weight: 700; font-size: 14px;
+  margin: 0 0 var(--s-3); padding: var(--s-3);
+  border-left: 3px solid var(--blue); background: var(--fill);
+}
+
+.reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
+.reasons li { position: relative; padding-left: var(--s-6); font-size: 14px; color: var(--ink-2); }
+.reasons li::before {
+  content: ""; position: absolute; left: 0; top: 6px;
+  width: 10px; height: 6px; border-left: 2px solid var(--blue); border-bottom: 2px solid var(--blue);
+  transform: rotate(-45deg);
+}
+
+/* Prototype chrome, deliberately not the product — same visual register as
+   the rail, so nobody mistakes it for something a patient would ever see. */
+.proto-note { margin: var(--s-8) 0 0; font-size: 12px; color: var(--ink-2); text-align: center; }
+.proto-link {
+  background: none; border: 0; padding: 0; font: inherit; font-size: 12px;
+  color: var(--blue); text-decoration: underline; cursor: pointer;
+}
+
+.videoframe[data-live="true"] { color: var(--white); background: var(--black); border-color: var(--black); }
+
+/* The "doctor ready" notification. It has to arrive over whatever the patient
+   is looking at, because the whole promise is that they can look away. */
+.toast {
+  position: fixed; left: var(--s-4); right: var(--s-4); bottom: calc(var(--rail-h) + var(--s-4));
+  z-index: 40; display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-4); border-radius: var(--r-tile);
+  background: var(--black); color: var(--white);
+  animation: toast-in .32s var(--ease-out) both;
+}
+.toast[hidden] { display: none; }
+.toast__mark { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--blue-lift); }
+.toast__body { flex: 1; min-width: 0; display: grid; }
+.toast__body b { font-weight: 800; }
+.toast__body span { color: var(--ink-2-dark); font-size: 13px; }
+.toast .btn { background: var(--white); color: var(--black); border-color: var(--white); flex: none; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+@media (min-width: 560px) { .toast { left: auto; right: var(--s-6); width: 380px; } }
+
+.tag {
+  display: inline-block; margin-left: var(--s-2); padding: 1px var(--s-2);
+  border-radius: 999px; background: var(--blue); color: var(--white);
+  font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  vertical-align: 2px;
+}

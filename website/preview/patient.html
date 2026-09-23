@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Dr Quick — patient prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="is-first-paint" data-area="dash">
+
+<header class="stick">
+  <p class="ribbon">Prototype. Not a live service — no real patients, GPs, or data.</p>
+  <div class="topbar">
+    <span class="brand">Dr<b>Quick</b></span>
+    <nav class="topnav" aria-label="Your account">
+      <button type="button" data-goto="home">Home</button>
+      <button type="button" data-goto="consultations">Consultations</button>
+      <button type="button" data-goto="prescriptions">Prescriptions</button>
+      <button type="button" data-goto="account">Account</button>
+    </nav>
+    <div class="topbar__end">
+      <div class="who"><b>Your account</b><span data-account="ref"></span></div>
+      <span class="avatar" data-account="initials"></span>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ===================== dashboard ===================== -->
+
+  <section data-screen="home" class="page is-active">
+    <div class="page__head">
+      <div>
+        <h1 data-reveal>Welcome back</h1>
+      </div>
+      <div class="page__actions" data-reveal>
+        <button class="btn btn--primary" data-goto="entry">See a GP now</button>
+      </div>
+    </div>
+
+    <div class="bento" data-stagger>
+      <div class="card card--fill card--bottom span-4">
+        <div class="card__head">
+          <h2 class="card__title">See a GP today</h2>
+          <span class="card__meta" data-home="availability"></span>
+        </div>
+        <p style="color:var(--ink-2-dark);max-width:34ch;margin:0 0 var(--s-6)">
+          Video consultation with a GMC-registered GP. England only. One fixed price,
+          shown in full before you book.
+        </p>
+        <div class="grid grid--2" style="margin-bottom:var(--s-6)">
+          <div class="stat">
+            <span class="stat__value" data-home="price"></span>
+            <span class="stat__label">Consultation and any prescription you need</span>
+          </div>
+          <div class="stat">
+            <span class="stat__value stat__value--sm" data-home="eta"></span>
+            <span class="stat__label">Estimated wait right now</span>
+          </div>
+        </div>
+        <button class="btn btn--block" data-goto="entry">Start a consultation</button>
+      </div>
+
+      <div class="card card--bottom">
+        <div class="card__head">
+          <h2 class="card__title">Your prescription</h2>
+        </div>
+        <div data-home="rx-status" style="flex:1"></div>
+        <button class="btn btn--block btn--sm" data-goto="prescriptions" style="margin-top:var(--s-4)">Track it</button>
+      </div>
+
+      <div class="card span-6">
+        <div class="card__head">
+          <h2 class="card__title">What needs you</h2>
+          <span class="card__meta" data-home="todo-count"></span>
+        </div>
+        <div class="alerts" data-home="todo"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2>Recent consultations</h2>
+        <button class="btn btn--sm" data-goto="consultations">See all</button>
+      </div>
+      <div class="rows" data-home="recent"></div>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2>This year</h2>
+        <p class="section__note">The pharmacy charges separately for any medicine.</p>
+      </div>
+      <div class="grid grid--3" data-stagger>
+        <div class="card">
+          <div class="stat">
+            <span class="stat__value" data-year="consults"></span>
+            <span class="stat__label">Consultations</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat">
+            <span class="stat__value" data-year="spend"></span>
+            <span class="stat__label">Paid to Dr Quick</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="stat">
+            <span class="stat__value" data-year="shared"></span>
+            <span class="stat__label">Summaries sent to your NHS GP</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="band" style="margin-top:var(--s-12)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21 19H3z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>
+      <p style="margin:0">This is not an emergency service. If it is an emergency,
+        <strong><a href="tel:999">call 999</a></strong> or go to A&amp;E.</p>
+    </div>
+  </section>
+
+  <section data-screen="consultations" class="page">
+    <div class="page__head">
+      <div>
+        <h1 data-reveal>Consultations</h1>
+      </div>
+      <div class="page__actions" data-reveal>
+        <button class="btn btn--primary" data-goto="entry">See a GP now</button>
+      </div>
+    </div>
+    <div class="tabs" data-filter role="group" aria-label="Filter consultations">
+      <button type="button" data-value="all" aria-pressed="true">All</button>
+      <button type="button" data-value="completed" aria-pressed="false">Completed</button>
+      <button type="button" data-value="cancelled" aria-pressed="false">Cancelled</button>
+    </div>
+    <div class="rows" data-list="consultations" style="margin-top:var(--s-4)"></div>
+    <p class="empty" data-list-empty hidden>No consultations match that filter.</p>
+  </section>
+
+  <section data-screen="consultation-detail" class="page page--narrow">
+    <button class="btn btn--sm" data-goto="consultations" style="margin-bottom:var(--s-6)">Back to consultations</button>
+    <h1 data-reveal data-detail="title"></h1>
+    <p class="page__lead" data-reveal data-detail="sub"></p>
+    <div class="facts" style="margin-top:var(--s-6)" data-detail="facts"></div>
+    <div class="section">
+      <div class="section__head"><h2>Outcome</h2></div>
+      <div class="rows" data-detail="outcome"></div>
+    </div>
+    <div class="section">
+      <div class="section__head"><h2>Receipt</h2></div>
+      <div class="card">
+        <div class="row" style="border:0;padding-top:0">
+          <div class="row__main"><span class="row__t">Consultation</span>
+            <span class="row__s">Includes writing any prescription you need. The pharmacy charges separately for the medicine.</span></div>
+          <div class="row__end" data-detail="cost"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen="prescriptions" class="page">
+    <div class="page__head">
+      <div>
+        <h1 data-reveal>Prescriptions</h1>
+        <p class="page__lead" data-reveal>Your £39 covered writing the prescription. The
+          pharmacy charges you separately for the medicine itself.</p>
+      </div>
+    </div>
+    <div class="grid grid--2" data-stagger data-list="prescriptions"></div>
+  </section>
+
+  <section data-screen="account" class="page page--narrow">
+    <h1 data-reveal>Account</h1>
+
+    <div class="section">
+      <div class="section__head"><h2>You</h2></div>
+      <div class="facts" data-account="facts"></div>
+    </div>
+
+    <div class="section">
+      <div class="section__head"><h2>Identity</h2></div>
+      <div class="gate gate--lg">
+        <span>Photo ID check</span>
+        <span class="pill" data-account="identity"></span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2>Your NHS GP</h2>
+        <p class="section__note">A summary of each consultation is sent to your NHS GP when you allow it.
+          Without it, a GP may be unable to prescribe some treatments safely.</p>
+      </div>
+      <div class="card">
+        <div class="row" style="border:0;padding:0">
+          <div class="row__main">
+            <span class="row__t" data-account="practice"></span>
+            <span class="row__s" data-account="consent-note"></span>
+          </div>
+          <button class="toggle" type="button" data-consent-toggle aria-pressed="true">Sharing on</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head"><h2>Payment</h2></div>
+      <div class="card">
+        <div class="row" style="border:0;padding:0">
+          <div class="row__main">
+            <span class="row__t" data-account="card"></span>
+            <span class="row__s">Authorised at booking. Only taken when a GP accepts your consultation.</span>
+          </div>
+          <button class="btn btn--sm" type="button">Replace</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section__head">
+        <h2>Your data</h2>
+        <p class="section__note">We hold your email, your consultation summaries and your payment receipts.
+          We never hold your card number.</p>
+      </div>
+      <div class="rows">
+        <div class="row"><div class="row__main"><span class="row__t">Download everything we hold</span>
+          <span class="row__s">A single file, emailed to you.</span></div>
+          <button class="btn btn--sm" type="button">Request</button></div>
+        <div class="row"><div class="row__main"><span class="row__t">Delete your account</span>
+          <span class="row__s">Clinical records are kept for the period the law requires. Everything else goes.</span></div>
+          <button class="btn btn--sm" type="button">Delete</button></div>
+      </div>
+    </div>
+
+    <div class="band" style="margin-top:var(--s-12)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21 19H3z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>
+      <p style="margin:0">This is not an emergency service. If it is an emergency,
+        <strong><a href="tel:999">call 999</a></strong> or go to A&amp;E.</p>
+    </div>
+  </section>
+
+  <!-- ===================== the consultation flow ===================== -->
+
+  <section data-screen="entry" class="shell">
+    <h1 data-reveal>Feel unwell? See a GP now.</h1>
+    <p data-reveal style="color:var(--ink-2)">England only. Not for emergencies.</p>
+    <div class="card" data-reveal style="margin-block:var(--s-6)">
+      <div style="display:flex;gap:var(--s-6)">
+        <div class="stat">
+          <span class="stat__value" data-entry="price"></span>
+          <span class="stat__label">Consultation and any prescription you need</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value stat__value--sm" data-entry="eta"></span>
+          <span class="stat__label">estimated wait right now</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn--primary btn--block" data-start data-reveal>See a GP now</button>
+    <button class="btn btn--block" data-goto="home" style="margin-top:var(--s-3)">Back to your dashboard</button>
+    <div class="band" style="margin-top:var(--s-8)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21 19H3z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>
+      <p style="margin:0">If this is an emergency, <strong><a href="tel:999">call 999</a></strong> or go to A&amp;E.</p>
+    </div>
+  </section>
+
+  <section data-screen="symptoms" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <h1 data-reveal>Tell us what's wrong</h1>
+    <form data-form="symptoms" novalidate>
+      <fieldset style="border:none;padding:0;margin:var(--s-6) 0 var(--s-4)">
+        <legend style="font-weight:700;margin-bottom:var(--s-2)">Main symptom</legend>
+        <div class="field">
+          <label class="choice">
+            <input type="radio" name="main-symptom" value="sore-throat" checked> Sore throat or cough
+          </label>
+          <label class="choice">
+            <input type="radio" name="main-symptom" value="stomach"> Stomach pain
+          </label>
+          <label class="choice">
+            <input type="radio" name="main-symptom" value="skin"> Skin or rash
+          </label>
+          <label class="choice">
+            <input type="radio" name="main-symptom" value="other"> Something else
+          </label>
+        </div>
+      </fieldset>
+      <div class="field">
+        <label for="duration">How long have you had these symptoms?</label>
+        <select id="duration" name="duration">
+          <option>Today</option>
+          <option selected>2–3 days</option>
+          <option>Over a week</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="details">Anything else the doctor should know?</label>
+        <textarea id="details" name="details" rows="4" placeholder="In your own words"></textarea>
+        <p class="hint" data-hint="details">Needed when you pick “Something else”, so the GP knows what they are taking.</p>
+      </div>
+      <p class="err" data-error="symptoms" role="alert" hidden></p>
+      <button class="btn btn--primary btn--block" type="submit">Continue</button>
+    </form>
+  </section>
+
+  <section data-screen="safety-check" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <h1 data-reveal>Quick safety check</h1>
+    <p style="color:var(--ink-2)">Tick anything that applies to you right now.</p>
+    <form data-form="safety" novalidate>
+      <div class="field">
+        <label class="choice">
+          <input type="checkbox" name="flag" value="chest-pain"> Chest pain or pressure
+        </label>
+        <label class="choice">
+          <input type="checkbox" name="flag" value="breathing"> Severe difficulty breathing
+        </label>
+        <label class="choice">
+          <input type="checkbox" name="flag" value="bleeding"> Heavy bleeding that will not stop
+        </label>
+        <label class="choice">
+          <input type="checkbox" name="flag" value="confusion"> Sudden confusion or loss of consciousness
+        </label>
+        <label class="choice">
+          <input type="checkbox" name="flag" value="self-harm"> Thoughts of suicide or serious self-harm
+        </label>
+      </div>
+      <button class="btn btn--primary btn--block" type="submit" data-safety-continue>None of these — continue</button>
+    </form>
+  </section>
+
+  <section data-screen="identity" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <h1 data-reveal>Verify it's you</h1>
+    <p>We use Stripe Identity to check a photo ID — a passport or driving licence, not a payment card.</p>
+    <div class="card" style="margin-block:var(--s-6)">
+      <div class="row" style="border:none;padding:0">
+        <span class="row__main">
+          <span class="row__t" data-identity="title">Photo ID and a selfie</span>
+          <span class="row__s" data-identity="note">You'll be asked to photograph your ID and take a quick selfie. This takes about a minute.</span>
+        </span>
+        <span class="row__end"><span class="pill" data-identity="pill" data-status="pending">Not started</span></span>
+      </div>
+    </div>
+    <button class="btn btn--primary btn--block" data-identity="action">Verify identity</button>
+  </section>
+
+  <section data-screen="nhs-gp" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <h1 data-reveal>Your NHS GP</h1>
+    <form data-form="nhs" novalidate>
+      <div class="field">
+        <label for="practice">GP practice name</label>
+        <input id="practice" name="practice" type="text" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="postcode">Practice postcode</label>
+        <input id="postcode" name="postcode" type="text" placeholder="e.g. SW1A 1AA" autocomplete="off">
+      </div>
+      <p class="err" data-error="nhs" role="alert" hidden></p>
+      <p style="margin-top:var(--s-6)">May we send your NHS GP a summary of this consultation?</p>
+      <button class="btn btn--primary btn--block" type="submit" value="yes" data-consent="yes">Yes, share with my NHS GP</button>
+      <button class="btn btn--block" type="submit" value="no" data-consent="no" style="margin-top:var(--s-3)">No, don't share</button>
+    </form>
+  </section>
+
+  <section data-screen="price-wait" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span>
+      <span data-done="true"></span><span></span><span></span><span></span>
+    </div>
+    <h1 data-reveal>Shown in full before you book</h1>
+    <div class="card">
+      <div style="display:flex;gap:var(--s-6)">
+        <div class="stat">
+          <span class="stat__value">£39</span>
+          <span class="stat__label">Consultation and any prescription you need</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value stat__value--sm" data-price-eta>about 3 minutes</span>
+          <span class="stat__label">estimated wait</span>
+        </div>
+      </div>
+      <p data-price-note style="color:var(--ink-2);margin-top:var(--s-4);margin-bottom:0">Covers the consultation and writing any prescription you need. The pharmacy charges separately for the medicine itself.</p>
+    </div>
+    <fieldset style="border:none;padding:0;margin:var(--s-6) 0 0">
+      <legend style="font-weight:700;margin-bottom:var(--s-2)">Pay with</legend>
+      <div class="field" style="margin-top:0">
+        <label class="choice">
+          <input type="radio" name="card" value="ok" checked> <span data-price="card"></span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="card" value="declined"> Test card that will be declined
+        </label>
+      </div>
+    </fieldset>
+    <p style="margin-top:var(--s-4)">Your card is authorised for £39 now. Payment is only taken when a GP accepts your consultation.</p>
+    <button class="btn btn--primary btn--block" data-authorise>Authorise payment</button>
+  </section>
+
+  <section data-screen="queue" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span>
+      <span data-done="true"></span><span data-done="true"></span><span></span><span></span>
+    </div>
+    <h1 data-reveal>You're in the queue</h1>
+    <div class="card" aria-live="polite">
+      <div class="stat">
+        <span class="stat__value" data-queue-position>3</span>
+        <span class="stat__label">position in queue</span>
+      </div>
+      <div class="stat" style="margin-top:var(--s-4)">
+        <span class="stat__value" data-queue-eta>about 3 minutes</span>
+        <span class="stat__label">estimated wait</span>
+      </div>
+      <div class="meter" data-tone="accent" style="margin-top:var(--s-4)"><i data-queue-bar style="width:0%"></i></div>
+    </div>
+    <p style="color:var(--ink-2)">Keep this page open. We'll tell you the moment a GP is ready.</p>
+    <button class="btn btn--block" data-cancel style="margin-top:var(--s-4)">Cancel and release the hold</button>
+    <p class="proto-note">Prototype: <button class="proto-link" type="button" data-skip-wait>skip the wait</button></p>
+  </section>
+
+  <section data-screen="doctor-ready" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span>
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span></span>
+    </div>
+    <h1 data-reveal>Your GP is ready</h1>
+    <p>A GP has accepted your consultation and is waiting for you now.</p>
+    <div class="card">
+      <div class="row" style="border:none;padding:0 0 var(--s-4)">
+        <span class="row__main">
+          <span class="row__t" data-ready="gp"></span>
+          <span class="row__s">GMC-registered GP, licensed to practise in England</span>
+        </span>
+        <span class="row__end"><span class="pill" data-status="valid">Waiting for you</span></span>
+      </div>
+      <p style="margin:0 0 var(--s-2);font-weight:700;font-size:13px;color:var(--ink-2)">Why this GP</p>
+      <ul class="reasons" data-ready="reasons"></ul>
+    </div>
+    <p data-ready="limited" hidden style="color:var(--ink-2)">You chose not to share your NHS record, so your GP may be unable to prescribe some treatments.</p>
+    <button class="btn btn--primary btn--block" data-join style="margin-top:var(--s-6)">Join the call</button>
+  </section>
+
+  <section data-screen="consultation" class="shell">
+    <div class="stepper">
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span>
+      <span data-done="true"></span><span data-done="true"></span><span data-done="true"></span><span data-done="true"></span>
+    </div>
+    <h1 data-reveal>Consultation</h1>
+    <div class="videoframe" data-call="gp">GP video</div>
+    <div class="countdown" data-call="clock" aria-live="off">00:00</div>
+    <p style="color:var(--ink-2)">This call is not recorded.</p>
+    <button class="btn btn--primary btn--block" data-end-call style="margin-top:var(--s-6)">End call</button>
+  </section>
+
+  <section data-screen="outcome" class="shell">
+    <h1 data-reveal>Your outcome</h1>
+    <p data-outcome="lead" style="color:var(--ink-2)"></p>
+    <div data-outcome="cards"></div>
+    <button class="btn btn--primary btn--block" data-complete style="margin-top:var(--s-6)">Continue</button>
+  </section>
+
+  <section data-screen="done" class="shell">
+    <h1 data-reveal>All done</h1>
+    <p data-done="lead">You'll receive a summary by email. Thank you for using Dr Quick.</p>
+    <div class="card" style="margin-block:var(--s-6)">
+      <div class="facts" data-done="facts"></div>
+    </div>
+    <button class="btn btn--primary btn--block" data-goto="home">Back to your dashboard</button>
+  </section>
+
+  <!-- ===================== awkward states ===================== -->
+
+  <section data-screen="red-flag" class="shell">
+    <h1 data-reveal>Call 999 now</h1>
+    <p data-reveal>What you have described needs emergency care, not a video consultation.</p>
+    <div class="card" data-flag="list" style="margin-block:var(--s-6)"></div>
+    <a class="btn btn--primary btn--block" href="tel:999" data-reveal>Call 999</a>
+    <p style="margin-top:var(--s-4)">Or go to your nearest A&amp;E. You have not been charged.</p>
+    <button class="btn btn--block" data-goto="home" style="margin-top:var(--s-4)">Back to your dashboard</button>
+  </section>
+
+  <section data-screen="consent-refused" class="shell">
+    <h1 data-reveal>Without your NHS records</h1>
+    <p>The GP may be unable to prescribe some treatments without access to your NHS GP records.</p>
+    <button class="btn btn--primary btn--block" data-consent-continue>Continue anyway</button>
+    <button class="btn btn--block" data-consent-change style="margin-top:var(--s-3)">Change my answer</button>
+  </section>
+
+  <section data-screen="no-gp-available" class="shell">
+    <h1 data-reveal>No GP available right now</h1>
+    <p>Your payment authorisation has been released — you have not been charged.</p>
+    <p>You can also contact NHS 111 or a Pharmacy First service for urgent advice.</p>
+    <button class="btn btn--primary btn--block" data-goto="home">Return to your dashboard</button>
+  </section>
+
+  <section data-screen="cancelled" class="shell">
+    <h1 data-reveal>Consultation cancelled</h1>
+    <p>Your place in the queue has been cancelled and the payment hold has been released.</p>
+    <button class="btn btn--primary btn--block" data-goto="home">Return to your dashboard</button>
+  </section>
+
+  <section data-screen="payment-failed" class="shell">
+    <h1 data-reveal>Payment could not be authorised</h1>
+    <p>Your card was declined. You have not been charged and you have not lost your place.</p>
+    <button class="btn btn--primary btn--block" data-goto="price-wait">Try another card</button>
+  </section>
+
+  <section data-screen="consult-ended-early" class="shell">
+    <h1 data-reveal>The call ended early</h1>
+    <p data-early="lead">Don't worry — the GP will still complete your outcome summary.</p>
+    <button class="btn btn--primary btn--block" data-goto="outcome">Continue to outcome</button>
+  </section>
+
+</main>
+
+<div class="toast" data-toast hidden role="status" aria-live="assertive">
+  <span class="toast__mark" aria-hidden="true"></span>
+  <div class="toast__body">
+    <b data-toast="title"></b>
+    <span data-toast="note"></span>
+  </div>
+  <button class="btn btn--sm" type="button" data-toast-action></button>
+</div>
+
+<script type="module" src="js/patient.js"></script>
+</body>
+</html>
