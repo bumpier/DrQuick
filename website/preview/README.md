@@ -1,5 +1,13 @@
 # Role prototype
 
+> **The patient surface now lives in the Next app** at `/patient` (`npm run dev`,
+> then `http://localhost:3000/patient`; `?data=seeded` still works, and the
+> "skip the wait" shortcut survives as a prototype control on the finding
+> screen). `patient.html` here is reference only. Its £39 fixed fee is
+> historical: pricing has been per request since 2026-09-04 (see the Patient
+> surface section of `CLAUDE.md`). The doctor and admin pages below are still
+> the only running versions of those surfaces.
+
 Prototype of the patient, doctor and admin surfaces. Fake data throughout.
 **Not a live service.**
 

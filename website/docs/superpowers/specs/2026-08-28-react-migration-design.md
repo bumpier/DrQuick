@@ -352,3 +352,14 @@ screen that needs a component the gallery does not show adds it via the CLI,
 restyles it, and adds it to the gallery first. Charts stay authored inline SVG
 from the `charts.js` geometry — no Recharts. The landing page's FAQ and role
 switch are not Radix and stay that way.
+
+## Addendum — 2026-09-23: milestone 2, the patient surface
+
+Milestone 2 is built, as the Uber-like find-a-GP flow the business plan describes. What changed from this spec, and why:
+
+- **`entry` folds into `/patient`.** Uber's home is the entry: one "See a GP now" on the home screen starts a request. `/patient/book/[[...step]]` has ten steps (symptoms, safety-check, identity, nhs-gp, quote, finding, ready, call, outcome, done) and six states (red-flag, consent-refused, no-gp-available, cancelled, payment-failed, ended-early). The preview's names are shortened: `price-wait` is `quote`, `queue` is `finding`, `doctor-ready` is `ready`, `consultation` is `call`, and `consult-ended-early` is `ended-early`.
+- **£39 is superseded.** Pricing became dynamic on 2026-09-04. Each request is quoted by `lib/pricing.ts` when the quote screen is reached, frozen, and carried unchanged to the receipt. See the Patient surface section of `CLAUDE.md`.
+- **The URL follows the reducer, and a live consultation locks it.** The pathname sync jumps only while no hold is live. Otherwise it puts the URL back, so browser navigation can never move money.
+- **The destinations are built:** consultations with its filter, the detail view (`dynamicParams = true`), prescriptions with a timeline, and the account with a working sharing switch.
+- **`preview/` still cannot be deleted.** Milestones 3 and 4 were planned (`docs/superpowers/plans/2026-09-02-doctor-admin-surfaces.md`) but only partly executed: the doctor and admin `lib/`, `hooks/` and `components/app/` pieces exist, but their routes do not. `preview/doctor.html` and `preview/admin.html` remain the only running reference for those surfaces.
+

@@ -233,3 +233,17 @@ One scale, two spellings. The named steps are what the landing page was written 
 ### Fonts
 
 `font-sans` is Inter, everything read. `font-display` is Geist: headlines, the wordmark, FAQ questions, `CardTitle`, `DialogTitle`, `SheetTitle`, `AlertTitle`, `TabsTrigger`, table headers and the sidebar's group labels. `font-heading` is shadcn's name for the display face and resolves to Geist, so a freshly generated component is right until the restyle pass renames it.
+
+## Patient surface patterns (2026-09-23)
+
+The find-a-GP flow at `/patient/book/*` adds a handful of composed patterns in `components/patient/`, all built from `components/ui/` and shown in `/dev/ui`:
+
+- **`FlowStep`**, one booking screen, in three layouts. `split` puts a 30rem step panel (white) beside a canvas on the ground that carries the live status of the request: the request so far, the search, the matched GP, the call. Below the md line the canvas sits between the heading and the body, as Uber's map sits above its sheet. `column` is for terminal screens and `band` is the full-bleed dark fill, reserved for 999. The canvas is DOM-last and never focusable.
+- **`ActionDock`**: one sticky action area at the bottom edge, primary first, with 52px targets. There is no draggable sheet. It lifts above the development jumper.
+- **`ChoiceRow`**: a whole row (or a tile, for a row of three) is the target of a radio or checkbox. Chosen is shown by a white fill and a 2px inset primary ring, as well as by the control itself.
+- **`SearchPulse`**: the one looping motion on the patient surface, and it is functional (it says the search is still running). Two primary rings scale out from the request in authored SVG with a non-scaling 2px stroke, only under `prefers-reduced-motion: no-preference` (`.pulse-ring` in `app/globals.css`). Reduced, the rings are static.
+- **`GpCard`**: the matched GP on the band, with a reference, the registration and why this GP was matched. It shows no name, face or rating.
+- **`PatientNav`**: one nav in two placements chosen by CSS. It is a row in the top bar from 560px and a fixed four-item tab bar below that, with the active item in primary (DESIGN's active state). It is hidden for the whole booking flow.
+- **`FieldError`**: ink words with a red icon. Error red on white fails AA at 13px, so red is the icon and the invalid field's border only.
+- **Band census**: one band per screen, never two. The home has its start or resume card, ready has the GP card, call has the video frame, and red-flag is the whole screen.
+- **Margins**: every patient page uses DESIGN's 16px phone margin (`components/patient/page.ts`), the same as the booking screens, and 24px above it.
