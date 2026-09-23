@@ -69,6 +69,20 @@ import { STATUS_LABELS } from '@/lib/alerts';
 import type { CredentialStatus } from '@/lib/fixtures';
 import { DASH } from '@/lib/placeholder';
 import { Countdown } from '@/components/app/Countdown';
+import { Timeline } from '@/components/app/Timeline';
+import { ChoiceRow } from '@/components/patient/ChoiceRow';
+import { ConsultRow } from '@/components/patient/ConsultRow';
+import { ActionDock } from '@/components/patient/FlowStep';
+import { FieldError } from '@/components/patient/FieldError';
+import { GpCard } from '@/components/patient/GpCard';
+import { PriceQuote } from '@/components/patient/PriceQuote';
+import { ProtoAction, ProtoNote } from '@/components/patient/ProtoNote';
+import { SearchPulse } from '@/components/patient/SearchPulse';
+import { UrgentLine } from '@/components/patient/UrgentLine';
+import { CallClock, VideoFrame } from '@/components/patient/VideoFrame';
+import { matchGp } from '@/lib/booking';
+import { CONSULTATIONS, GPS, PRESCRIBING, PRESCRIPTIONS } from '@/lib/fixtures';
+import { prescriptionFor } from '@/lib/patient';
 
 // Three surfaces every component must sit on. The band is a surface, not a theme.
 const SURFACES = [
@@ -103,6 +117,24 @@ const stepsAt = (current: number) =>
     label,
     status: (i < current ? 'done' : i === current ? 'current' : 'todo') as StepStatus,
   }));
+
+// The patient booking's five steps before commit, on the third.
+const PATIENT_STEPS = ['Symptoms', 'Safety', 'Identity', 'NHS GP', 'Price'].map((label, i) => ({
+  id: label.toLowerCase(),
+  label,
+  status: (i < 2 ? 'done' : i === 2 ? 'current' : 'todo') as StepStatus,
+}));
+
+// The fixture floor's match, and a prescription written for a first patient
+// with no pharmacy saved (lib/patient.ts).
+const GALLERY_GP = matchGp(GPS, PRESCRIBING, { nhsGpConsent: true })!;
+const BLANK_RX = prescriptionFor(
+  {
+    id: 'C-0001', date: '28 August 2026', at: null, gp: 'GP-002', reason: 'Sore throat or cough', minutes: 9, status: 'completed', cost: 32,
+    outcome: { prescription: true, referral: false, fitNote: false, sharedWithNhsGp: true },
+  },
+  null,
+)!;
 
 // preview/js/doctor.js:284-291 — the profile's account facts, blank and seeded.
 const FACTS_BLANK = [
@@ -158,7 +190,7 @@ export function Gallery() {
           Hover and keyboard focus are live: press Tab to walk every control and check the 3px outline or the field glow.
         </p>
         <nav aria-label="Sections" className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-fine">
-          {['button', 'segmented-link', 'fields', 'select', 'choice', 'checkbox', 'badge', 'card', 'alert', 'tabs', 'table', 'progress', 'countdown', 'charts', 'avatar', 'separator', 'skeleton', 'breadcrumb', 'tooltip', 'overlays', 'dropdown', 'toast', 'credential-matrix', 'sidebar', 'stat-tile', 'status-badge', 'stepper', 'ribbon', 'empty-state', 'page-header', 'facts'].map((id) => (
+          {['button', 'segmented-link', 'fields', 'select', 'choice', 'checkbox', 'badge', 'card', 'alert', 'tabs', 'table', 'progress', 'countdown', 'charts', 'avatar', 'separator', 'skeleton', 'breadcrumb', 'tooltip', 'overlays', 'dropdown', 'toast', 'credential-matrix', 'sidebar', 'stat-tile', 'status-badge', 'stepper', 'ribbon', 'empty-state', 'page-header', 'facts', 'timeline', 'choice-row', 'field-error', 'urgent-line', 'price-quote', 'search-pulse', 'gp-card', 'video-frame', 'consult-row', 'action-dock', 'proto-note'].map((id) => (
             <a key={id} href={`#${id}`} className="text-ink-2 hover:text-primary">{id}</a>
           ))}
         </nav>
@@ -586,7 +618,7 @@ export function Gallery() {
 
       <Section id="toast" title="Toast (sonner)" note="A white card with the tier-3 shadow; the semantic colour sits on the status icon only.">
         <div className="flex flex-wrap gap-3">
-          <Button variant="secondary" onClick={() => toast('Your GP is ready', { description: 'Dr Patel will join the call now.' })}>Toast</Button>
+          <Button variant="secondary" onClick={() => toast('Your GP is ready', { description: 'GP-002 has accepted your consultation.' })}>Toast</Button>
           <Button variant="secondary" onClick={() => toast.success('Documents uploaded')}>Success</Button>
           <Button variant="secondary" onClick={() => toast.error('Could not reach the server', { description: 'Try again in a moment.' })}>Error</Button>
           <Button variant="secondary" onClick={() => toast.loading('Matching you to a GP…')}>Loading</Button>
@@ -684,6 +716,10 @@ export function Gallery() {
           <div className="rounded-xl bg-surface p-6"><Stepper steps={stepsAt(0)} /></div>
           <Card className="block p-6"><Stepper steps={stepsAt(3)} /></Card>
           <div className="rounded-xl bg-surface p-6"><Stepper steps={stepsAt(5)} /></div>
+          <div className="rounded-xl bg-white p-6 shadow-card">
+            <p className="text-fine text-ink-2 mb-4">labels=&quot;current&quot;: the patient booking&apos;s five steps, only the current word shown at every width</p>
+            <Stepper label="Booking steps" labels="current" className="mb-0" steps={PATIENT_STEPS} />
+          </div>
         </div>
       </Section>
 
@@ -712,6 +748,101 @@ export function Gallery() {
           <div className="rounded-xl bg-surface p-6"><p className="text-fine text-ink-2 mb-4">Blank</p><Facts items={FACTS_BLANK} /></div>
           <Card className="block p-6"><p className="text-fine text-ink-2 mb-4">Seeded</p><Facts items={FACTS_SEEDED} /></Card>
         </div>
+      </Section>
+
+      <Section id="timeline" title="Timeline" note="A journey as the steps it is actually on: done steps ink, the current one the primary mark with aria-current, the rest muted by weight as well as colour. The seeded prescriptions, and one written in blank mode with no pharmacy saved.">
+        <div className="grid grid-cols-3 gap-4 max-cols:grid-cols-1">
+          {[...PRESCRIPTIONS, BLANK_RX].map((rx) => (
+            <Card key={rx.id} className="block p-6"><p className="text-fine text-ink-2 mb-4">{rx.id}</p><Timeline label={rx.id} steps={rx.steps} /></Card>
+          ))}
+        </div>
+      </Section>
+
+      <Section id="choice-row" title="ChoiceRow" note="The patient's answers: the whole row is the target, chosen by fill and a primary ring as well as by the control itself. Rows for a list, tiles for a row of three.">
+        <div className="grid grid-cols-2 gap-6 max-cols:grid-cols-1">
+          <div className="grid gap-2 rounded-xl bg-white p-6 shadow-card">
+            <RadioGroup defaultValue="stomach" aria-label="Example symptoms">
+              <ChoiceRow control={<RadioGroupItem value="throat" />}>Sore throat or cough</ChoiceRow>
+              <ChoiceRow control={<RadioGroupItem value="stomach" />}>Stomach pain</ChoiceRow>
+            </RadioGroup>
+            <RadioGroup defaultValue="today" aria-label="Example durations" className="grid-cols-3">
+              <ChoiceRow layout="tile" control={<RadioGroupItem value="today" />}>Today</ChoiceRow>
+              <ChoiceRow layout="tile" control={<RadioGroupItem value="days" />}>2–3 days</ChoiceRow>
+              <ChoiceRow layout="tile" control={<RadioGroupItem value="week" />}>Over a week</ChoiceRow>
+            </RadioGroup>
+          </div>
+          <div className="grid gap-2 rounded-xl bg-white p-6 shadow-card">
+            <ChoiceRow control={<Checkbox defaultChecked />}>Chest pain or pressure</ChoiceRow>
+            <ChoiceRow control={<Checkbox />}>Severe difficulty breathing</ChoiceRow>
+          </div>
+        </div>
+      </Section>
+
+      <Section id="field-error" title="FieldError" note="What to fix, beside the field: ink words (error red fails AA at 13px), with the red on the icon and the field's border only.">
+        <div className="grid max-w-md gap-2 rounded-xl bg-white p-6 shadow-card">
+          <Label htmlFor="gallery-postcode">Practice postcode</Label>
+          <Input id="gallery-postcode" defaultValue="12345" aria-invalid aria-describedby="gallery-postcode-error" />
+          <FieldError id="gallery-postcode-error">That doesn’t look like a postcode. Check it and try again.</FieldError>
+        </div>
+      </Section>
+
+      <Section id="urgent-line" title="UrgentLine" note="The 999 route at body size with a real tel: link: the landing sentence on the home and account screens, the short line on every booking screen before the call.">
+        <div className="grid gap-4 rounded-xl bg-white p-6 shadow-card">
+          <UrgentLine variant="band" />
+          <UrgentLine />
+        </div>
+      </Section>
+
+      <Section id="price-quote" title="PriceQuote" note="The price in full beside the wait, what it covers underneath. The quote is frozen when the screen is first reached; blank mode's wait is a dash because no floor of GPs exists yet.">
+        <div className="grid grid-cols-2 gap-4 max-cols:grid-cols-1">
+          <PriceQuote amount={32} wait={DASH} />
+          <PriceQuote amount={40} wait="about 3 minutes" />
+        </div>
+      </Section>
+
+      <Section id="search-pulse" title="SearchPulse" note="Finding a GP: two rings go out from the request while the search runs, only under prefers-reduced-motion: no-preference. Reduced, the rings sit still. It never counts GPs or patients.">
+        <div className="grid grid-cols-2 gap-4 max-cols:grid-cols-1">
+          <div className="grid place-items-center rounded-xl bg-surface p-6"><SearchPulse /></div>
+          <div className="grid place-items-center rounded-xl bg-white p-6 shadow-card"><SearchPulse className="max-w-[11rem]" /></div>
+        </div>
+      </Section>
+
+      <Section id="gp-card" title="GpCard" note="The matched GP, the one band on the ready screen: a reference, the registration and why this GP was matched. No name, no face, no rating. With the NHS record refused, the card says what that may cost.">
+        <div className="grid grid-cols-2 gap-4 max-cols:grid-cols-1">
+          <GpCard gp={GALLERY_GP} consent />
+          <GpCard gp={{ ...GALLERY_GP, limitedPrescribing: true }} consent={false} />
+        </div>
+      </Section>
+
+      <Section id="video-frame" title="VideoFrame and CallClock" note="A placeholder that says what it is, never a fake stream, capped in height on a phone so End call is always on screen.">
+        <div className="grid grid-cols-[2fr_1fr] items-center gap-6 max-cols:grid-cols-1">
+          <VideoFrame gpRef="GP-002" />
+          <CallClock seconds={545} gpRef="GP-002" />
+        </div>
+      </Section>
+
+      <Section id="consult-row" title="ConsultRow" note="One consultation wherever consultations are listed. The newest from this session carries the New badge; a cancelled one says so and costs nothing.">
+        <Card className="block p-6">
+          <ul className="divide-y divide-rule">
+            {[{ ...CONSULTATIONS[0], isNew: true }, CONSULTATIONS[3]].map((row) => <li key={row.id}><ConsultRow consultation={row} /></li>)}
+          </ul>
+        </Card>
+      </Section>
+
+      <Section id="action-dock" title="ActionDock" note="The booking screens' one docked action, primary first. Sticky to the bottom edge in a flow; shown static here.">
+        <div className="max-w-md rounded-xl bg-white px-6 shadow-card">
+          <ActionDock className="static">
+            <Button size="lg" className="min-h-13 w-full">Yes, share with my NHS GP</Button>
+            <Button size="lg" variant="secondary" className="min-h-13 w-full">No, don’t share</Button>
+          </ActionDock>
+        </div>
+      </Section>
+
+      <Section id="proto-note" title="ProtoNote" note="Prototype shortcuts inside a screen, in the state jumper's monospace on the band: shown in development or with ?jumper=1, never to a patient.">
+        <ProtoNote>
+          <ProtoAction onClick={() => toast('Prototype shortcut pressed')}>Prototype: skip the wait</ProtoAction>
+          <ProtoAction onClick={() => toast('Prototype shortcut pressed')}>Prototype: no GP available</ProtoAction>
+        </ProtoNote>
       </Section>
 
       <footer className="border-t border-rule py-10">
