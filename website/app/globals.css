@@ -362,6 +362,19 @@
     .hero::before, .band-grid { background-image: none; }
   }
 
+  /* Finding a GP. Two rings go out from the request while the search runs:
+     functional motion, it says the search is still going, so it runs only
+     under no-preference and sits still otherwise (the numbers beside it carry
+     the news). The stroke stays 2px as the ring grows, and it fades out
+     rather than stopping at an edge. Nothing else on the patient surface
+     loops. */
+  .pulse-ring { transform-box: fill-box; transform-origin: 50% 50%; }
+  @media (prefers-reduced-motion: no-preference) {
+    .pulse-ring { animation: pulseRing 2.4s var(--ease-out) infinite; }
+    .pulse-ring-late { animation-delay: 1.2s; }
+  }
+  @keyframes pulseRing { from { transform: scale(1); opacity: .55; } to { transform: scale(7.5); opacity: 0; } }
+
   /* Emergency band */
   .urgent { border-top: 1px solid var(--color-rule); border-bottom: 1px solid var(--color-rule); }
   .urgent p { padding: 20px 0; font-size: .9375rem; font-weight: 600; display: flex; gap: 12px; align-items: flex-start; }
