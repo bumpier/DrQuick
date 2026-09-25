@@ -24,7 +24,7 @@ function fixture() {
           <div data-reveal />
           <div data-reveal />
         </div>
-        <div className="hero-img" data-reveal="load" />
+        <div className="hero-art" data-reveal="load" />
         <input id="join" />
       </div>
       <div className="mode" data-mode="gp">
@@ -92,16 +92,6 @@ test('the nav floats only once the sentinel has scrolled away', () => {
   expect(nav.classList.contains('is-floating')).toBe(true);
   navIo.trigger([{ target: sentinel, isIntersecting: true }]);
   expect(nav.classList.contains('is-floating')).toBe(false);
-});
-
-test('the idle loop runs only while the illustration is on screen', () => {
-  render(fixture());
-  const art = document.querySelector('.hero-img') as HTMLElement;
-  const artIo = IOStub.instances.find((io) => io.observed.includes(art))!;
-  artIo.trigger([{ target: art, isIntersecting: true }]);
-  expect(art.classList.contains('art-live')).toBe(true);
-  artIo.trigger([{ target: art, isIntersecting: false }]);
-  expect(art.classList.contains('art-live')).toBe(false);
 });
 
 test('the nav CTA moves the caret to the active form', () => {

@@ -76,7 +76,7 @@ test('the GP mode keeps its order, has no 999 band, and the dark fill sits on th
   const kids = [...gp.querySelectorAll(':scope > *')];
   expect(kids.map((el) => GP_ORDER.find((c) => el.classList.contains(c)))).toEqual(GP_ORDER);
   expect(gp.querySelector('.urgent')).toBeNull();
-  expect(gp.querySelector('.pay')!.className).toContain('bg-band');
+  expect(gp.querySelector('.pay .bg-band')).not.toBeNull();
   expect(gp.querySelector('#gps')).not.toBeNull(); // the #gps hash target
 });
 
@@ -127,11 +127,13 @@ test.skipIf(PATIENT_MODE)('with PATIENT_MODE off the patient mode is absent, not
   expect(container.querySelector('[data-mode-link]')).toBeNull();
 });
 
-test('the footer carries the second 999 link and the Storyset attribution', () => {
+test('the footer carries the second 999 link, and no Storyset asset or attribution is left', () => {
   const { container } = render(<Page />);
   const footer = container.querySelector('footer')!;
   expect(footer.querySelector('a.tel')).toHaveAttribute('href', 'tel:999');
-  expect(footer.querySelector('a[href="https://storyset.com/doctors"]')).toHaveTextContent('Doctors illustrations by Storyset');
+  // The illustrations left with the 2026-09-25 rebrand; the licence link goes with them.
+  expect(container.querySelector('a[href*="storyset.com"]')).toBeNull();
+  expect(container.querySelector('img[src*="illustration"], .art')).toBeNull();
   // The 999 band is patient-flow content and ships only in patient mode; the
   // footer instance is shared, so the page never loses the number entirely.
   expect(container.querySelectorAll('a[href="tel:999"]')).toHaveLength(PATIENT_MODE ? 2 : 1);

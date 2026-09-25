@@ -6,7 +6,7 @@ import { Hero } from '@/components/Hero';
 import { WaitlistForm } from '@/components/WaitlistForm';
 import { GpSignupForm } from '@/components/GpSignupForm';
 import { PATIENT_MODE } from '@/lib/site-mode';
-import { HeroArt } from '@/components/HeroArt';
+import { HeroTiles } from '@/components/PhotoTile';
 import { Nav } from '@/components/Nav';
 import { UrgentBand } from '@/components/UrgentBand';
 
@@ -14,13 +14,13 @@ test('the hero skeleton is identical for both modes: masked lines, sub, form, ar
   const { container } = render(
     <Hero lines={['See a GP', 'in minutes.']} sub="sub copy"
       form={<WaitlistForm role="patient" source="hero" cta="Join the waitlist" inputId="join" reveal="load" />}
-      art={<div className="hero-img" data-reveal="load" />} />,
+      art={<div className="hero-art" data-reveal="load" />} />,
   );
   const h1 = container.querySelector('h1')!;
   expect(h1).toHaveAttribute('tabindex', '-1');
   expect(h1.querySelectorAll('.ln[data-line] > span')).toHaveLength(2);
   expect(container.querySelector('form[data-source="hero"] input[type="email"]')).toBeInTheDocument();
-  expect(container.querySelector('.hero-img')).toBeInTheDocument();
+  expect(container.querySelector('.hero-art')).toBeInTheDocument();
 });
 
 // The capture is a slot, so the four-field sign-up drops into the same skeleton
@@ -29,10 +29,10 @@ test('the GP sign-up occupies that same slot without changing the skeleton', () 
   const { container } = render(
     <Hero headerId="gps" lines={['Consult when', 'it suits you.']} sub="sub copy"
       form={<GpSignupForm source="hero-gp" cta="Sign up" inputId="gp-join" reveal="load" />}
-      art={<div className="hero-img" data-reveal="load" />} />,
+      art={<div className="hero-art" data-reveal="load" />} />,
   );
   expect(container.querySelectorAll('h1 .ln[data-line] > span')).toHaveLength(2);
-  expect(container.querySelector('.hero-img')).toBeInTheDocument();
+  expect(container.querySelector('.hero-art')).toBeInTheDocument();
   const form = container.querySelector('form[data-source="hero-gp"]')!;
   const visible = [...form.querySelectorAll('input')].filter((i) => !i.classList.contains('hp'));
   expect(visible.map((i) => i.getAttribute('name'))).toEqual(['name', 'email', 'mobile', 'gmc']);
@@ -40,12 +40,19 @@ test('the GP sign-up occupies that same slot without changing the skeleton', () 
   expect(visible[0]).toHaveAttribute('id', 'gp-join');
 });
 
-test('the inlined art carries the idle-loop groups and the brand palette only', () => {
-  const { container } = render(<HeroArt />);
-  const art = container.querySelector('.hero-img')!;
-  expect(art.querySelector('svg')).toBeInTheDocument();
-  for (const cls of ['art-bg', 'art-icons', 'art-c1', 'art-c2', 'art-c3']) {
-    expect(art.querySelector(`.${cls}`), `missing .${cls}`).toBeTruthy();
+test('the hero tiles hold three photo slots, placeholders invent no people or captions', () => {
+  const { container } = render(<HeroTiles tiles={[
+    { slot: 'a', tone: 'wash', glyph: 'phone' },
+    { slot: 'b', tone: 'peach', glyph: 'video' },
+    { slot: 'c', tone: 'sun', glyph: 'home' },
+  ]} />);
+  const figures = [...container.querySelectorAll('.hero-art figure[data-photo]')];
+  expect(figures.map((f) => f.getAttribute('data-photo'))).toEqual(['a', 'b', 'c']);
+  expect(figures[0].className).toContain('row-span-2');
+  for (const f of figures) {
+    expect(f.querySelector('img')).toBeNull();
+    expect(f.querySelector('figcaption')).toBeNull();
+    expect(f.textContent).toBe('');
   }
 });
 

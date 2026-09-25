@@ -101,22 +101,6 @@ export function LandingBehavior() {
 
     setMode(root.getAttribute('data-role') === 'gp' ? 'gp' : 'patient', false);
 
-    // The illustration idles only while it is on screen; a decorative loop must not
-    // burn battery behind the fold, least of all for someone reading this while ill.
-    const art = document.querySelector('.hero-img');
-    if (art) {
-      if (!('IntersectionObserver' in window)) {
-        art.classList.add('art-live');
-      } else {
-        const artIo = new IntersectionObserver(
-          ([e]) => art.classList.toggle('art-live', e.isIntersecting),
-          { threshold: 0 },
-        );
-        artIo.observe(art);
-        cleanups.push(() => artIo.disconnect());
-      }
-    }
-
     // The bar only earns a hard edge once it is actually floating over content.
     const sentinel = document.getElementById('nav-sentinel');
     const nav = document.querySelector('nav');

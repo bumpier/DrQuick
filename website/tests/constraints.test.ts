@@ -150,6 +150,17 @@ test('app source uses only the permitted palette', () => {
   }
 });
 
+// The favicon and anything else drawn in public/assets ships to every visitor,
+// so it keeps to the same palette as the source.
+test('served SVG assets use only the permitted palette', () => {
+  const svgs = walk(join(ROOT, 'public', 'assets')).filter((f) => extname(f) === '.svg');
+  expect(svgs.length).toBeGreaterThan(0);
+  for (const file of svgs) {
+    const bad = offPaletteHexes(readFileSync(file, 'utf8'));
+    expect(bad, `${file} uses off-palette colour(s): ${bad.join(', ')}`).toEqual([]);
+  }
+});
+
 test('app source smuggles no colour through an arbitrary value function', () => {
   for (const file of FILES) {
     const bad = arbitraryColorFunctions(readFileSync(file, 'utf8'));

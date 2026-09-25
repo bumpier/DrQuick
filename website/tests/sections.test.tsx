@@ -7,11 +7,13 @@ import { Covers } from '@/components/Covers';
 import { PriceBand } from '@/components/PriceBand';
 import { PATIENT_STEPS, PATIENT_COVERS, GP_COVERS } from '@/app/landing-content';
 
-test('the bento varies: two setup tiles, one full-width dark payoff, third in sequence', () => {
+test('the bento varies: a wide tile, a narrow tile, one full-width forest payoff, third in sequence', () => {
   const { container } = render(<Steps headingId="t" title="As simple as it sounds." tiles={PATIENT_STEPS} />);
   const tiles = [...container.querySelectorAll('.bento > div')];
   expect(tiles).toHaveLength(3);
-  expect(tiles[0].className).toContain('col-span-3');
+  expect(tiles[0].className).toContain('col-span-4');
+  expect(tiles[0].className).toContain('bg-lime-wash');
+  expect(tiles[1].className).toContain('col-span-2');
   expect(tiles[2].className).toContain('bg-band');
   expect(tiles[2].className).toContain('col-span-6');
   expect(tiles[2]).toHaveTextContent('Talk by video.');
@@ -35,17 +37,18 @@ test('the compliance sentences survive in the covers copy', () => {
   expect(gpNo).toContain('Scotland, Wales and Northern Ireland');
 });
 
-test('the price band puts the promise in the accent and stays tabular', () => {
+test('the price tile is lime, the pay tile forest, and both stay tabular', () => {
   const { container } = render(
     <PriceBand variant="price" headingId="p" fine="fine"
-      headline={<><b className="text-primary">Your price in full</b>, before you book.</>} />,
+      headline={<><b className="bg-white">Your price in full</b>, before you book.</>} />,
   );
-  expect(container.querySelector('h2 b')!.className).toContain('text-primary');
+  expect(container.querySelector('section.price .bg-primary')).not.toBeNull();
+  expect(container.querySelector('h2 b')!.className).toContain('bg-white');
   expect(container.querySelector('h2')!.className).toContain('tabular-nums');
   const { container: pay } = render(
     <PriceBand variant="pay" headingId="g" fine="fine"
       headline={<><b className="text-primary-lift">Paid more</b> when demand is high.</>} />,
   );
-  expect(pay.querySelector('section')!.className).toContain('bg-band');
+  expect(pay.querySelector('section.pay .bg-band')).not.toBeNull();
   expect(pay.querySelector('h2 b')!.className).toContain('text-primary-lift');
 });

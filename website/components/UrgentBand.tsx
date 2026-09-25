@@ -3,7 +3,8 @@
 export function UrgentBand() {
   return (
     <aside className="urgent" data-reveal>
-      <div className="wrap">
+      {/* The white bar is drawn by .urgent p in the authored layer. */}
+      <div className="wrap pt-0 pb-0">
         <p>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
             <circle cx="9" cy="9" r="7.6" stroke="currentColor" strokeWidth="2.1" />

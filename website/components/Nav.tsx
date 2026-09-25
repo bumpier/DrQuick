@@ -29,7 +29,7 @@ export function Nav() {
           </SegmentedLinkGroup>
         )}
         {/* The phone nav shrinks the CTA a step; the form buttons keep the full size. */}
-        <Button asChild size="lg" className="btn max-phone:px-4 max-phone:py-[15px]">
+        <Button asChild size="lg" className="btn max-phone:h-11 max-phone:px-4">
           {PATIENT_MODE ? (
             <a id="nav-cta" href="#join" data-focus="join">
               <span className="cta-p"><span className="cta-long">Join the waitlist</span><span className="cta-short">Join</span></span>
