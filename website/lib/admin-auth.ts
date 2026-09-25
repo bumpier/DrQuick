@@ -2,8 +2,9 @@
 // keep it out of any client bundle. No dependencies.
 //
 // Accounts come from ADMIN_USERS, entries separated by ";":
-//   email|Display Name|scrypt$16384$<salt>$<hash>
-// made with `npm run admin:hash`. Removing an entry signs that admin out on
+//   email|Display Name|scrypt:16384:<salt>:<hash>
+// made with `npm run admin:hash`. Colons, not dollar signs: Next expands
+// $NAME inside .env files, which would silently corrupt a salt. Removing an entry signs that admin out on
 // their next request, because every session is re-checked against the list.
 //
 // A session is base64url(JSON {email, exp}) + "." + HMAC-SHA256 over it with
@@ -29,11 +30,11 @@ const b64 = (buf: Buffer) => buf.toString('base64url');
 
 export function hashPassword(password: string, salt = randomBytes(16)): string {
   const key = scryptSync(password.normalize('NFKC'), salt, KEYLEN, { N: SCRYPT_N });
-  return `scrypt$${SCRYPT_N}$${b64(salt)}$${b64(key)}`;
+  return `scrypt:${SCRYPT_N}:${b64(salt)}:${b64(key)}`;
 }
 
 export function verifyPassword(password: string, stored: string): boolean {
-  const [scheme, n, salt, hash] = stored.split('$');
+  const [scheme, n, salt, hash] = stored.split(':');
   if (scheme !== 'scrypt' || !n || !salt || !hash) return false;
   const expected = Buffer.from(hash, 'base64url');
   const actual = scryptSync(password.normalize('NFKC'), Buffer.from(salt, 'base64url'), expected.length, { N: Number(n) });
@@ -48,7 +49,7 @@ export function adminAccounts(env = process.env.ADMIN_USERS ?? ''): Map<string, 
   const accounts = new Map<string, Account>();
   for (const entry of env.split(';')) {
     const [email, name, hash] = entry.split('|').map((s) => s.trim());
-    if (email && name && hash?.startsWith('scrypt$')) accounts.set(email.toLowerCase(), { email: email.toLowerCase(), name, hash });
+    if (email && name && hash?.startsWith('scrypt:')) accounts.set(email.toLowerCase(), { email: email.toLowerCase(), name, hash });
   }
   return accounts;
 }

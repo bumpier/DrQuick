@@ -49,4 +49,4 @@ if (password.length < 12) {
 const N = 16384;
 const salt = randomBytes(16);
 const key = scryptSync(password.normalize('NFKC'), salt, 64, { N });
-console.log(`${email.toLowerCase()}|${name}|scrypt$${N}$${salt.toString('base64url')}$${key.toString('base64url')}`);
+console.log(`${email.toLowerCase()}|${name}|scrypt:${N}:${salt.toString('base64url')}:${key.toString('base64url')}`);
