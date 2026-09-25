@@ -5,7 +5,8 @@ import { cn } from "@/lib/utils"
 
 // The Patients / GPs switch: real links carrying aria-current, resolved before
 // paint by the inline head script in app/layout.tsx. It is never Tabs or
-// ToggleGroup (CLAUDE.md) — without JavaScript the links still navigate. The one
+// ToggleGroup (CLAUDE.md) — without JavaScript the links still navigate. The
+// current link is the lime pill, carrying forest text. The one
 // interactive pill on the landing page; also the link-based role switch for any
 // dashboard.
 const segmentedLinkGroupVariants = cva("flex gap-0.5 rounded-pill bg-fill", {
@@ -19,7 +20,7 @@ const segmentedLinkGroupVariants = cva("flex gap-0.5 rounded-pill bg-fill", {
 })
 
 const segmentedLinkVariants = cva(
-  "inline-flex items-center justify-center rounded-pill font-semibold tracking-[-.01em] whitespace-nowrap text-ink-2 no-underline transition-[background-color,color,box-shadow] duration-160 ease-(--ease) hover:text-ink aria-[current]:bg-white aria-[current]:text-ink aria-[current]:shadow-seg",
+  "inline-flex items-center justify-center rounded-pill font-semibold tracking-[-.01em] whitespace-nowrap text-ink-2 no-underline transition-[background-color,color,box-shadow] duration-160 ease-(--ease) hover:text-ink aria-[current]:bg-primary aria-[current]:text-ink",
   {
     variants: {
       size: {

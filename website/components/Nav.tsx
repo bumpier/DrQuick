@@ -13,13 +13,14 @@
 import { Button } from '@/components/ui/button';
 import { SegmentedLink, SegmentedLinkGroup } from '@/components/ui/segmented-link';
 import { PATIENT_MODE } from '@/lib/site-mode';
+import { Wordmark } from '@/components/Wordmark';
 
 export function Nav() {
   return (
     <nav className="site-nav">
       <div className="wrap flex items-center gap-8 h-19 max-phone:gap-3.5 max-phone:h-16">
-        <a className="logo font-display text-2xl max-phone:text-[1.375rem] font-bold tracking-[-.04em] no-underline mr-auto" href="#">
-          Dr<span className="text-primary-ink">Quick</span>
+        <a className="logo text-2xl max-phone:text-[1.375rem] no-underline mr-auto" href="#">
+          <Wordmark />
         </a>
         {PATIENT_MODE && (
           <SegmentedLinkGroup aria-label="Choose what you are here for">

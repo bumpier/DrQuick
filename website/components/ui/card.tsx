@@ -3,16 +3,22 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
-// Cards have no border: a white surface lifted off the ground by the tier-2
-// shadow (DESIGN.md). The band variant is the dark payoff fill — a surface,
-// not a theme. Spacing is one variable so header, content and footer share it.
+// Cards are the bento tiles (DESIGN.md, Lime & Forest). White sits on the ground
+// inside a 6% forest ring; the tinted tones carry no ring, their colour is the
+// edge. The band variant is the forest payoff fill — a surface, not a theme.
+// Spacing is one variable so header, content and footer share it.
 const cardVariants = cva(
-  "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl py-(--card-spacing) text-body shadow-card [--card-spacing:--spacing(6)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(4)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+  "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-2xl py-(--card-spacing) text-body shadow-card [--card-spacing:--spacing(6)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(4)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-2xl *:[img:last-child]:rounded-b-2xl",
   {
     variants: {
       variant: {
         default: "bg-card text-card-foreground",
-        band: "bg-band text-band-foreground",
+        band: "bg-band text-band-foreground shadow-none",
+        lime: "bg-primary text-ink shadow-none",
+        wash: "bg-lime-wash text-ink shadow-none",
+        sun: "bg-sun text-ink shadow-none",
+        peach: "bg-peach text-ink shadow-none",
+        quiet: "bg-surface-mid text-ink shadow-none",
       },
     },
     defaultVariants: { variant: "default" },

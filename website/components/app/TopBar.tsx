@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { DOCTOR, DOCTOR_DASHBOARD } from '@/lib/fixtures';
 import type { NavItem } from './nav';
+import { Wordmark } from '@/components/Wordmark';
 
 type Props = { surface: 'doctor' | 'admin'; title: string; nav: NavItem[]; end?: React.ReactNode };
 
@@ -19,8 +20,8 @@ export function TopBar({ surface, title, nav, end }: Props) {
       className="sticky top-(--ribbon-h) z-10 flex h-16 items-center gap-4 border-b border-rule bg-white px-6 max-phone:px-4"
     >
       <SidebarTrigger />
-      <Link href="/" className="font-display text-xl font-bold tracking-[-.04em] whitespace-nowrap no-underline">
-        Dr<span className="text-primary-ink">Quick</span>
+      <Link href="/" className="text-xl no-underline">
+        <Wordmark />
       </Link>
       <span className="text-fine text-ink-2">{title}</span>
       {/* useIsMobile() is false on the server: below 900 the desktop rail is `hidden`

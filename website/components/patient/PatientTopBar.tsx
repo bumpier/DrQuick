@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { PATIENT_ACCOUNT } from '@/lib/fixtures';
 import { PatientNav } from './PatientNav';
+import { Wordmark } from '@/components/Wordmark';
 
 // The wordmark home, the destinations (not during a request) and who is
 // signed in, as a fixture reference, never a name.
@@ -14,9 +15,9 @@ export function PatientTopBar({ screen, flow }: { screen: string; flow: boolean 
       <Link
         href="/patient"
         aria-label="Dr Quick, home"
-        className="font-display text-xl font-bold tracking-[-.04em] whitespace-nowrap no-underline"
+        className="text-xl no-underline"
       >
-        Dr<span className="text-primary-ink">Quick</span>
+        <Wordmark />
       </Link>
       {!flow && <PatientNav screen={screen} />}
       <div className="ml-auto flex items-center gap-3">

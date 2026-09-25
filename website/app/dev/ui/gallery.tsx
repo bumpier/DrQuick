@@ -83,6 +83,7 @@ import { CallClock, VideoFrame } from '@/components/patient/VideoFrame';
 import { matchGp } from '@/lib/booking';
 import { CONSULTATIONS, GPS, PRESCRIBING, PRESCRIPTIONS } from '@/lib/fixtures';
 import { prescriptionFor } from '@/lib/patient';
+import { Wordmark } from '@/components/Wordmark';
 
 // Three surfaces every component must sit on. The band is a surface, not a theme.
 const SURFACES = [
@@ -642,7 +643,7 @@ export function Gallery() {
         <SidebarProvider className="min-h-0 h-[440px] w-full overflow-hidden rounded-xl bg-white shadow-card">
           <Sidebar collapsible="none" className="border-r border-rule">
             <SidebarHeader>
-              <span className="font-display text-xl font-bold tracking-[-.04em] px-2 py-1">Dr<span className="text-primary-ink">Quick</span></span>
+              <Wordmark className="text-xl px-2 py-1" />
             </SidebarHeader>
             <SidebarContent>
               <SidebarGroup>
