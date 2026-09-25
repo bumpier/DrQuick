@@ -36,13 +36,13 @@ function ResumeCard() {
         ? { title: 'You’re in a consultation', body: `Your call with ${gp} is still open.`, action: 'Back to your call' }
         : { title: 'Your outcome is ready', body: `${gp} has finished your consultation.`, action: 'See your outcome' };
   return (
-    <Card variant="band" data-slot="resume-card" className="band-grid" data-reveal>
+    <Card variant="lime" data-slot="resume-card" data-reveal>
       <CardHeader>
         <CardTitle role="heading" aria-level={2} className="text-2xl">{resume.title}</CardTitle>
         <CardDescription>{resume.body}</CardDescription>
       </CardHeader>
       <CardFooter>
-        <Button asChild size="lg" className="min-h-13 w-full">
+        <Button asChild size="lg" variant="dark" className="min-h-13 w-full">
           <Link href={bookingHref(state.screen)}>{resume.action}</Link>
         </Button>
       </CardFooter>
@@ -85,18 +85,18 @@ export function PatientHome() {
   return (
     <div data-screen="home" className={PAGE}>
       <h1 data-reveal tabIndex={-1} className="mb-6 text-headline max-phone:text-headline-sm">{seeded ? 'Welcome back' : 'Welcome'}</h1>
-      <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]" data-stagger>
-        <div className="grid gap-6">
+      <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]" data-stagger>
+        <div className="grid gap-4">
           {live ? <ResumeCard /> : <StartCard />}
           <UrgentLine variant="band" />
         </div>
-        <div className="grid gap-6">
+        <div className="grid gap-4">
           {todos.length > 0 && (
             <section aria-labelledby="todo-title" className="grid gap-3" data-reveal>
               <h2 id="todo-title" className="text-xl leading-[1.3] font-semibold tracking-[-.02em]">What needs you</h2>
               <ul className="grid gap-2">
                 {todos.map((todo) => (
-                  <li key={todo.id} data-tone={todo.tone} className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-card">
+                  <li key={todo.id} data-tone={todo.tone} className="flex items-start gap-3 rounded-2xl bg-white p-5 shadow-card">
                     {todo.id === 'prescription'
                       ? <PillIcon strokeWidth={2} aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary-ink" />
                       : <ClockIcon strokeWidth={2} aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-ink-2" />}

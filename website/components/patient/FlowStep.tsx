@@ -157,7 +157,7 @@ export function FlowStep({
       data-layout="split"
       className={cn(
         "grid flex-1 grid-rows-[auto_auto_1fr] bg-white [grid-template-areas:'head'_'canvas'_'body']",
-        "md:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:bg-surface md:[grid-template-areas:'head_canvas'_'body_canvas']",
+        "md:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:bg-lime-wash md:[grid-template-areas:'head_canvas'_'body_canvas']",
       )}
     >
       <div className="px-6 pt-6 pb-2 [grid-area:head] max-phone:px-4 md:border-r md:border-rule md:bg-white md:px-10 md:pt-10">

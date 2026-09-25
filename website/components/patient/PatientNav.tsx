@@ -6,8 +6,8 @@ import { PATIENT_NAV, PATIENT_SECTION_OF } from './nav';
 // One nav, two placements, decided by CSS so the server HTML is final: a row
 // in the top bar from the phone line up, and below it the app's tab bar,
 // fixed to the bottom edge (and lifted above the development jumper when it
-// shows). The current destination is the primary mark: DESIGN.md gives active
-// states the one accent.
+// shows). The current destination is the lime pill (the tab bar's cell turns
+// lime-wash on a phone), the same mark as the landing page's switch.
 export function PatientNav({ screen }: { screen: string }) {
   const current = activeNav(screen, PATIENT_SECTION_OF);
   return (
@@ -28,9 +28,9 @@ export function PatientNav({ screen }: { screen: string }) {
             href={href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'inline-flex h-10 items-center gap-2 rounded-md px-3 text-label font-semibold whitespace-nowrap text-ink-2 no-underline',
-              'transition-[background-color,color] duration-160 ease-(--ease) hover:bg-surface-mid hover:text-ink aria-[current=page]:text-primary-ink',
-              'max-phone:h-full max-phone:flex-col max-phone:justify-center max-phone:gap-1 max-phone:rounded-none max-phone:px-1 max-phone:text-[11px] max-phone:hover:bg-transparent',
+              'inline-flex h-10 items-center gap-2 rounded-pill px-4 text-label font-semibold whitespace-nowrap text-ink-2 no-underline',
+              'transition-[background-color,color] duration-160 ease-(--ease) hover:bg-surface-mid hover:text-ink aria-[current=page]:bg-primary aria-[current=page]:text-ink',
+              'max-phone:h-full max-phone:flex-col max-phone:justify-center max-phone:gap-1 max-phone:rounded-none max-phone:px-1 max-phone:text-[11px] max-phone:hover:bg-transparent max-phone:aria-[current=page]:bg-lime-wash',
             )}
           >
             <Icon strokeWidth={2} aria-hidden="true" className="size-5 shrink-0" />
