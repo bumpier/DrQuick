@@ -20,7 +20,7 @@ export function TopBar({ surface, title, nav, end }: Props) {
     >
       <SidebarTrigger />
       <Link href="/" className="font-display text-xl font-bold tracking-[-.04em] whitespace-nowrap no-underline">
-        Dr<span className="text-primary">Quick</span>
+        Dr<span className="text-primary-ink">Quick</span>
       </Link>
       <span className="text-fine text-ink-2">{title}</span>
       {/* useIsMobile() is false on the server: below 900 the desktop rail is `hidden`

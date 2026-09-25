@@ -19,7 +19,7 @@ export function Covers({ headingId, title, cols }: {
                 {col.items.map((item) => (
                   <li key={item}
                     className={`grid grid-cols-[20px_1fr] gap-3.5 py-4 border-b border-rule text-body${col.tone === 'no' ? ' text-ink-2' : ''}`}>
-                    <svg className={`mt-0.75 ${col.tone === 'yes' ? 'text-primary' : 'text-ink-2'}`} width="20" height="20" aria-hidden="true">
+                    <svg className={`mt-0.75 ${col.tone === 'yes' ? 'text-primary-ink' : 'text-ink-2'}`} width="20" height="20" aria-hidden="true">
                       <use href={col.tone === 'yes' ? '#i-yes' : '#i-no'} />
                     </svg>
                     <span>{item}</span>

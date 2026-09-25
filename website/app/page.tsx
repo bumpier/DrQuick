@@ -52,7 +52,7 @@ export default function Page() {
           <PriceBand
             variant="price"
             headingId="price-title"
-            headline={<><b className="text-primary font-bold">Your price in full</b>, before you book.</>}
+            headline={<><b className="text-primary-ink font-bold">Your price in full</b>, before you book.</>}
             fine="What you are quoted is what you pay: the price is fixed the moment you book and never changed after, with no booking fee and nothing else to pay Dr Quick afterwards."
           />
           <Faq headingId="faq-title" title="Questions people ask." items={PATIENT_FAQ} />

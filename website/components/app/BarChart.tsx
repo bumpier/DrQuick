@@ -33,7 +33,7 @@ export function BarChart({ data, height = 150, format = String, ariaLabel }: Pro
               <rect
                 key={i}
                 data-emph={data[i].emph ?? 'false'}
-                className={data[i].emph === 'true' ? 'fill-primary' : 'fill-outline'}
+                className={data[i].emph === 'true' ? 'fill-primary-ink' : 'fill-outline'}
                 x={bar.x}
                 y={bar.y}
                 width={bar.w}

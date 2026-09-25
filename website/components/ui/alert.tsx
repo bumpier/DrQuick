@@ -11,7 +11,7 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: "*:[svg]:text-ink-2",
-        accent: "*:[svg]:text-primary",
+        accent: "*:[svg]:text-primary-ink",
         success: "*:[svg]:text-success",
         destructive: "text-error *:[svg]:text-error",
       },
@@ -43,7 +43,7 @@ function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="alert-title"
       className={cn(
-        "font-display font-semibold tracking-[-.01em] group-has-[>svg]/alert:col-start-2 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary",
+        "font-display font-semibold tracking-[-.01em] group-has-[>svg]/alert:col-start-2 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary-ink",
         className
       )}
       {...props}
@@ -59,7 +59,7 @@ function AlertDescription({
     <div
       data-slot="alert-description"
       className={cn(
-        "text-body text-pretty text-ink-2 group-data-[variant=destructive]/alert:text-error [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary [&_p:not(:last-child)]:mb-4",
+        "text-body text-pretty text-ink-2 group-data-[variant=destructive]/alert:text-error [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary-ink [&_p:not(:last-child)]:mb-4",
         className
       )}
       {...props}

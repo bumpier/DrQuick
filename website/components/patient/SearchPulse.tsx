@@ -18,9 +18,9 @@ export function SearchPulse({ className }: { className?: string }) {
         <circle cx="160" cy="160" r="152" className="fill-none stroke-ink/10" strokeWidth="1" vectorEffect="non-scaling-stroke" />
         <circle cx="160" cy="160" r="104" className="fill-none stroke-ink/10" strokeWidth="1" vectorEffect="non-scaling-stroke" />
         <circle cx="160" cy="160" r="56" className="fill-none stroke-ink/10" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-        <circle cx="160" cy="160" r="18" className="pulse-ring fill-none stroke-primary" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-        <circle cx="160" cy="160" r="18" className="pulse-ring pulse-ring-late fill-none stroke-primary" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-        <circle cx="160" cy="160" r="12" className="fill-primary stroke-white" strokeWidth="3" />
+        <circle cx="160" cy="160" r="18" className="pulse-ring fill-none stroke-primary-ink" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        <circle cx="160" cy="160" r="18" className="pulse-ring pulse-ring-late fill-none stroke-primary-ink" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        <circle cx="160" cy="160" r="12" className="fill-primary-ink stroke-white" strokeWidth="3" />
       </svg>
     </div>
   );

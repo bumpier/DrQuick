@@ -36,7 +36,7 @@ export function LineChart({ sets, labels, height = 150, ariaLabel }: Props) {
                 key={set.key}
                 data-key={set.key}
                 d={toPath(linePoints(set.values, { width, height, max }))}
-                className={i === 0 ? 'stroke-primary' : 'stroke-ink-2'}
+                className={i === 0 ? 'stroke-primary-ink' : 'stroke-ink-2'}
                 strokeDasharray={i === 0 ? undefined : '5 4'}
                 fill="none"
                 strokeWidth={2}

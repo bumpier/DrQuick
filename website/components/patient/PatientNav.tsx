@@ -29,7 +29,7 @@ export function PatientNav({ screen }: { screen: string }) {
             aria-current={active ? 'page' : undefined}
             className={cn(
               'inline-flex h-10 items-center gap-2 rounded-md px-3 text-label font-semibold whitespace-nowrap text-ink-2 no-underline',
-              'transition-[background-color,color] duration-160 ease-(--ease) hover:bg-surface-mid hover:text-ink aria-[current=page]:text-primary',
+              'transition-[background-color,color] duration-160 ease-(--ease) hover:bg-surface-mid hover:text-ink aria-[current=page]:text-primary-ink',
               'max-phone:h-full max-phone:flex-col max-phone:justify-center max-phone:gap-1 max-phone:rounded-none max-phone:px-1 max-phone:text-[11px] max-phone:hover:bg-transparent',
             )}
           >

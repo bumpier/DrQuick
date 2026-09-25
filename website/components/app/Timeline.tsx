@@ -25,7 +25,7 @@ export function Timeline({ steps, label = 'Progress' }: { steps: readonly Timeli
               className={cn(
                 'mt-1.5 size-3 rounded-sm border',
                 state === 'done' && 'border-ink bg-ink',
-                state === 'now' && 'border-primary bg-primary',
+                state === 'now' && 'border-primary-ink bg-primary-ink',
                 state === 'todo' && 'border-outline bg-white',
               )}
             />

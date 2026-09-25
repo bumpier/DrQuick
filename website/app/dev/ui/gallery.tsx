@@ -191,7 +191,7 @@ export function Gallery() {
         </p>
         <nav aria-label="Sections" className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-fine">
           {['button', 'segmented-link', 'fields', 'select', 'choice', 'checkbox', 'badge', 'card', 'alert', 'tabs', 'table', 'progress', 'countdown', 'charts', 'avatar', 'separator', 'skeleton', 'breadcrumb', 'tooltip', 'overlays', 'dropdown', 'toast', 'credential-matrix', 'sidebar', 'stat-tile', 'status-badge', 'stepper', 'ribbon', 'empty-state', 'page-header', 'facts', 'timeline', 'choice-row', 'field-error', 'urgent-line', 'price-quote', 'search-pulse', 'gp-card', 'video-frame', 'consult-row', 'action-dock', 'proto-note'].map((id) => (
-            <a key={id} href={`#${id}`} className="text-ink-2 hover:text-primary">{id}</a>
+            <a key={id} href={`#${id}`} className="text-ink-2 hover:text-primary-ink">{id}</a>
           ))}
         </nav>
       </header>
@@ -642,7 +642,7 @@ export function Gallery() {
         <SidebarProvider className="min-h-0 h-[440px] w-full overflow-hidden rounded-xl bg-white shadow-card">
           <Sidebar collapsible="none" className="border-r border-rule">
             <SidebarHeader>
-              <span className="font-display text-xl font-bold tracking-[-.04em] px-2 py-1">Dr<span className="text-primary">Quick</span></span>
+              <span className="font-display text-xl font-bold tracking-[-.04em] px-2 py-1">Dr<span className="text-primary-ink">Quick</span></span>
             </SidebarHeader>
             <SidebarContent>
               <SidebarGroup>

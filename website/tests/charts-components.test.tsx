@@ -72,8 +72,8 @@ test('BarChart draws one rect per day at the measured width, today in primary, t
   expect(svg).toHaveAttribute('viewBox', '0 0 640 170');
   const rects = [...container.querySelectorAll('rect')];
   expect(rects).toHaveLength(14);
-  expect(rects.filter((r) => r.classList.contains('fill-primary'))).toHaveLength(1);
-  expect(rects.at(-1)).toHaveClass('fill-primary');
+  expect(rects.filter((r) => r.classList.contains('fill-primary-ink'))).toHaveLength(1);
+  expect(rects.at(-1)).toHaveClass('fill-primary-ink');
   expect(rects.slice(0, -1).every((r) => r.classList.contains('fill-outline'))).toBe(true);
   expect(container.querySelectorAll('rect > title')).toHaveLength(14);
   expect(container.querySelector('rect > title')).toHaveTextContent('15: 1 consultations');
@@ -99,7 +99,7 @@ test('LineChart draws two paths at 640 and one at 390, on one shared ceiling', (
   const paths = container.querySelectorAll('path');
   expect(paths).toHaveLength(2);
   expect(paths[0]).toHaveAttribute('data-key', 'first');
-  expect(paths[0]).toHaveClass('stroke-primary');
+  expect(paths[0]).toHaveClass('stroke-primary-ink');
   expect(paths[0]).not.toHaveAttribute('stroke-dasharray');
   expect(paths[1]).toHaveAttribute('data-key', 'second');
   expect(paths[1]).toHaveClass('stroke-ink-2');
@@ -140,7 +140,7 @@ test('ChartLegend swatches are the marks: solid primary and outline, and an ink-
   const [daily, demand] = container.querySelectorAll('[data-slot="chart-legend"]');
   expect(daily).toHaveTextContent('Today');
   expect(daily).toHaveTextContent('Earlier days');
-  expect(daily.querySelector('[data-swatch="primary"] span')).toHaveClass('bg-primary');
+  expect(daily.querySelector('[data-swatch="primary"] span')).toHaveClass('bg-primary-ink');
   expect(daily.querySelector('[data-swatch="outline"] span')).toHaveClass('bg-outline');
   const dashed = demand.querySelector('[data-swatch="ink-2"]')!;
   expect(dashed).toHaveTextContent('GPs online');

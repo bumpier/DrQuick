@@ -16,7 +16,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       className={cn(
         "w-full min-w-0 rounded-md border-2 border-transparent bg-fill px-[19px] py-[15px] text-base font-normal text-ink outline-none placeholder:text-ink-2",
         "transition-[background-color,border-color,box-shadow] duration-160 ease-(--ease)",
-        "hover:bg-fill-hover focus:border-primary focus:bg-white focus:shadow-glow-primary",
+        "hover:bg-fill-hover focus:border-ink focus:bg-white focus:shadow-glow-primary",
         "aria-invalid:border-error aria-invalid:bg-white focus:aria-invalid:border-error focus:aria-invalid:shadow-glow-error",
         "disabled:cursor-not-allowed disabled:bg-fill disabled:text-outline",
         "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-label file:font-semibold file:text-ink",

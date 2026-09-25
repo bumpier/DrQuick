@@ -18,7 +18,7 @@ export function ChoiceRow({ control, children, hint, layout = 'row', className }
       className={cn(
         'flex cursor-pointer gap-3 rounded-lg bg-surface-mid px-4 py-3 text-body font-semibold text-ink',
         'transition-[background-color,box-shadow] duration-160 ease-(--ease) hover:bg-fill',
-        'has-[[data-state=checked]]:bg-white has-[[data-state=checked]]:ring-2 has-[[data-state=checked]]:ring-primary has-[[data-state=checked]]:ring-inset',
+        'has-[[data-state=checked]]:bg-white has-[[data-state=checked]]:ring-2 has-[[data-state=checked]]:ring-primary-ink has-[[data-state=checked]]:ring-inset',
         layout === 'row' ? 'min-h-14 items-center' : 'min-h-18 flex-col items-center justify-center gap-2 px-2 text-center',
         className,
       )}

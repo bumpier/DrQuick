@@ -42,16 +42,21 @@ const BANNED_PATTERNS = [
   /\bcqc (registration )?number\b/i,
 ];
 
-// The @theme colours in app/globals.css (DESIGN.md front matter, TechMed Modern,
-// reduced to the roles the site uses) plus its one prefers-contrast substitution,
-// #747688, which is already in the set. #fff appears as the stroke colour inside
-// the status-icon SVGs. The retired true-black / #1447E6 system is deliberately
-// absent so it cannot creep back in.
+// The @theme colours in app/globals.css (DESIGN.md front matter, Lime & Forest,
+// 2026-09-25) plus the prefers-contrast substitution #dfe6d8, which is already in
+// the set. #fff appears as the stroke colour inside the status-icon SVGs. Every
+// retired system (TechMed's #0047FF, true-black / #1447E6) is deliberately absent
+// so it cannot creep back in, and NHS Blue #005EB8 and NHS Green #009639 can never
+// be added: a private provider must never read as NHS-branded.
 const ALLOWED_HEX = new Set([
-  '#ffffff', '#fff', '#f7f9fb', '#eceef0', '#e6e8ea', '#e0e3e5',
-  '#434657', '#747688', '#e2e8f0', '#0f172a', '#94a3b8',
-  '#0047ff', '#0035c5', '#b9c3ff', '#10b981', '#ef4444',
+  '#ffffff', '#fff', '#f5f7f2', '#edf1e8', '#e8ede3', '#dfe6d8',
+  '#163300', '#4d5b45', '#6b7a63', '#dce4d4', '#b5c9a5',
+  '#9fe870', '#8bdb57', '#2f6b0f', '#e2f6d5', '#ffeb69', '#ffd7b5', '#c8322a',
 ]);
+const NHS_HEX = ['#005eb8', '#009639'];
+test('the palette never admits an NHS colour', () => {
+  for (const hex of NHS_HEX) expect(ALLOWED_HEX.has(hex)).toBe(false);
+});
 
 export function offPaletteHexes(text: string): string[] {
   return (text.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [])
@@ -84,9 +89,10 @@ describe('the checkers themselves bite', () => {
   test('an off-palette hex is flagged', () => {
     expect(offPaletteHexes('color: #005EB8;')).toEqual(['#005eb8']);
     expect(offPaletteHexes('bg-[#005EB8]')).toEqual(['#005eb8']);
-    expect(offPaletteHexes('color: #0047FF;')).toEqual([]);
-    // The retired palette is off-palette now, not grandfathered.
-    expect(offPaletteHexes('color: #1447E6; background: #000000;')).toEqual(['#1447e6', '#000000']);
+    expect(offPaletteHexes('color: #9FE870;')).toEqual([]);
+    expect(offPaletteHexes('color: #009639;')).toEqual(['#009639']);
+    // The retired palettes are off-palette now, not grandfathered.
+    expect(offPaletteHexes('color: #0047FF; background: #1447E6; x: #000000;')).toEqual(['#0047ff', '#1447e6', '#000000']);
   });
   test('an arbitrary colour function is flagged', () => {
     expect(arbitraryColorFunctions('className="bg-[rgb(0,94,184)]"')).toHaveLength(1);

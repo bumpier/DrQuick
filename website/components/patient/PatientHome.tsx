@@ -98,7 +98,7 @@ export function PatientHome() {
                 {todos.map((todo) => (
                   <li key={todo.id} data-tone={todo.tone} className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-card">
                     {todo.id === 'prescription'
-                      ? <PillIcon strokeWidth={2} aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
+                      ? <PillIcon strokeWidth={2} aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary-ink" />
                       : <ClockIcon strokeWidth={2} aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-ink-2" />}
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold">{todo.title}</p>

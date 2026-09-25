@@ -18,7 +18,7 @@ export function ConsultRow({ consultation: c }: { consultation: ConsultationRow 
       className="group flex items-center gap-4 py-3 no-underline"
     >
       <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-2 font-semibold transition-colors duration-160 ease-(--ease) group-hover:text-primary">
+        <span className="flex flex-wrap items-center gap-2 font-semibold transition-colors duration-160 ease-(--ease) group-hover:text-primary-ink">
           {c.reason}
           {c.isNew && <Badge>New</Badge>}
         </span>

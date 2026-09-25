@@ -27,8 +27,7 @@ test('siteUrl uses the configured origin', async () => {
 test('the metadata ports the flat page head: share card, icons, locale', async () => {
   vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://drquick.example');
   vi.doMock('next/font/google', () => ({
-    Geist: () => ({ variable: '--font-geist', className: '' }),
-    Inter: () => ({ variable: '--font-inter', className: '' }),
+    Plus_Jakarta_Sans: () => ({ variable: '--font-jakarta', className: '' }),
   }));
   const { PATIENT_MODE } = await import('@/lib/site-mode');
   const { metadata, viewport } = await import('@/app/layout');
@@ -55,5 +54,5 @@ test('the metadata ports the flat page head: share card, icons, locale', async (
   expect(og.images).toEqual([{ url: '/assets/og.png', width: 1200, height: 630 }]);
   expect(metadata.twitter).toMatchObject({ card: 'summary_large_image', images: ['/assets/og.png'] });
   expect(metadata.icons).toMatchObject({ icon: '/assets/favicon.svg', apple: '/assets/favicon.svg' });
-  expect(viewport.themeColor).toBe('#F7F9FB');
+  expect(viewport.themeColor).toBe('#F5F7F2');
 });

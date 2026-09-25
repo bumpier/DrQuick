@@ -16,7 +16,7 @@ export function PatientTopBar({ screen, flow }: { screen: string; flow: boolean 
         aria-label="Dr Quick, home"
         className="font-display text-xl font-bold tracking-[-.04em] whitespace-nowrap no-underline"
       >
-        Dr<span className="text-primary">Quick</span>
+        Dr<span className="text-primary-ink">Quick</span>
       </Link>
       {!flow && <PatientNav screen={screen} />}
       <div className="ml-auto flex items-center gap-3">

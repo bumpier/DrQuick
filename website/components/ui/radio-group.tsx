@@ -29,7 +29,7 @@ function RadioGroupItem({
     <RadioGroupPrimitive.Item
       data-slot="radio-group-item"
       className={cn(
-        "group/radio-group-item peer relative flex aspect-square size-5 shrink-0 rounded-full border-2 border-outline bg-white transition-[border-color,background-color] duration-160 ease-(--ease) after:absolute after:-inset-x-3 after:-inset-y-2 disabled:cursor-not-allowed disabled:border-fill disabled:bg-fill aria-invalid:border-error data-checked:border-primary data-checked:bg-primary data-checked:text-white",
+        "group/radio-group-item peer relative flex aspect-square size-5 shrink-0 rounded-full border-2 border-outline bg-white transition-[border-color,background-color] duration-160 ease-(--ease) after:absolute after:-inset-x-3 after:-inset-y-2 disabled:cursor-not-allowed disabled:border-fill disabled:bg-fill aria-invalid:border-error data-checked:border-primary-ink data-checked:bg-primary-ink data-checked:text-white",
         className
       )}
       {...props}

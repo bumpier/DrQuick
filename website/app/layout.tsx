@@ -1,22 +1,17 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Inter } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { siteUrl } from '@/lib/site-url';
 import { DEFAULT_ROLE, PATIENT_MODE } from '@/lib/site-mode';
 
-// DESIGN.md: Geist carries the headlines, Inter the reading. Only the weights the
-// page sets are loaded.
-const geist = Geist({
+// DESIGN.md (Lime & Forest): one friendly geometric face, Plus Jakarta Sans,
+// carries both the headlines and the reading. Only the weights the page sets
+// are loaded.
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  weight: ['600', '700'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
-  variable: '--font-geist',
-});
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-jakarta',
 });
 
 // The head describes the audience the page opens on. With both modes live that
@@ -68,7 +63,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = { themeColor: '#F7F9FB' };
+export const viewport: Viewport = { themeColor: '#F5F7F2' };
 
 // Resolving the role before paint means the switch never flashes the wrong page;
 // without this script neither hiding rule matches and every mode in the DOM
@@ -94,7 +89,7 @@ const ROLE_SCRIPT = PATIENT_MODE
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB" className={`${geist.variable} ${inter.variable}`} suppressHydrationWarning>
+    <html lang="en-GB" className={jakarta.variable} suppressHydrationWarning>
       <body>
         <script dangerouslySetInnerHTML={{ __html: ROLE_SCRIPT }} />
         {children}

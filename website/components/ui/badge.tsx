@@ -12,12 +12,12 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary/15 text-primary [a]:hover:bg-primary/25",
+        default: "bg-lime-wash text-primary-ink [a]:hover:bg-primary",
         secondary: "bg-fill text-ink-2 [a]:hover:bg-fill-hover",
         success: "bg-success/15 text-success",
         destructive: "bg-error/15 text-error [a]:hover:bg-error/25",
         ghost: "text-ink-2 hover:bg-surface-mid hover:text-ink",
-        link: "text-primary underline-offset-4 hover:underline",
+        link: "text-primary-ink underline-offset-4 hover:underline",
       },
     },
     defaultVariants: {

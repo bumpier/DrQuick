@@ -18,21 +18,21 @@ const buttonVariants = cva(
     // showing, so a fast reply never flashes it; under reduced motion it is
     // dropped rather than parked at one edge, since the label and the colour
     // already carry the state.
-    "aria-busy:relative aria-busy:cursor-wait aria-busy:overflow-hidden aria-busy:after:absolute aria-busy:after:inset-x-0 aria-busy:after:bottom-0 aria-busy:after:h-0.5 aria-busy:after:-translate-x-full aria-busy:after:animate-pending aria-busy:after:bg-white aria-busy:after:content-[''] motion-reduce:aria-busy:after:hidden",
+    "aria-busy:relative aria-busy:cursor-wait aria-busy:overflow-hidden aria-busy:after:absolute aria-busy:after:inset-x-0 aria-busy:after:bottom-0 aria-busy:after:h-0.5 aria-busy:after:-translate-x-full aria-busy:after:animate-pending aria-busy:after:bg-ink aria-busy:after:content-[''] motion-reduce:aria-busy:after:hidden",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
   ],
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-white shadow-btn-glow hover:bg-primary-strong disabled:bg-outline disabled:shadow-none",
+          "bg-primary text-primary-foreground hover:bg-primary-strong disabled:bg-fill disabled:text-outline",
         secondary:
           "bg-fill text-ink hover:bg-fill-hover aria-expanded:bg-fill-hover disabled:bg-fill disabled:text-outline",
         ghost:
           "text-ink hover:bg-surface-mid aria-expanded:bg-surface-mid disabled:text-outline",
         destructive:
           "bg-error/15 text-error hover:bg-error/25 disabled:bg-fill disabled:text-outline",
-        link: "text-primary underline-offset-4 hover:underline disabled:text-outline",
+        link: "text-primary-ink underline-offset-4 hover:underline disabled:text-outline",
       },
       size: {
         default: "h-10 px-5 text-label leading-none",

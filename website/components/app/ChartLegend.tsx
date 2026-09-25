@@ -28,7 +28,7 @@ function Swatch({ swatch }: { swatch: LegendItem['swatch'] }) {
   return (
     <span
       aria-hidden="true"
-      className={cn('size-2.5 shrink-0 rounded-[2px]', swatch === 'primary' ? 'bg-primary' : 'bg-outline')}
+      className={cn('size-2.5 shrink-0 rounded-[2px]', swatch === 'primary' ? 'bg-primary-ink' : 'bg-outline')}
     />
   );
 }
