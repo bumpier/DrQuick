@@ -84,12 +84,15 @@ import { matchGp } from '@/lib/booking';
 import { CONSULTATIONS, GPS, PRESCRIBING, PRESCRIPTIONS } from '@/lib/fixtures';
 import { prescriptionFor } from '@/lib/patient';
 import { Wordmark } from '@/components/Wordmark';
+import { HeroTiles, PhotoTile } from '@/components/PhotoTile';
 
-// Three surfaces every component must sit on. The band is a surface, not a theme.
+// Four surfaces every component must sit on: the ground, white, the forest band
+// and a lime tile. The band is a surface, not a theme.
 const SURFACES = [
   { id: 'ground', label: 'On ground', panel: 'bg-surface', muted: 'text-ink-2' },
   { id: 'white', label: 'On white', panel: 'bg-white shadow-card', muted: 'text-ink-2' },
   { id: 'band', label: 'On band', panel: 'bg-band text-white band-grid', muted: 'text-band-muted' },
+  { id: 'lime', label: 'On lime', panel: 'bg-primary text-ink', muted: 'text-ink-2' },
 ] as const;
 type Surface = (typeof SURFACES)[number];
 
@@ -162,9 +165,9 @@ function Section({ id, title, note, children }: {
 
 function Surfaces({ render }: { render: (s: Surface) => React.ReactNode }) {
   return (
-    <div className="grid grid-cols-3 gap-4 max-cols:grid-cols-1">
+    <div className="grid grid-cols-4 gap-4 max-forms:grid-cols-2 max-cols:grid-cols-1">
       {SURFACES.map((s) => (
-        <div key={s.id} data-surface={s.id} className={cn('rounded-xl p-6 min-w-0', s.panel)}>
+        <div key={s.id} data-surface={s.id} className={cn('rounded-2xl p-6 min-w-0', s.panel)}>
           <p className={cn('text-fine mb-4', s.muted)}>{s.label}</p>
           <div className="flex flex-col items-start gap-4 min-w-0">{render(s)}</div>
         </div>
@@ -187,22 +190,50 @@ export function Gallery() {
         <p className="text-fine text-ink-2 mb-2">Development only · not indexed · 404 in production</p>
         <h1 className="text-4xl tracking-[-.03em]">Component gallery</h1>
         <p className="text-lead text-ink-2 mt-3 max-w-[60ch]">
-          Every component in <code>components/ui</code>, in every variant and state, on the ground, on white and on the band.
+          Every component in <code>components/ui</code>, in every variant and state, on the ground, on white, on the forest band and on lime.
           Hover and keyboard focus are live: press Tab to walk every control and check the 3px outline or the field glow.
         </p>
         <nav aria-label="Sections" className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-fine">
-          {['button', 'segmented-link', 'fields', 'select', 'choice', 'checkbox', 'badge', 'card', 'alert', 'tabs', 'table', 'progress', 'countdown', 'charts', 'avatar', 'separator', 'skeleton', 'breadcrumb', 'tooltip', 'overlays', 'dropdown', 'toast', 'credential-matrix', 'sidebar', 'stat-tile', 'status-badge', 'stepper', 'ribbon', 'empty-state', 'page-header', 'facts', 'timeline', 'choice-row', 'field-error', 'urgent-line', 'price-quote', 'search-pulse', 'gp-card', 'video-frame', 'consult-row', 'action-dock', 'proto-note'].map((id) => (
+          {['wordmark', 'photo-tile', 'button', 'segmented-link', 'fields', 'select', 'choice', 'checkbox', 'badge', 'card', 'alert', 'tabs', 'table', 'progress', 'countdown', 'charts', 'avatar', 'separator', 'skeleton', 'breadcrumb', 'tooltip', 'overlays', 'dropdown', 'toast', 'credential-matrix', 'sidebar', 'stat-tile', 'status-badge', 'stepper', 'ribbon', 'empty-state', 'page-header', 'facts', 'timeline', 'choice-row', 'field-error', 'urgent-line', 'price-quote', 'search-pulse', 'gp-card', 'video-frame', 'consult-row', 'action-dock', 'proto-note'].map((id) => (
             <a key={id} href={`#${id}`} className="text-ink-2 hover:text-primary-ink">{id}</a>
           ))}
         </nav>
       </header>
 
-      <Section id="button" title="Button" note="Default is the landing page's .btn at size lg. Secondary is a light slate fill — there is no outline variant. Disabled is the outline grey; aria-busy adds the pending sweep after 350ms (hidden under reduced motion). Ghost and link are ink-coloured: on the band they take text-white / text-primary-lift explicitly, as shown.">
+      <Section id="wordmark" title="Wordmark" note="components/Wordmark.tsx: 'Dr' in the surface's text colour, 'Quick' on a lime pill in forest. One definition, used by the landing nav and footer and both top bars.">
+        <Surfaces render={() => (
+          <>
+            <Wordmark className="text-3xl" />
+            <Wordmark className="text-xl" />
+          </>
+        )} />
+      </Section>
+
+      <Section id="photo-tile" title="PhotoTile" note="A bento photo slot (components/PhotoTile.tsx). Until photography arrives each slot shows its tone, a hard-edged disc in a partner tone and a line glyph; no people, no captions. docs/photo-brief.md lists the shots. HeroTiles is the hero's one-tall-two-short cluster.">
+        <div className="grid grid-cols-4 gap-4 max-forms:grid-cols-2 max-phone:grid-cols-1">
+          <PhotoTile slot="gallery-wash" tone="wash" glyph="phone" className="aspect-[3/4]" />
+          <PhotoTile slot="gallery-peach" tone="peach" glyph="video" className="aspect-[3/4]" />
+          <PhotoTile slot="gallery-sun" tone="sun" glyph="home" className="aspect-[3/4]" />
+          <PhotoTile slot="gallery-quiet" tone="quiet" glyph="chat" className="aspect-[3/4]" />
+        </div>
+        <div className="mt-4 max-w-[560px]">
+          <HeroTiles tiles={[
+            { slot: 'gallery-tall', tone: 'wash', glyph: 'laptop' },
+            { slot: 'gallery-top', tone: 'peach', glyph: 'video' },
+            { slot: 'gallery-bottom', tone: 'sun', glyph: 'home' },
+          ]} />
+        </div>
+      </Section>
+
+      <Section id="button" title="Button" note="A flat pill. Default is lime with forest text; secondary is white inside a forest ring; dark is the forest pill for lime and sun tiles, where a lime button vanishes (see On lime). Disabled is the fill grey; aria-busy adds the pending sweep after 350ms (hidden under reduced motion). Ghost and link are ink-coloured: on the band they take text-white / text-primary-lift explicitly, as shown.">
         <Surfaces render={(s) => (
           <>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg">Join the waitlist</Button>
+              {s.id === 'lime'
+                ? <Button size="lg" variant="dark">Join the waitlist</Button>
+                : <Button size="lg">Join the waitlist</Button>}
               <Button size="lg" variant="secondary">Secondary</Button>
+              <Button size="lg" variant="dark">Dark</Button>
             </div>
             <div className="flex flex-wrap gap-3">
               <Button>Default</Button>
@@ -353,7 +384,7 @@ export function Gallery() {
         )} />
       </Section>
 
-      <Section id="card" title="Card" note="Borderless, white with the tier-2 shadow, 16px radius. The band variant is the dark payoff fill. Bento tiles are Cards with p-7 / p-tile-lead-pad overrides.">
+      <Section id="card" title="Card" note="The bento tile: 32px radius. White carries a 6% forest ring; the tones (band, lime, wash, sun, peach, quiet) carry none, their colour is the edge. Band is the forest payoff fill. Bento tiles are Cards with p-7 / p-tile-lead-pad overrides.">
         <Surfaces render={() => (
           <>
             <Card className="w-full">
@@ -374,6 +405,12 @@ export function Gallery() {
               <CardFooter><Button size="sm" variant="secondary">The payoff</Button></CardFooter>
             </Card>
             <Card className="w-full block p-7"><h3>Bento tile</h3><p className="text-body text-ink-2 mt-2.5">The landing page shape: a plain block with 28px padding.</p></Card>
+            {(['lime', 'wash', 'sun', 'peach', 'quiet'] as const).map((tone) => (
+              <Card key={tone} variant={tone} className="w-full block p-7">
+                <h3>{tone} tile</h3>
+                <p className="text-body text-ink-2 mt-2.5">Forest text; secondary text stays at 4.9:1 or better.</p>
+              </Card>
+            ))}
           </>
         )} />
       </Section>
