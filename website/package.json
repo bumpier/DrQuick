@@ -10,7 +10,8 @@
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "admin:hash": "node scripts/hash-password.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
