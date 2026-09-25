@@ -1,6 +1,10 @@
 import { test, expect, describe } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
+import {
+  MEDICINES, BANNED_PATTERNS, PATIENT_PRESSURE_PATTERNS, PATIENT_CLAIM_PATTERNS,
+  NAMED_DOCTOR as PATIENT_NAMED_DOCTOR, LITERAL_MONEY as PATIENT_LITERAL_MONEY,
+} from '@/lib/compliance';
 
 const ROOT = join(__dirname, '..');
 const SCAN_DIRS = ['app', 'components', 'lib'].map((d) => join(ROOT, d));
@@ -15,32 +19,15 @@ function walk(dir: string): string[] {
   });
 }
 
-const FILES = SCAN_DIRS.flatMap(walk).filter((f) => EXTS.has(extname(f)));
+// lib/compliance.ts must name the medicines and phrases it bans, so it is the
+// one file the source scans skip. The test below pins that exclusion to it.
+const COMPLIANCE_MODULE = join(ROOT, 'lib', 'compliance.ts');
+const FILES = SCAN_DIRS.flatMap(walk).filter((f) => EXTS.has(extname(f)) && f !== COMPLIANCE_MODULE);
 
-const MEDICINES = [
-  'amoxicillin', 'azithromycin', 'clarithromycin', 'doxycycline', 'penicillin',
-  'trimethoprim', 'nitrofurantoin', 'prednisolone', 'salbutamol', 'omeprazole',
-  'metformin', 'atorvastatin', 'levothyroxine', 'sertraline', 'fluoxetine',
-  'citalopram', 'amitriptyline', 'naproxen', 'ibuprofen', 'paracetamol',
-  'codeine', 'tramadol', 'morphine', 'oxycodone', 'diazepam', 'zopiclone',
-  'pregabalin', 'gabapentin', 'semaglutide', 'tirzepatide', 'wegovy',
-  'ozempic', 'mounjaro',
-];
-
-// Pricing became dynamic on 2026-09-04, but these stayed banned: the reversal
-// was to the pricing *model*, not to its presentation. Time-pressure framing and
-// paid-for clinical priority are the ASA/DMCC exposures, and they are exposures
-// whatever sets the number. See the pricing bullet in CLAUDE.md.
-//
-// Word-boundary patterns: a bare substring match on "surge" also fires on
-// "surgery", which is ordinary UK general-practice vocabulary.
-const BANNED_PATTERNS = [
-  /\bsurge\b/i,
-  /\bpriority queue\b/i,
-  /\bbusier than usual\b/i,
-  /\bcqc-registered clinical partner\b/i,
-  /\bcqc (registration )?number\b/i,
-];
+test('only lib/compliance.ts is excluded from the source scan', () => {
+  const all = SCAN_DIRS.flatMap(walk).filter((f) => EXTS.has(extname(f)));
+  expect(all.filter((f) => !FILES.includes(f))).toEqual([COMPLIANCE_MODULE]);
+});
 
 // The @theme colours in app/globals.css (DESIGN.md front matter, Lime & Forest,
 // 2026-09-25) plus the prefers-contrast substitution #dfe6d8, which is already in
@@ -208,37 +195,7 @@ const PATIENT_SOURCES = [
   ...['booking-flow.ts', 'pricing.ts', 'patient.ts'].map((file) => join(ROOT, 'lib', file)),
 ].filter((file) => EXTS.has(extname(file)));
 
-// Each pattern with a sample it must catch. The lookbehind on "busy" lets
-// aria-busy through; "not recorded" and "never recorded" are the honest
-// sentences and do not match the recording claim.
-const PATIENT_PRESSURE_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
-  [/(?<![-\w])busy\b/i, 'Our GPs are busy right now'],
-  [/\bbusier\b/i, 'Busier than usual'],
-  [/\bsurge\b/i, 'Surge pricing applies'],
-  [/\bpriority\b/i, 'Priority queue'],
-  [/\bhurry\b/i, 'Hurry, prices rise soon'],
-  [/\bact now\b/i, 'Act now to hold this price'],
-  [/\blimited time\b/i, 'For a limited time'],
-  [/\bjump the queue\b/i, 'Pay more to jump the queue'],
-  [/\bskip the queue\b/i, 'Skip the queue'],
-  [/\bfrom £\d/i, 'Consultations from £32'],
-  [/\bup to £\d/i, 'Pay up to £48'],
-  [/\b(urgency|triage|severity|risk) score\b/i, 'Your triage score is 4'],
-  [/\d+\s*GPs?\s+online/i, '3 GPs online'],
-];
-const PATIENT_CLAIM_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
-  [/\bguarantee/i, 'Guaranteed prescription'],
-  [/\bprescriptions included\b/i, 'Prescriptions included'],
-  [/\bUK-wide\b/i, 'A UK-wide service'],
-  [/\bacross the UK\b/i, 'Available across the UK'],
-  [/\bany UK pharmacy\b/i, 'Collect from any UK pharmacy'],
-  [/\b(is|are|will be|being) recorded\b/i, 'This call is recorded for training'],
-  [/\bCQC\b/i, 'CQC registered'],
-];
-// Case-sensitive on purpose: a named doctor is a capitalised surname.
-const PATIENT_NAMED_DOCTOR: readonly [RegExp, string] = [/\bDr\.? (?!Quick\b)[A-Z][a-z]+/, 'Dr Patel has accepted'];
-const PATIENT_LITERAL_MONEY: readonly [RegExp, string] = [/£\d/, 'Request a GP for £40'];
-
+// The pattern lists live in lib/compliance.ts, each with a sample it must catch.
 const PATIENT_PATTERNS = [
   ...PATIENT_PRESSURE_PATTERNS, ...PATIENT_CLAIM_PATTERNS, PATIENT_NAMED_DOCTOR, PATIENT_LITERAL_MONEY,
 ];
