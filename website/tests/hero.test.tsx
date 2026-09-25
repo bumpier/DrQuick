@@ -43,8 +43,8 @@ test('the GP sign-up occupies that same slot without changing the skeleton', () 
 test('the hero tiles hold three photo slots, placeholders invent no people or captions', () => {
   const { container } = render(<HeroTiles tiles={[
     { slot: 'a', tone: 'wash', glyph: 'phone' },
-    { slot: 'b', tone: 'peach', glyph: 'video' },
-    { slot: 'c', tone: 'sun', glyph: 'home' },
+    { slot: 'b', tone: 'stone', glyph: 'video' },
+    { slot: 'c', tone: 'sage', glyph: 'home' },
   ]} />);
   const figures = [...container.querySelectorAll('.hero-art figure[data-photo]')];
   expect(figures.map((f) => f.getAttribute('data-photo'))).toEqual(['a', 'b', 'c']);

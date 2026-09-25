@@ -212,20 +212,20 @@ export function Gallery() {
       <Section id="photo-tile" title="PhotoTile" note="A bento photo slot (components/PhotoTile.tsx). Until photography arrives each slot shows its tone, a hard-edged disc in a partner tone and a line glyph; no people, no captions. docs/photo-brief.md lists the shots. HeroTiles is the hero's one-tall-two-short cluster.">
         <div className="grid grid-cols-4 gap-4 max-forms:grid-cols-2 max-phone:grid-cols-1">
           <PhotoTile slot="gallery-wash" tone="wash" glyph="phone" className="aspect-[3/4]" />
-          <PhotoTile slot="gallery-peach" tone="peach" glyph="video" className="aspect-[3/4]" />
-          <PhotoTile slot="gallery-sun" tone="sun" glyph="home" className="aspect-[3/4]" />
+          <PhotoTile slot="gallery-stone" tone="stone" glyph="video" className="aspect-[3/4]" />
+          <PhotoTile slot="gallery-sage" tone="sage" glyph="home" className="aspect-[3/4]" />
           <PhotoTile slot="gallery-quiet" tone="quiet" glyph="chat" className="aspect-[3/4]" />
         </div>
         <div className="mt-4 max-w-[560px]">
           <HeroTiles tiles={[
             { slot: 'gallery-tall', tone: 'wash', glyph: 'laptop' },
-            { slot: 'gallery-top', tone: 'peach', glyph: 'video' },
-            { slot: 'gallery-bottom', tone: 'sun', glyph: 'home' },
+            { slot: 'gallery-top', tone: 'stone', glyph: 'video' },
+            { slot: 'gallery-bottom', tone: 'sage', glyph: 'home' },
           ]} />
         </div>
       </Section>
 
-      <Section id="button" title="Button" note="A flat pill. Default is lime with forest text; secondary is white inside a forest ring; dark is the forest pill for lime and sun tiles, where a lime button vanishes (see On lime). Disabled is the fill grey; aria-busy adds the pending sweep after 350ms (hidden under reduced motion). Ghost and link are ink-coloured: on the band they take text-white / text-primary-lift explicitly, as shown.">
+      <Section id="button" title="Button" note="A flat pill. Default is lime with forest text; secondary is white inside a forest ring; dark is the forest pill for lime and sage tiles, where a lime button vanishes (see On lime). Disabled is the fill grey; aria-busy adds the pending sweep after 350ms (hidden under reduced motion). Ghost and link are ink-coloured: on the band they take text-white / text-primary-lift explicitly, as shown.">
         <Surfaces render={(s) => (
           <>
             <div className="flex flex-wrap gap-3">
@@ -384,7 +384,7 @@ export function Gallery() {
         )} />
       </Section>
 
-      <Section id="card" title="Card" note="The bento tile: 32px radius. White carries a 6% forest ring; the tones (band, lime, wash, sun, peach, quiet) carry none, their colour is the edge. Band is the forest payoff fill. Bento tiles are Cards with p-7 / p-tile-lead-pad overrides.">
+      <Section id="card" title="Card" note="The bento tile: 32px radius. White carries a 6% forest ring; the tones (band, lime, wash, sage, stone, quiet) carry none, their colour is the edge. Band is the forest payoff fill. Bento tiles are Cards with p-7 / p-tile-lead-pad overrides.">
         <Surfaces render={() => (
           <>
             <Card className="w-full">
@@ -405,7 +405,7 @@ export function Gallery() {
               <CardFooter><Button size="sm" variant="secondary">The payoff</Button></CardFooter>
             </Card>
             <Card className="w-full block p-7"><h3>Bento tile</h3><p className="text-body text-ink-2 mt-2.5">The landing page shape: a plain block with 28px padding.</p></Card>
-            {(['lime', 'wash', 'sun', 'peach', 'quiet'] as const).map((tone) => (
+            {(['lime', 'wash', 'sage', 'stone', 'quiet'] as const).map((tone) => (
               <Card key={tone} variant={tone} className="w-full block p-7">
                 <h3>{tone} tile</h3>
                 <p className="text-body text-ink-2 mt-2.5">Forest text; secondary text stays at 4.9:1 or better.</p>

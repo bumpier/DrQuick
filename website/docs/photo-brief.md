@@ -10,11 +10,11 @@ glyph. To fill a slot, add the image under `public/assets/photos/` and pass
 | Slot (`data-photo`) | Mode | Tile | What the shot shows |
 |---|---|---|---|
 | `patient-sofa-phone` | Patient | tall, lime-wash | An adult at home on a sofa, unwell but calm, holding a phone. Soft daylight. |
-| `patient-video-call` | Patient | short, peach | Over-the-shoulder: a phone or laptop showing a video call. The doctor on screen is out of focus or cropped out. |
-| `patient-home` | Patient | short, sun | A detail of a calm home: a mug, a blanket, a window. No people needed. |
+| `patient-video-call` | Patient | short, stone | Over-the-shoulder: a phone or laptop showing a video call. The doctor on screen is out of focus or cropped out. |
+| `patient-home` | Patient | short, sage | A detail of a calm home: a mug, a blanket, a window. No people needed. |
 | `gp-home-laptop` | GP | tall, lime-wash | A GP working from home at a laptop, headset on, in a bright room. |
-| `gp-video-consult` | GP | short, sun | Hands and a laptop mid-consultation; the patient on screen is not identifiable. |
-| `gp-notes` | GP | short, peach | A desk detail: notebook, coffee, laptop edge. No people needed. |
+| `gp-video-consult` | GP | short, sage | Hands and a laptop mid-consultation; the patient on screen is not identifiable. |
+| `gp-notes` | GP | short, stone | A desk detail: notebook, coffee, laptop edge. No people needed. |
 
 Crop for the tile: the tall tiles are roughly 3:4 at desktop and square on a
 phone; the short tiles are roughly 4:3. Keep the subject clear of the top-left
@@ -32,5 +32,5 @@ corner, where the placeholder glyph sits today.
   or green uniforms.
 - **England only.** No recognisable Scottish, Welsh or Northern Irish settings.
 - **No urgency.** No clocks, countdowns or queues. Calm, unhurried light.
-- Colour grade warm and natural so the photos sit with the lime, peach and
-  sun tiles. No filters that add gradients or glows.
+- Colour grade warm and natural so the photos sit with the lime, stone and
+  sage tiles. No filters that add gradients or glows.

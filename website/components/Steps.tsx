@@ -1,6 +1,6 @@
 // The bento. Tiles must vary in span, fill and layout; three identical cards
 // is a failure (CLAUDE.md). Step one is the wide lime-wash tile with its
-// numeral set large, step two the narrow white tile with a peach numeral disc,
+// numeral set large, step two the narrow white tile with a stone numeral disc,
 // and step three, the payoff, the full-width forest band — it stays third in
 // the sequence and is the Card's band variant.
 import type { Tile } from '@/app/landing-content';
@@ -25,7 +25,7 @@ export function Steps({ headingId, title, tiles }: {
           </Card>
           <Card data-reveal
             className="tile col-span-2 max-cols:col-span-1 max-phone:col-span-2 justify-between gap-10 p-8">
-            <span aria-hidden="true" className="grid size-14 place-items-center rounded-full bg-peach font-display text-2xl font-extrabold text-ink">2</span>
+            <span aria-hidden="true" className="grid size-14 place-items-center rounded-full bg-stone font-display text-2xl font-extrabold text-ink">2</span>
             <div>
               <h3>{b.title}</h3>
               <p className="text-body text-ink-2 mt-2.5">{b.body}</p>

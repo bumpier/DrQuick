@@ -6,13 +6,13 @@
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
-export type PhotoTone = 'wash' | 'peach' | 'sun' | 'quiet';
+export type PhotoTone = 'wash' | 'stone' | 'sage' | 'quiet';
 export type Glyph = 'phone' | 'video' | 'home' | 'laptop' | 'chat';
 
 const TONE: Record<PhotoTone, { ground: string; disc: string }> = {
   wash: { ground: 'bg-lime-wash', disc: 'bg-primary' },
-  peach: { ground: 'bg-peach', disc: 'bg-sun' },
-  sun: { ground: 'bg-sun', disc: 'bg-white' },
+  stone: { ground: 'bg-stone', disc: 'bg-sage' },
+  sage: { ground: 'bg-sage', disc: 'bg-lime-wash' },
   quiet: { ground: 'bg-surface-mid', disc: 'bg-lime-wash' },
 };
 

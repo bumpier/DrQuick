@@ -27,8 +27,8 @@
   --color-primary-lift: #9FE870;   /* the accent on forest, 9.5:1 */
   --color-primary-ink: #2F6B0F;    /* readable green: links, strokes, marks, rings; 6.5:1 on white */
   --color-lime-wash: #E2F6D5;      /* bento tile tone */
-  --color-sun: #FFEB69;            /* bento tile tone, at most one per section */
-  --color-peach: #FFD7B5;          /* bento tile tone */
+  --color-sage: #C9DDB8;           /* bento tile tone, a muted mid green */
+  --color-stone: #E8E5DB;          /* bento tile tone, a warm neutral */
   --color-success: #2F6B0F;
   --color-error: #C8322A;          /* 5.3:1 on white */
 

@@ -46,8 +46,8 @@ export default function Page() {
             form={<WaitlistForm role="patient" source="hero" cta="Join the waitlist" inputId="join" reveal="load" />}
             art={<HeroTiles tiles={[
               { slot: 'patient-sofa-phone', tone: 'wash', glyph: 'phone' },
-              { slot: 'patient-video-call', tone: 'peach', glyph: 'video' },
-              { slot: 'patient-home', tone: 'sun', glyph: 'home' },
+              { slot: 'patient-video-call', tone: 'stone', glyph: 'video' },
+              { slot: 'patient-home', tone: 'sage', glyph: 'home' },
             ]} />}
           />
           <UrgentBand />
@@ -77,8 +77,8 @@ export default function Page() {
             form={<GpSignupForm source="hero-gp" cta="Sign up" inputId="gp-join" reveal="load" />}
             art={<HeroTiles tiles={[
               { slot: 'gp-home-laptop', tone: 'wash', glyph: 'laptop' },
-              { slot: 'gp-video-consult', tone: 'sun', glyph: 'video' },
-              { slot: 'gp-notes', tone: 'peach', glyph: 'chat' },
+              { slot: 'gp-video-consult', tone: 'sage', glyph: 'video' },
+              { slot: 'gp-notes', tone: 'stone', glyph: 'chat' },
             ]} />}
           />
           <Steps headingId="gp-steps-title" title="How a shift works." tiles={GP_STEPS} />

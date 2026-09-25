@@ -51,7 +51,7 @@ const BANNED_PATTERNS = [
 const ALLOWED_HEX = new Set([
   '#ffffff', '#fff', '#f5f7f2', '#edf1e8', '#e8ede3', '#dfe6d8',
   '#163300', '#4d5b45', '#6b7a63', '#dce4d4', '#b5c9a5',
-  '#9fe870', '#8bdb57', '#2f6b0f', '#e2f6d5', '#ffeb69', '#ffd7b5', '#c8322a',
+  '#9fe870', '#8bdb57', '#2f6b0f', '#e2f6d5', '#c9ddb8', '#e8e5db', '#c8322a',
 ]);
 const NHS_HEX = ['#005eb8', '#009639'];
 test('the palette never admits an NHS colour', () => {

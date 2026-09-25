@@ -30,7 +30,7 @@ Pre-launch landing page for Dr Quick: on-demand private GP video consultations (
   - Ground `#F5F7F2` (surface). Cards and fields are true white `#FFFFFF`. Quiet tile and hover `#EDF1E8`; switch track `#E8EDE3`, hover `#DFE6D8`; disabled `#6B7A63`; hairlines and field borders `#DCE4D4`.
   - Ink is forest `#163300`, the same dark as the fills (the band). Secondary text `#4D5B45`; on the band `#B5C9A5`. Never true black.
   - **Lime `#9FE870` is a fill, never a line**: every primary button, selected state and "you are here" mark, always carrying forest text. It is 1.4:1 on white, so it is never text, a stroke, a ring or a chart mark on a light surface — that is **`primary-ink` `#2F6B0F`**. Hover `#8BDB57`. On the band, lime is the accent and may be text.
-  - Bento tile tones: `lime-wash` `#E2F6D5`, `peach` `#FFD7B5`, `sun` `#FFEB69` (at most one sun tile per section).
+  - Bento tile tones: `lime-wash` `#E2F6D5`, `stone` `#E8E5DB`, `sage` `#C9DDB8`. Greens and warm neutrals only: the user retired yellow and peach tones on 2026-09-25 because they read feminine; do not reintroduce warm pastels.
   - Semantic: success `#2F6B0F`, error `#C8322A` — the status icons, the invalid field and the 999 icon only. Never decoration.
   - Never NHS Blue `#005EB8` or NHS Green `#009639`, or anything near either. Dr Quick is a private provider and must never read as NHS-branded. The retired TechMed (`#0047FF`) and true-black / `#1447E6` systems are not to be reintroduced.
 - **Typography:** Plus Jakarta Sans only (400–800, `next/font`, system-ui fallback). Headlines 800 at -0.035em, h3 and titles 700, reading copy 16px, leads 17–21px, fine print 13px.

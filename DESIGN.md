@@ -19,8 +19,8 @@ colors:
   primary-lift: '#9FE870'
   primary-ink: '#2F6B0F'
   lime-wash: '#E2F6D5'
-  sun: '#FFEB69'
-  peach: '#FFD7B5'
+  sage: '#C9DDB8'
+  stone: '#E8E5DB'
   success: '#2F6B0F'
   error: '#C8322A'
 typography:
@@ -95,7 +95,7 @@ The system has three moves:
 
 - **Lime is a fill, never a line.** `primary` `#9FE870` has 1.4:1 contrast on white, so it never appears as text, a stroke, a ring or a chart mark on a light surface. Anything that must be read or seen as a line on light is **`primary-ink`** `#2F6B0F` (6.5:1 on white). On the forest band, lime (`primary-lift`) is the accent and is fine as text (9.5:1).
 - **Forest is the one dark.** `ink` and `band` are the same `#163300`: text on light surfaces, and the dark fill. Never true black.
-- **Tile tones.** `lime-wash`, `peach` and `sun` are bento tones with forest text; `ink-2` stays at 4.9:1 or better on every one. `sun` is loud, so use at most one sun tile per section. `surface-mid` is the quiet tile, for the lesser of a pair (for example, "what it doesn't cover").
+- **Tile tones.** `lime-wash`, `stone` and `sage` are bento tones with forest text; `ink-2` stays at 4.9:1 or better on every one. The palette is greens and warm neutrals only: no yellows, peaches or pinks (retired 2026-09-25 as reading feminine). `surface-mid` is the quiet tile, for the lesser of a pair (for example, "what it doesn't cover").
 - **Semantic.** `success` is `primary-ink`. `error` `#C8322A` (5.3:1 on white) is for status icons, the invalid field and the 999 icon only, never decoration.
 - **Never NHS.** NHS Blue `#005EB8` and NHS Green `#009639`, and anything near either, are banned. `tests/constraints.test.ts` refuses both.
 - No gradients, glass or gradient text. The only textures are the 1px lime line grid on forest fills (`.band-grid`), drawn with `linear-gradient` as a hard-edged line.
@@ -122,8 +122,8 @@ Everything is round. Buttons, switches, tabs and badges are full pills. Fields a
 
 ## Components
 
-- **Button:** a flat pill. `default` is lime with forest text. `secondary` is white inside a 2px forest ring. `dark` is the forest pill for lime and sun tiles, where a lime button would vanish. `ghost` and `link` are forest / `primary-ink`. Heights are 48px (default) and 56px (lg), because targets must be large for patients who are unwell.
-- **Card:** the tile. Variants: `default` (white), `band` (forest), `lime`, `wash`, `sun`, `peach`, `quiet`.
+- **Button:** a flat pill. `default` is lime with forest text. `secondary` is white inside a 2px forest ring. `dark` is the forest pill for lime and sage tiles, where a lime button would vanish. `ghost` and `link` are forest / `primary-ink`. Heights are 48px (default) and 56px (lg), because targets must be large for patients who are unwell.
+- **Card:** the tile. Variants: `default` (white), `band` (forest), `lime`, `wash`, `sage`, `stone`, `quiet`.
 - **Fields:** white inside a 2px `rule` border, which darkens to `outline` on hover and turns forest with the lime glow on focus. Invalid is the error border.
 - **Selected state:** the lime pill, with forest text, in the segmented switch, tabs and `PatientNav`. Checkboxes, radios and switches fill `primary-ink` with a white mark, because a control boundary needs 3:1.
 - **Wordmark** (`components/Wordmark.tsx`): "Dr" in the surface's text colour, then "Quick" on a lime pill in forest. It is defined once and reads the same on every surface.
@@ -150,7 +150,7 @@ Everything is round. Buttons, switches, tabs and badges are full pills. Fields a
 | `band` / `band-foreground` / `band-muted` (added) | `band` `#163300` / `white` / `band-ink-2` `#B5C9A5` | a surface, not a theme: no `.dark` class and no `dark:` variants anywhere |
 | `sidebar*` | `white` / `ink` / `primary` / `surface-mid` / `rule` | the app shell reads its own names; they are the same surfaces |
 
-Also added and outside shadcn: `primary-ink`, `lime-wash`, `sun`, `peach` and `success`. Not declared: `chart-1…5` (charts are authored inline SVG), the `.dark` block, and `--radius` with its calc chain.
+Also added and outside shadcn: `primary-ink`, `lime-wash`, `sage`, `stone` and `success`. Not declared: `chart-1…5` (charts are authored inline SVG), the `.dark` block, and `--radius` with its calc chain.
 
 ### Radius aliases
 

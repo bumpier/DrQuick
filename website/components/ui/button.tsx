@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 // The shared button (DESIGN.md, Lime & Forest): a flat pill. Default is lime
 // with forest text; secondary is a white pill inside a forest ring, which reads
-// on the ground and on every tile tone; dark is a forest pill for lime and sun
+// on the ground and on every tile tone; dark is a forest pill for lime and sage
 // tiles, where a lime button would vanish. Focus is the global :focus-visible
 // outline in app/globals.css, so nothing here sets outline-none.
 const buttonVariants = cva(
