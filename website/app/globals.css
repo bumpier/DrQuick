@@ -443,6 +443,38 @@
   footer .tel { text-decoration-color: var(--color-primary); }
   footer .tel:hover { color: var(--color-primary); }
 
+  /* ---------- Prose ----------
+     Markdown rendered by components/blog/Prose.tsx: blog posts, the editor's
+     live preview and the legal pages. Element selectors are the honest tool
+     here — the markup comes from content, not from components. */
+  .prose { font-size: 1.0625rem; line-height: 1.7; color: var(--color-ink); max-width: 68ch; }
+  .prose > * + * { margin-top: 1.1em; }
+  .prose .prose-h2 { font-size: clamp(1.5rem, 2.4vw, 1.875rem); font-weight: 800; letter-spacing: -.03em; line-height: 1.2; margin-top: 1.9em; }
+  .prose .prose-h3 { font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.3; margin-top: 1.6em; }
+  .prose .prose-h4 { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; margin-top: 1.4em; }
+  .prose > :first-child { margin-top: 0; }
+  .prose a { color: var(--color-primary-ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px; font-weight: 600; }
+  .prose a:hover { color: var(--color-ink); }
+  .prose strong { font-weight: 700; }
+  .prose ul, .prose ol { padding-left: 1.4em; }
+  .prose ul { list-style: disc; }
+  .prose ol { list-style: decimal; }
+  .prose li + li { margin-top: .4em; }
+  .prose li::marker { color: var(--color-primary-ink); font-weight: 700; }
+  .prose li > input[type="checkbox"] { margin-right: .5em; accent-color: var(--color-primary-ink); }
+  .prose blockquote { background: var(--color-lime-wash); border-radius: var(--radius-xl); padding: 20px 24px; font-weight: 600; }
+  .prose blockquote > * + * { margin-top: .8em; }
+  .prose hr { border: 0; border-top: 1px solid var(--color-rule); margin: 2.2em 0; }
+  .prose code { font-size: .9em; background: var(--color-surface-mid); border-radius: var(--radius-sm); padding: .1em .35em; }
+  .prose pre { background: var(--color-band); color: var(--color-white); border-radius: var(--radius-xl); padding: 20px 24px; overflow-x: auto; font-size: .875rem; line-height: 1.6; }
+  .prose pre code { background: none; padding: 0; color: inherit; }
+  .prose img { width: 100%; height: auto; border-radius: var(--radius-xl); }
+  .prose-table { overflow-x: auto; }
+  .prose table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
+  .prose th { text-align: left; font-family: var(--font-display); font-weight: 700; border-bottom: 2px solid var(--color-rule); padding: 8px 12px 8px 0; }
+  .prose td { border-bottom: 1px solid var(--color-rule); padding: 10px 12px 10px 0; vertical-align: top; }
+  .prose del { color: var(--color-ink-2); }
+
   /* Role modes. Both modes sit in the DOM and the head script picks one before paint.
      With no JS neither rule matches, both render stacked, and that is also what a
      crawler reads: one document carrying both audiences. */

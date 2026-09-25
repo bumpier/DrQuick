@@ -43,6 +43,10 @@ const nextConfig: NextConfig = {
       { source: '/doctor/:path*', headers: [NOINDEX] },
       { source: '/admin/:path*', headers: [NOINDEX] },
       { source: '/dev/:path*', headers: [NOINDEX] },
+      // The legal pages are drafts until the legal entity exists (PRODUCT.md);
+      // a draft must never be indexed as if it were in force.
+      { source: '/privacy', headers: [NOINDEX] },
+      { source: '/terms', headers: [NOINDEX] },
     ];
   },
 };

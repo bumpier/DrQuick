@@ -32,3 +32,11 @@ test('assets are immutable-cached; the dashboard prefixes and the dev gallery ar
     expect(rule.headers).toContainEqual({ key: 'X-Robots-Tag', value: 'noindex, nofollow' });
   }
 });
+
+test('the draft legal pages are noindex until they are in force', async () => {
+  const rules = await nextConfig.headers!();
+  for (const path of ['/privacy', '/terms']) {
+    const rule = rules.find((r) => r.source === path)!;
+    expect(rule.headers).toContainEqual({ key: 'X-Robots-Tag', value: 'noindex, nofollow' });
+  }
+});

@@ -13,6 +13,7 @@
 import { Button } from '@/components/ui/button';
 import { SegmentedLink, SegmentedLinkGroup } from '@/components/ui/segmented-link';
 import { PATIENT_MODE } from '@/lib/site-mode';
+import { NavLinks } from '@/components/site/NavLinks';
 import { Wordmark } from '@/components/Wordmark';
 
 export function Nav() {
@@ -22,6 +23,8 @@ export function Nav() {
         <a className="logo text-2xl max-phone:text-[1.375rem] no-underline mr-auto" href="#">
           <Wordmark />
         </a>
+        {/* The page links, from the form breakpoint up; below it the footer carries them. */}
+        <NavLinks className="max-forms:hidden" />
         {PATIENT_MODE && (
           <SegmentedLinkGroup aria-label="Choose what you are here for">
             <SegmentedLink href="?role=patient" data-mode-link="patient" current>Patients</SegmentedLink>

@@ -4,6 +4,7 @@ import { join, extname } from 'node:path';
 import {
   MEDICINES, BANNED_PATTERNS, PATIENT_PRESSURE_PATTERNS, PATIENT_CLAIM_PATTERNS,
   NAMED_DOCTOR as PATIENT_NAMED_DOCTOR, LITERAL_MONEY as PATIENT_LITERAL_MONEY,
+  checkCopy,
 } from '@/lib/compliance';
 
 const ROOT = join(__dirname, '..');
@@ -307,4 +308,25 @@ describe('the patient state jumper', () => {
       expect(jumpPaths, screen).toContain(`/patient/book/${screen}`);
     }
   });
+});
+
+/* ---------------------------------------------------------------------------
+   The marketing pages and the site components run the same checkCopy() rules a
+   blog post must pass before it can publish, so the site never says what a
+   post may not.
+--------------------------------------------------------------------------- */
+const MARKETING_SOURCES = [
+  ...walk(join(ROOT, 'app', '(site)')),
+  ...walk(join(ROOT, 'components', 'site')),
+].filter((file) => EXTS.has(extname(file)));
+
+test('there is marketing source to scan', () => {
+  const scanned = MARKETING_SOURCES.map((file) => file.split(/[\\/]/).slice(-2).join('/'));
+  expect(scanned).toEqual(expect.arrayContaining(['about/content.ts', 'pricing/page.tsx', 'privacy/content.ts', 'site/PageParts.tsx']));
+});
+
+test('the marketing pages pass the public copy rules', () => {
+  const hits = MARKETING_SOURCES.flatMap((file) =>
+    checkCopy(readFileSync(file, 'utf8')).map((h) => `${file}: ${h.rule} "${h.phrase}"`));
+  expect(hits).toEqual([]);
 });
