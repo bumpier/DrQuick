@@ -85,6 +85,10 @@ import { CONSULTATIONS, GPS, PRESCRIBING, PRESCRIPTIONS } from '@/lib/fixtures';
 import { prescriptionFor } from '@/lib/patient';
 import { Wordmark } from '@/components/Wordmark';
 import { HeroTiles, PhotoTile } from '@/components/PhotoTile';
+import { InfoTile, NumberedTile } from '@/components/site/PageParts';
+import { PostTile } from '@/components/blog/PostTile';
+import { Prose } from '@/components/blog/Prose';
+import type { BlogPost } from '@/lib/blog';
 
 // Four surfaces every component must sit on: the ground, white, the forest band
 // and a lime tile. The band is a surface, not a theme.
@@ -148,6 +152,19 @@ const FACTS_SEEDED = [
   ['Reference', 'GP-002'], ['Credentials', '7 of 7 verified'], ['Consultations', '40'], ['Earned to date', '£1,560'], ['Working in', 'England only'],
 ] as const;
 
+// A sample post for the blog sections: fixture data, never shown outside /dev/ui.
+const GALLERY_POST: BlogPost = {
+  id: 'sample', slug: 'sample', title: 'What a fit note is, and when you need one',
+  summary: 'If you are off work for more than seven days, your employer can ask for one. Here is how it works.',
+  body: 'word '.repeat(400), tone: 'wash', status: 'published', authorEmail: 'editor@example.com', authorName: 'Sam Editor',
+  createdAt: Date.UTC(2026, 8, 25), updatedAt: Date.UTC(2026, 8, 25), publishedAt: Date.UTC(2026, 8, 25),
+};
+const GALLERY_MD = [
+  '## A heading two', 'A paragraph with **bold**, _italic_, `code` and [a link](/pricing).',
+  '### A heading three', '- A bullet\n- Another bullet', '1. A numbered step\n2. The next step',
+  '> A quote sits on a lime-wash tile.', '| Column | Column |\n| --- | --- |\n| Cell | Cell |', '---', 'A closing paragraph.',
+].join('\n\n');
+
 function Section({ id, title, note, children }: {
   id: string; title: string; note?: string; children: React.ReactNode;
 }) {
@@ -194,7 +211,7 @@ export function Gallery() {
           Hover and keyboard focus are live: press Tab to walk every control and check the 3px outline or the field glow.
         </p>
         <nav aria-label="Sections" className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-fine">
-          {['wordmark', 'photo-tile', 'button', 'segmented-link', 'fields', 'select', 'choice', 'checkbox', 'badge', 'card', 'alert', 'tabs', 'table', 'progress', 'countdown', 'charts', 'avatar', 'separator', 'skeleton', 'breadcrumb', 'tooltip', 'overlays', 'dropdown', 'toast', 'credential-matrix', 'sidebar', 'stat-tile', 'status-badge', 'stepper', 'ribbon', 'empty-state', 'page-header', 'facts', 'timeline', 'choice-row', 'field-error', 'urgent-line', 'price-quote', 'search-pulse', 'gp-card', 'video-frame', 'consult-row', 'action-dock', 'proto-note'].map((id) => (
+          {['wordmark', 'photo-tile', 'site-tiles', 'post-tile', 'prose', 'button', 'segmented-link', 'fields', 'select', 'choice', 'checkbox', 'badge', 'card', 'alert', 'tabs', 'table', 'progress', 'countdown', 'charts', 'avatar', 'separator', 'skeleton', 'breadcrumb', 'tooltip', 'overlays', 'dropdown', 'toast', 'credential-matrix', 'sidebar', 'stat-tile', 'status-badge', 'stepper', 'ribbon', 'empty-state', 'page-header', 'facts', 'timeline', 'choice-row', 'field-error', 'urgent-line', 'price-quote', 'search-pulse', 'gp-card', 'video-frame', 'consult-row', 'action-dock', 'proto-note'].map((id) => (
             <a key={id} href={`#${id}`} className="text-ink-2 hover:text-primary-ink">{id}</a>
           ))}
         </nav>
@@ -223,6 +240,27 @@ export function Gallery() {
             { slot: 'gallery-bottom', tone: 'sage', glyph: 'home' },
           ]} />
         </div>
+      </Section>
+
+      <Section id="site-tiles" title="Site tiles" note="components/site/PageParts.tsx: the marketing pages' NumberedTile and InfoTile, in every tone. A numeral disc always contrasts with its tile; on forest it is lime.">
+        <div className="grid grid-cols-4 gap-4 max-forms:grid-cols-2 max-phone:grid-cols-1">
+          {(['default', 'wash', 'sage', 'stone', 'quiet', 'band', 'lime'] as const).map((tone, i) => (
+            <NumberedTile key={tone} n={i + 1} tone={tone} tile={{ title: `${tone} tile`, body: 'A step, told in one or two plain sentences.' }} />
+          ))}
+          <InfoTile title="Info tile" body="A promise or a fact, with no numeral." tone="default" />
+        </div>
+      </Section>
+
+      <Section id="post-tile" title="PostTile" note="components/blog/PostTile.tsx: a post on the blog index. The whole tile is one link (the title's ::after covers it). The lead post is wider and larger; tone is the author's choice.">
+        <div className="grid grid-cols-3 gap-4 max-cols:grid-cols-1">
+          {(['wash', 'sage', 'stone', 'band'] as const).map((tone, i) => (
+            <PostTile key={tone} lead={i === 0} className={i === 0 ? 'col-span-3 max-cols:col-span-1' : undefined} post={{ ...GALLERY_POST, tone, id: tone, slug: `sample-${tone}` }} />
+          ))}
+        </div>
+      </Section>
+
+      <Section id="prose" title="Prose" note="components/blog/Prose.tsx: Markdown in the site's type scale — blog posts, the editor's preview and the legal pages. No raw HTML renders; images show only from /assets; a heading 1 becomes an h2 so the page keeps one h1.">
+        <div className="rounded-2xl bg-white p-10 shadow-card max-phone:p-6"><Prose markdown={GALLERY_MD} /></div>
       </Section>
 
       <Section id="button" title="Button" note="A flat pill. Default is lime with forest text; secondary is white inside a forest ring; dark is the forest pill for lime and sage tiles, where a lime button vanishes (see On lime). Disabled is the fill grey; aria-busy adds the pending sweep after 350ms (hidden under reduced motion). Ghost and link are ink-coloured: on the band they take text-white / text-primary-lift explicitly, as shown.">

@@ -63,7 +63,9 @@ Success at this stage is validated demand and validated supply, not traffic. Per
 
 ### What this site does today
 
-Waitlist capture only. The page runs as two modes behind a nav switch — a patient page and a GP page — and four forms (patient hero, patient closing band, GP hero, GP closing band) POST JSON to `/api/waitlist`: `{ "email": "...", "role": "patient" | "gp", "source": "hero" | "recap" | "hero-gp" | "recap-gp" }`. Email is the only field a person ever types. A honeypot field and client-side validation are in place.
+**Pages (2026-09-25):** the landing page plus About, How it works, Pricing, Contact, and draft Privacy and Terms pages, and a blog written by named admins in an on-site Markdown editor. Blog posts must pass the same compliance rules as the site (`lib/compliance.ts`: no medicine names, no CQC claim beyond the approved wording, no price figures or ranges, no time pressure, no UK-wide claim, no named doctor); publishing is blocked on any breach. The Privacy and Terms drafts block launch until the legal entity exists and a lawyer has reviewed them. No page collects anything beyond the waitlist forms on the landing page.
+
+Waitlist capture is the only data collection. The page runs as two modes behind a nav switch — a patient page and a GP page — and four forms (patient hero, patient closing band, GP hero, GP closing band) POST JSON to `/api/waitlist`: `{ "email": "...", "role": "patient" | "gp", "source": "hero" | "recap" | "hero-gp" | "recap-gp" }`. Email is the only field a person ever types. A honeypot field and client-side validation are in place.
 
 **Built (2026-08-27):** `/api/waitlist` is a Vercel serverless function with no npm dependencies, storing email, role, source and an ISO timestamp in Redis over the REST API. It does **not** retain IP addresses — the rate-limit key is a salted SHA-256 hash under a 600-second TTL and never enters the waitlist record. `/api/waitlist-export` returns CSV and `/api/waitlist-delete` executes an erasure request; both require a `WAITLIST_EXPORT_TOKEN` bearer token and refuse everything when it is unset.
 

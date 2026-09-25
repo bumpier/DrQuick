@@ -185,3 +185,11 @@ The find-a-GP flow at `/patient/book/*` adds composed patterns in `components/pa
 - **`FieldError`**: ink words with a red icon, and the invalid field's red border.
 - **Band census**: one forest band per screen, never two.
 - **Margins**: every patient page uses the 16px phone margin (`components/patient/page.ts`) and 24px above it.
+
+## Site pages and blog (2026-09-25)
+
+- **Marketing pages** follow the landing grammar: a white hero tile with the one h1 (`PageHero`), then headed sections of tiles (`SiteSection`, `NumberedTile`, `InfoTile`), ending with the stone `JoinTile`. Forest still belongs to the payoff tile of a sequence. The nav marks the current page with the lime pill.
+- **Blog index:** the newest post is a full-width tile, the rest a three-column grid; each post's tone (lime-wash, sage, stone or forest) is the author's choice, and the whole tile is one link.
+- **Article:** a white header tile (title, summary, author, date, reading time), the body in a white tile at a 68ch measure, then the forest "not medical advice" tile.
+- **Prose:** 17px at 1.7; h2 800 and h3 700 in the display scale; links `primary-ink`, underlined; list markers `primary-ink`; quotes on a lime-wash tile; code blocks on forest.
+- **Admin editor:** fields and Markdown on the left, the live preview on the right (the same `Prose`), and the copy-check panel above the preview — lime-wash when clear, a red ring with each flagged phrase when not.
