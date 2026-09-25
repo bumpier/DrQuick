@@ -79,7 +79,7 @@ These are not preferences. Several carry criminal or regulatory penalty.
 - **Never name medicines or imply a consultation guarantees a prescription.** Advertising prescription-only medicines to the public is a criminal offence (Human Medicines Regulations 2012 + CAP 12.12). There is an active ASA/MHRA/GPhC enforcement wave hitting this category. "See a GP in minutes" is permitted; naming drugs is not.
 - **Keep the emergency disclaimer.** 999/A&E, visible.
 - **Collect nothing beyond email on this page.** No symptoms, no health information. The moment intake collects symptoms, Dr Quick is a data controller of Article 9 special-category health data.
-- **Storyset attribution link is required by licence** and must never be removed.
+- **Storyset attribution link is required by licence** whenever a Storyset asset is on a page. None ships since the 2026-09-25 rebrand; if one returns, the link returns with it.
 
 ### Product-level constraints inherited from regulation
 
@@ -104,9 +104,10 @@ Recorded because they constrain what the site may ever promise:
 
 - **Name:** Dr Quick. Wordmark renders as "DrQuick".
 - **Voice, as evidenced by the shipped page:** short, plain, declarative. No eyebrow labels, no section labels, no fine print beyond what compliance requires. "Keep it simple, stupid" is stated design law in `CLAUDE.md`.
-- **Standing preference: the category canon.** Shown a rolled visual direction plus three alternative worlds on 2026-08-27, the user deliberately chose the standing exit — the category standard played straight — and named **Uber** as the craft bar. This is a durable brand commitment, not a one-off: future visual work executes the convention at full fidelity rather than reaching for an expressive world. A patient deciding whether to trust a regulated clinical service is not the visitor to surprise.
-- **Palette (confirmed 2026-09-02):** the "TechMed Modern" system the user supplied as `DESIGN.md` — a slate-tinted off-white ground, slate-900 dark fills, one Electric Indigo primary (`#0047FF`), Geist for headlines and Inter for reading, borderless cards on a soft slate shadow. This replaced the true white / true black / `#1447E6` system of 2026-08-27, which had itself replaced navy/amber/paper. NHS Blue and its neighbours remain excluded so a private provider never reads as NHS-branded.
-- **Binding visual law lives in `CLAUDE.md`** (the `DESIGN.md` palette, Geist + Inter, Uber-style layout skeleton, and the illustration-sourcing rule that applies while illustration is used — real photography is the recorded upgrade path). Recorded here by reference as binding; not restated or expanded in this file.
+- **Visual direction: Lime & Forest (decided 2026-09-25, by the user).** The user asked for a complete redesign away from the clinical look: modern, green, HelloFresh-like, bento boxes; "not clinical, not NHS"; meant to inspire, create trust and look new. From four options they chose **Lime & Forest** (Wise / Cash App energy), Plus Jakarta Sans throughout, the redesign reaching every surface, and photography for imagery. This **reverses** the earlier standing preference for the category canon played straight with Uber as the craft bar (2026-08-27) and the TechMed Modern palette (2026-09-02); neither is to be restored by later work. Future visual work executes Lime & Forest at full fidelity.
+- **Palette:** a faint green off-white ground, forest `#163300` for text and dark fills, lime `#9FE870` as the action fill (never a line on a light surface, where `primary-ink` `#2F6B0F` takes over), and lime-wash, peach and sun bento tones. NHS Blue and NHS Green, and their neighbours, remain excluded so a private provider never reads as NHS-branded. Earlier systems, in order: navy/amber/paper, true black / `#1447E6`, TechMed Modern.
+- **Warmth never outruns honesty.** The friendlier look adds no claims: no invented statistics, testimonials, GP faces or counts, and photographs must never pass for real Dr Quick GPs (`docs/photo-brief.md`).
+- **Binding visual law lives in `CLAUDE.md` and `DESIGN.md`** (palette, type, bento layout, the equal-billing hero, imagery rules). Recorded here by reference as binding; not restated or expanded in this file.
 
 ## Evidence on Hand
 
@@ -115,7 +116,7 @@ Real, in-repo:
 - `Docs/Dr_Quick_Research_Report.md` — sourced August 2026 regulatory, market, architecture and build research. The authoritative document; `CLAUDE.md` requires reading it before big changes.
 - `Docs/Dr_Quick_Business_Plan.pdf` — executive summary, problem, solution, marketplace model, financial forecast (revenue £2.46m Year 1 → £21.6m Year 3, EBITDA breakeven Year 2, 17.6% margin Year 3). **These forecasts are unvalidated projections and must never be presented as achieved results.**
 - `Docs/Dr_Quick_Landing_Page_info.pdf` — a **superseded** earlier landing-page concept, retained as an anti-reference for its *presentation*. Its demand-based pricing model was reinstated by the user on 2026-09-04; its "£82 Priority · busier than usual" framing — a live price quoted as scarcity, beside a purchasable queue position — was not, and remains banned in code by `tests/constraints.test.ts`.
-- `assets/doctors-bro.svg`, `assets/doctor-online.svg` — Storyset illustrations, recoloured. Masters in `../Illustrations/`.
+- `assets/doctors-bro.svg`, `assets/doctor-online.svg` — retired Storyset illustrations (no longer on the site). Masters in `../Illustrations/`.
 
 **Absences future work must not fabricate:**
 

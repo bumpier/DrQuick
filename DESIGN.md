@@ -1,183 +1,187 @@
 ---
-name: TechMed Modern
+name: Lime & Forest
+adopted: 2026-09-25
+replaces: TechMed Modern (2026-09-02)
 colors:
-  surface: '#f7f9fb'
-  surface-dim: '#d8dadc'
-  surface-bright: '#f7f9fb'
-  surface-container-lowest: '#ffffff'
-  surface-container-low: '#f2f4f6'
-  surface-container: '#eceef0'
-  surface-container-high: '#e6e8ea'
-  surface-container-highest: '#e0e3e5'
-  on-surface: '#191c1e'
-  on-surface-variant: '#434657'
-  inverse-surface: '#2d3133'
-  inverse-on-surface: '#eff1f3'
-  outline: '#747688'
-  outline-variant: '#c4c5da'
-  surface-tint: '#0046fa'
-  primary: '#0035c5'
-  on-primary: '#ffffff'
-  primary-container: '#0047ff'
-  on-primary-container: '#d4d9ff'
-  inverse-primary: '#b9c3ff'
-  secondary: '#00677f'
-  on-secondary: '#ffffff'
-  secondary-container: '#00ccf9'
-  on-secondary-container: '#005266'
-  tertiary: '#3130c0'
-  on-tertiary: '#ffffff'
-  tertiary-container: '#4b4dd8'
-  on-tertiary-container: '#d9d8ff'
-  error: '#EF4444'
-  on-error: '#ffffff'
-  error-container: '#ffdad6'
-  on-error-container: '#93000a'
-  primary-fixed: '#dde1ff'
-  primary-fixed-dim: '#b9c3ff'
-  on-primary-fixed: '#001257'
-  on-primary-fixed-variant: '#0033c0'
-  secondary-fixed: '#b7eaff'
-  secondary-fixed-dim: '#4cd6ff'
-  on-secondary-fixed: '#001f28'
-  on-secondary-fixed-variant: '#004e60'
-  tertiary-fixed: '#e1e0ff'
-  tertiary-fixed-dim: '#c0c1ff'
-  on-tertiary-fixed: '#07006c'
-  on-tertiary-fixed-variant: '#2f2ebe'
-  background: '#f7f9fb'
-  on-background: '#191c1e'
-  surface-variant: '#e0e3e5'
-  slate-900: '#0F172A'
-  slate-600: '#475569'
-  slate-400: '#94A3B8'
-  slate-200: '#E2E8F0'
-  success: '#10B981'
-  warning: '#F59E0B'
+  surface: '#F5F7F2'
+  surface-mid: '#EDF1E8'
+  fill: '#E8EDE3'
+  fill-hover: '#DFE6D8'
+  white: '#FFFFFF'
+  ink: '#163300'
+  ink-2: '#4D5B45'
+  outline: '#6B7A63'
+  rule: '#DCE4D4'
+  band: '#163300'
+  band-ink-2: '#B5C9A5'
+  primary: '#9FE870'
+  primary-strong: '#8BDB57'
+  primary-lift: '#9FE870'
+  primary-ink: '#2F6B0F'
+  lime-wash: '#E2F6D5'
+  sun: '#FFEB69'
+  peach: '#FFD7B5'
+  success: '#2F6B0F'
+  error: '#C8322A'
 typography:
-  headline-lg:
-    fontFamily: Geist
-    fontSize: 32px
-    fontWeight: '700'
-    lineHeight: '1.2'
-    letterSpacing: -0.04em
-  headline-lg-mobile:
-    fontFamily: Geist
-    fontSize: 24px
-    fontWeight: '700'
-    lineHeight: '1.2'
+  display:
+    fontFamily: Plus Jakarta Sans
+    fontWeight: '800'
+    letterSpacing: -0.035em
+  h1:
+    fontFamily: Plus Jakarta Sans
+    fontSize: clamp(42px, 5.8vw, 76px)
+    fontWeight: '800'
+    lineHeight: '1.04'
+    letterSpacing: -0.035em
+  h2:
+    fontFamily: Plus Jakarta Sans
+    fontSize: clamp(32px, 4.2vw, 52px)
+    fontWeight: '800'
+    lineHeight: '1.08'
     letterSpacing: -0.03em
-  headline-md:
-    fontFamily: Geist
+  h3:
+    fontFamily: Plus Jakarta Sans
     fontSize: 20px
-    fontWeight: '600'
+    fontWeight: '700'
     lineHeight: '1.3'
     letterSpacing: -0.02em
+  headline-lg:
+    fontFamily: Plus Jakarta Sans
+    fontSize: 32px
+    fontWeight: '800'
+    lineHeight: '1.2'
+    letterSpacing: -0.035em
   body-lg:
-    fontFamily: Inter
-    fontSize: 18px
+    fontFamily: Plus Jakarta Sans
+    fontSize: clamp(17px, 1.6vw, 21px)
     fontWeight: '400'
-    lineHeight: '1.6'
-    letterSpacing: -0.011em
+    lineHeight: '1.55'
   body-md:
-    fontFamily: Inter
-    fontSize: 15px
+    fontFamily: Plus Jakarta Sans
+    fontSize: 16px
     fontWeight: '400'
     lineHeight: '1.5'
-    letterSpacing: -0.009em
   body-sm:
-    fontFamily: Inter
+    fontFamily: Plus Jakarta Sans
     fontSize: 13px
     fontWeight: '400'
     lineHeight: '1.5'
-    letterSpacing: 0em
-  label-caps:
-    fontFamily: Geist
-    fontSize: 11px
-    fontWeight: '600'
-    lineHeight: '1.2'
-    letterSpacing: 0.05em
-  numeric-data:
-    fontFamily: Geist
-    fontSize: 18px
-    fontWeight: '600'
-    lineHeight: '1'
-    letterSpacing: -0.02em
 rounded:
-  sm: 0.25rem
-  DEFAULT: 0.5rem
-  md: 0.75rem
-  lg: 1rem
-  xl: 1.5rem
-  full: 9999px
+  sm: 6px
+  control: 12px
+  lg: 16px
+  card: 24px
+  tile: 32px
+  pill: 9999px
 spacing:
   unit: 4px
   gutter: 24px
+  tile-gap: 16px
   margin-mobile: 16px
-  margin-desktop: 48px
-  gap-xs: 4px
-  gap-sm: 8px
-  gap-md: 16px
-  gap-lg: 32px
-  gap-xl: 64px
 ---
 
-## Brand & Style
+## Brand & style
 
-This design system represents a shift from sterile institutionalism to a high-performance **TechMed** aesthetic. The personality is defined by technological sophistication, clinical precision, and "velvet-glove" reliability. It is designed for modern healthcare professionals who require the efficiency of a high-end SaaS tool combined with the life-critical trustworthiness of medical software.
+Dr Quick is a private GP service. It should feel **modern, warm and trustworthy, and never clinical or NHS**. The references are Wise and HelloFresh: bold flat colour blocks, friendly rounded type and bento tiles. A patient who feels unwell should meet something calm and confident, not a hospital form.
 
-The visual style is **Modern / Corporate** with a "Soft Flat" influence. It moves away from rigid boxy structures in favor of fluid surfaces, micro-elevations, and refined optical balance. By utilizing subtle background fills and high-precision typography, the interface feels less like a legacy database and more like a high-performance operating system for medicine. The emotional response should be one of calm, ultra-efficient control and advanced technical capability.
+The system has three moves:
 
-## Colors
+1. **Lime is the action.** Every primary button, every selected state and every "you are here" mark is a lime fill carrying forest text.
+2. **Forest is the payoff.** The one dark colour fills the tiles that land the point: step three of how-it-works, the GP pay tile, the footer, the start card and the 999 screen.
+3. **Bento tiles carry the page.** Sections are rounded tiles on a plain, faintly green ground. Colour separates things, not hairlines or shadows.
 
-The color strategy transitions from "Clinical Blue" to a more vibrant **Electric Indigo** (#0047FF), signaling modern technology and speed.
+## Colour
 
-- **Primary (Tech Blue):** Used for primary actions, critical navigation, and active states. It provides a high-energy focal point against the neutral background.
-- **Surface & Background:** The base of the application uses an off-white **Slate-tinted Neutral** (#F8FAFC). This reduces eye strain compared to pure white while maintaining a clean, high-end feel.
-- **Depth Layers:** Depth is created using a palette of Slate Grays. `slate-200` is used for subtle container fills, while `slate-900` ensures maximum readability for primary text.
-- **Semantic Colors:** Success, error, and warning states use vibrant, high-saturation tones that harmonize with the Electric Indigo primary, moving away from the "blood red" of the previous system to a more "digital alert" palette.
+- **Lime is a fill, never a line.** `primary` `#9FE870` has 1.4:1 contrast on white, so it never appears as text, a stroke, a ring or a chart mark on a light surface. Anything that must be read or seen as a line on light is **`primary-ink`** `#2F6B0F` (6.5:1 on white). On the forest band, lime (`primary-lift`) is the accent and is fine as text (9.5:1).
+- **Forest is the one dark.** `ink` and `band` are the same `#163300`: text on light surfaces, and the dark fill. Never true black.
+- **Tile tones.** `lime-wash`, `peach` and `sun` are bento tones with forest text; `ink-2` stays at 4.9:1 or better on every one. `sun` is loud, so use at most one sun tile per section. `surface-mid` is the quiet tile, for the lesser of a pair (for example, "what it doesn't cover").
+- **Semantic.** `success` is `primary-ink`. `error` `#C8322A` (5.3:1 on white) is for status icons, the invalid field and the 999 icon only, never decoration.
+- **Never NHS.** NHS Blue `#005EB8` and NHS Green `#009639`, and anything near either, are banned. `tests/constraints.test.ts` refuses both.
+- No gradients, glass or gradient text. The only textures are the 1px lime line grid on forest fills (`.band-grid`), drawn with `linear-gradient` as a hard-edged line.
 
 ## Typography
 
-This system uses a dual-font strategy to maximize precision and modern appeal. **Geist** is used for headlines and data-heavy labels for its technical, mono-spaced influence and sharp terminals. **Inter** is used for body text to ensure maximum legibility at all sizes.
+One face: **Plus Jakarta Sans** (400, 500, 600, 700, 800), self-hosted with `next/font`. Headlines are 800 with tracking at -0.035em, h3 and titles are 700, and body text is 16px at 400. The wordmark is 800. `font-display` and `font-sans` both resolve to Jakarta; `font-display` remains a separate name so headings can be found and restyled together.
 
-- **Precision Hierarchy:** Letter-spacing is tightened on larger headlines (-0.04em) to create a "locked-in," professional appearance.
-- **Data Display:** `numeric-data` uses Geist's high-precision numerals for patient vitals, ensuring they stand out from standard body text.
-- **Labels:** Small labels use uppercase with tracking (0.05em) to provide clear section headers without overwhelming the data.
+## Layout: the bento
 
-## Layout & Spacing
+- The page is the 1200px `.wrap` on the `surface` ground. Each section is a heading on the ground followed by tiles, or a single wide tile that holds its own heading. Tiles sit 16px apart.
+- **Tiles vary.** A row of identical cards is a failure. Vary span, tone and internal layout: a wide lime-wash tile with a large numeral, a narrow white tile, a full-width forest payoff.
+- **Heroes** are two cells: a white tile with the headline, sub and capture, beside a `HeroTiles` photo cluster (one tall tile and two short). Both modes use the same shape, which is what makes the equal billing between patients and GPs visible.
+- **Photography** is the imagery. Until it arrives, `PhotoTile` holds each slot with a tone, a hard-edged disc and a line glyph. `docs/photo-brief.md` lists the shots and the rules they must keep: no one who could pass for a real Dr Quick GP, no medicine, and no NHS or CQC branding.
+- Breakpoints: 560 / 900 / 1080 (see below).
 
-The design system utilizes a **4px base grid** for tight, purposeful spacing. The layout philosophy is a **Fluid Grid** with fixed maximum widths for content readability.
+## Elevation
 
-- **Breakpoints:** 
-    - Mobile: 0 - 599px (4 columns, 16px margins)
-    - Tablet: 600 - 1023px (8 columns, 24px margins)
-    - Desktop: 1024px+ (12 columns, 48px margins)
-- **Reflow:** On desktop, data sidebars are pinned, while the primary medical feed expands. On mobile, sidebars collapse into a bottom-sheet or drawer navigation.
-- **Rhythm:** Use `gap-lg` for separating major modules (e.g., Patient Info vs. Treatment Plan) and `gap-sm` for internal component relationships.
+Flat. A white tile on the ground carries `shadow-card`, a 1px forest ring at 6%. Tinted tiles carry nothing, because their colour is their edge. Only floating layers lift: `shadow-pop` on popovers, dialogs, sheets, dropdowns, tooltips and toasts. Fields focus with a forest border and the 4px lime `shadow-glow-primary`.
 
-## Elevation & Depth
+## Shape
 
-This system moves away from flat borders in favor of **Micro-Elevations**. Hierarchy is established through layering and soft, diffused shadows.
-
-- **Tier 1 (Surface):** The background canvas.
-- **Tier 2 (Card/Container):** Uses a subtle background fill (`slate-100`) or a white surface with an ultra-soft ambient shadow: `0 4px 12px rgba(15, 23, 42, 0.04)`.
-- **Tier 3 (Popovers/Modals):** High elevation with a more pronounced shadow to indicate temporary interaction: `0 12px 32px rgba(15, 23, 42, 0.08)`.
-- **Shadow Tinting:** All shadows use a tiny amount of the neutral Slate tint to prevent a "dirty" gray appearance, ensuring the UI remains clean and "medical-grade."
-
-## Shapes
-
-The shape language is **Rounded (0.5rem base)**. This softens the high-tech aesthetic, making it feel like a modern consumer-grade "app" rather than a cold clinical tool.
-
-- **Standard Elements:** Buttons, inputs, and small cards use 8px (`rounded-md`).
-- **Large Containers:** Dashboard widgets and main content areas use 16px (`rounded-xl`) to create a distinct framing effect.
-- **Interactive Pills:** Search bars and status tags use a full pill radius to clearly distinguish them from functional action buttons.
+Everything is round. Buttons, switches, tabs and badges are full pills. Fields are 12px. Cards are 24px (`xl`) and bento tiles 32px (`2xl`).
 
 ## Components
 
-- **Buttons:** Primary buttons are solid `primary-color` with white text. They feature a subtle inner-glow on top to provide a "soft flat" 3D feel. Secondary buttons use a light slate fill instead of an outline.
-- **Input Fields:** Fields use a subtle background fill of `slate-100` with no border. On focus, they transition to a white background with a 2px `primary-color` outline and a soft glow.
-- **Cards:** Cards should have no borders. They are defined by their 16px corner radius and either a white background with a soft shadow or a very light `slate-50` fill.
-- **Chips & Tags:** Status chips (e.g., "Stable", "Critical") use a high-contrast background with 15% opacity of the semantic color and bold 700-weight text in the same color for maximum scannability.
-- **Data Lists:** Use clean rows with 12px padding. Remove horizontal dividers; instead, use a subtle `slate-50` hover state to indicate interactivity.
-- **Data Visualizations:** Charts should use the `primary-color` and `secondary-color` gradients, with 2px stroke widths for line graphs to maintain a "high-precision" look.
+- **Button:** a flat pill. `default` is lime with forest text. `secondary` is white inside a 2px forest ring. `dark` is the forest pill for lime and sun tiles, where a lime button would vanish. `ghost` and `link` are forest / `primary-ink`. Heights are 48px (default) and 56px (lg), because targets must be large for patients who are unwell.
+- **Card:** the tile. Variants: `default` (white), `band` (forest), `lime`, `wash`, `sun`, `peach`, `quiet`.
+- **Fields:** white inside a 2px `rule` border, which darkens to `outline` on hover and turns forest with the lime glow on focus. Invalid is the error border.
+- **Selected state:** the lime pill, with forest text, in the segmented switch, tabs and `PatientNav`. Checkboxes, radios and switches fill `primary-ink` with a white mark, because a control boundary needs 3:1.
+- **Wordmark** (`components/Wordmark.tsx`): "Dr" in the surface's text colour, then "Quick" on a lime pill in forest. It is defined once and reads the same on every surface.
+- **Charts:** marks in `primary-ink`, comparison in `outline`, 2px strokes.
+
+## shadcn token mapping
+
+`components/ui/` is shadcn/ui restyled to this system. Every shadcn semantic variable is an alias of a token in `@theme` in `app/globals.css`, declared in `@theme inline`; nothing new is declared and no colour is written as a value.
+
+| shadcn token | Dr Quick token | Note |
+|---|---|---|
+| `background` | `surface` `#F5F7F2` | page ground |
+| `foreground` | `ink` `#163300` | |
+| `card` / `popover` | `white` | |
+| `card-foreground` / `popover-foreground` | `ink` | |
+| `primary` / `primary-foreground` | `primary` `#9FE870` / `ink` | lime fill, forest text |
+| `secondary` / `secondary-foreground` | `fill` `#E8EDE3` / `ink` | |
+| `muted` / `muted-foreground` | `surface-mid` `#EDF1E8` / `ink-2` `#4D5B45` | |
+| `accent` / `accent-foreground` | `surface-mid` / `ink` | hover on the ground |
+| `destructive` | `error` `#C8322A` | status only |
+| `border` | `rule` `#DCE4D4` | hairlines and field borders |
+| `input` | `fill` | |
+| `ring` | `ink` | the focus outline is forest on light and lime on forest |
+| `band` / `band-foreground` / `band-muted` (added) | `band` `#163300` / `white` / `band-ink-2` `#B5C9A5` | a surface, not a theme: no `.dark` class and no `dark:` variants anywhere |
+| `sidebar*` | `white` / `ink` / `primary` / `surface-mid` / `rule` | the app shell reads its own names; they are the same surfaces |
+
+Also added and outside shadcn: `primary-ink`, `lime-wash`, `sun`, `peach` and `success`. Not declared: `chart-1…5` (charts are authored inline SVG), the `.dark` block, and `--radius` with its calc chain.
+
+### Radius aliases
+
+| name | value | used for |
+|---|---|---|
+| `sm` | 6px | the focus outline's corners |
+| `md` / `control` | 12px | fields, select triggers, menu items |
+| `lg` | 16px | popovers, dropdowns, alerts |
+| `xl` / `tile` | 24px | cards, dialogs, toasts, the 999 bar |
+| `2xl` | 32px | bento tiles, photo tiles, the landing sections |
+| `pill` | 9999px | buttons, the segmented switch, tabs, badges, the switch track |
+
+### Breakpoints
+
+`560 / 900 / 1080` as `max-phone: / max-cols: / max-forms:` (desktop-first, on the landing page) and as `sm: / md: / lg:` (min-width, inside `components/ui/`). Three lines with two spellings; there is no `xl` or `2xl`.
+
+## Patient surface patterns (2026-09-23, restyled 2026-09-25)
+
+The find-a-GP flow at `/patient/book/*` adds composed patterns in `components/patient/`, all built from `components/ui/` and shown in `/dev/ui`:
+
+- **`FlowStep`**: one booking screen, in three layouts.
+  - `split` puts a 30rem white step panel beside a lime-wash canvas carrying the live status of the request. Below the md line the canvas sits between the heading and the body.
+  - `column` is for terminal screens.
+  - `band` is the full-bleed forest fill, reserved for 999.
+  - The canvas is DOM-last and never focusable.
+- **`ActionDock`**: one sticky action area at the bottom edge, primary first, with 52px targets. There is no draggable sheet.
+- **`ChoiceRow`**: a whole row is the target of a radio or checkbox. The chosen row is shown by a white fill and a 2px inset `primary-ink` ring, as well as by the control itself.
+- **`SearchPulse`**: the one looping motion on the patient surface, and it is functional. Two `primary-ink` rings scale out from a white core, only under `prefers-reduced-motion: no-preference`.
+- **`GpCard`**: the matched GP on the band, with a reference, the registration and why this GP was matched. It shows no name, face or rating.
+- **`PatientNav`**: a row in the top bar from 560px, and a fixed four-item tab bar below that. The active item is the lime pill (a lime-wash cell in the tab bar). It is hidden for the whole booking flow.
+- **Home**: a bento. The forest start card (or a lime resume tile while a consultation is live) and the 999 bar sit on the left; what needs you and recent consultations sit on the right, 16px apart.
+- **`FieldError`**: ink words with a red icon, and the invalid field's red border.
+- **Band census**: one forest band per screen, never two.
+- **Margins**: every patient page uses the 16px phone margin (`components/patient/page.ts`) and 24px above it.
