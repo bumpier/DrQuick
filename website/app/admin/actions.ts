@@ -20,8 +20,10 @@ export async function signIn(_prev: SignInState, form: FormData): Promise<SignIn
   const ip = (h.get('x-forwarded-for') ?? '').split(',')[0].trim() || h.get('x-real-ip') || 'unknown';
   try {
     if (!(await loginAllowed(ip, email))) return { error: 'Too many attempts. Try again in ten minutes.', email };
-  } catch {
-    return { error: 'Sign-in is unavailable right now. Try again shortly.', email };
+  } catch (err) {
+    return (err as Error).message === 'store_unavailable'
+      ? { error: 'Sign-in needs the site’s Redis store, which is not configured on this server.', email }
+      : { error: 'Sign-in is unavailable right now. Try again shortly.', email };
   }
 
   const admin = verifyCredentials(email, password);

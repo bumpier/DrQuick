@@ -126,7 +126,8 @@ export async function endSession() {
 // Five attempts per ten minutes per IP and email, on the waitlist's pattern: a
 // salted hash as the key (never the raw IP), INCR plus EXPIRE NX. In
 // development and tests an in-memory map stands in; a production build with no
-// store refuses sign-in outright, since there is no blog to edit without one.
+// store throws 'store_unavailable' and sign-in is refused, since there is no
+// blog to edit without one.
 const ATTEMPTS = 5;
 const WINDOW_S = 600;
 const g = globalThis as typeof globalThis & { __drQuickLogin?: Map<string, { n: number; until: number }> };
@@ -138,7 +139,7 @@ export async function loginAllowed(ip: string, email: string, now = Date.now()):
     const [count] = await pipeline([['INCR', key], ['EXPIRE', key, WINDOW_S, 'NX']]);
     return Number(count) <= ATTEMPTS;
   }
-  if (process.env.NODE_ENV === 'production') return false;
+  if (process.env.NODE_ENV === 'production') throw new Error('store_unavailable');
   const map = (g.__drQuickLogin ??= new Map());
   const entry = map.get(key);
   const fresh = !entry || entry.until <= now ? { n: 0, until: now + WINDOW_S * 1000 } : entry;

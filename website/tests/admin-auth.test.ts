@@ -128,6 +128,13 @@ describe('sign in and out', () => {
     expect(await loginAllowed('2.2.2.2', 'a@example.com')).toBe(true);
   });
 
+  test('a production server with no store says so, rather than blaming the password', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const result = await signIn({ error: null, email: '' }, form('editor@example.com', 'correct horse battery'));
+    expect(result.error).toMatch(/Redis store, which is not configured/);
+    expect(jar.has(SESSION_COOKIE)).toBe(false);
+  });
+
   test('signing out clears the cookie', async () => {
     jar.set(SESSION_COOKIE, { value: signSession('editor@example.com')! });
     await expect(signOut()).rejects.toThrow('NEXT_REDIRECT /admin/login');
