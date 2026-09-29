@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { ExternalLinkIcon, MailIcon, PhoneIcon } from 'lucide-react';
 import { EmptyState } from '@/components/app/EmptyState';
 import { Badge } from '@/components/ui/badge';
@@ -6,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { emailLog } from '@/lib/db/schema';
 import { GP_STATUSES, PATIENT_STATUSES } from '@/lib/db/schema';
-import { fmtDateTime, fmtTime, firstTouchChannel, sourceLabel, statusLabel } from '@/lib/admin/format';
-import { describeEvent, type Journey } from '@/lib/admin/queries/journey';
+import { fmtDateTime, firstTouchChannel, sourceLabel, statusLabel } from '@/lib/admin/format';
+import { humanEmailError } from '@/lib/admin/email-errors';
+import type { Journey } from '@/lib/admin/queries/journey';
 import type { Signup } from '@/lib/waitlist';
 import { EraseButton, NotesControl, ResendButton, StatusControl } from './SignupControls';
 import { StatusBadge } from './StatusBadge';
+import { VisitorTimeline } from './VisitorTimeline';
 
 type EmailRow = typeof emailLog.$inferSelect;
 
@@ -111,7 +114,7 @@ export function SignupDetail({ signup, emails, journey, ownHost }: {
                       <TableCell className="whitespace-normal">
                         {TEMPLATE_LABELS[e.template] ?? e.template}
                         {e.template === 'admin_new_gp' && <span className="block text-fine text-ink-2">to the team</span>}
-                        {e.error && <span className="block text-fine text-ink-2">{e.error}</span>}
+                        {e.error && <span className="block text-fine text-ink-2">{humanEmailError(e.error)}</span>}
                       </TableCell>
                       <TableCell>
                         <Badge variant={e.status === 'sent' ? 'success' : e.status === 'failed' ? 'destructive' : 'secondary'}>
@@ -127,7 +130,7 @@ export function SignupDetail({ signup, emails, journey, ownHost }: {
           </CardContent>
         </Card>
 
-        <JourneyCard journey={journey} hasVisitor={Boolean(signup.visitorId)} />
+        <JourneyCard journey={journey} visitorId={signup.visitorId} ownHost={ownHost} />
       </div>
 
       <div className="grid min-w-0 gap-4">
@@ -153,42 +156,20 @@ export function SignupDetail({ signup, emails, journey, ownHost }: {
   );
 }
 
-function JourneyCard({ journey, hasVisitor }: { journey: Journey | null; hasVisitor: boolean }) {
+function JourneyCard({ journey, visitorId, ownHost }: { journey: Journey | null; visitorId: string | null; ownHost: string | null }) {
   return (
     <Card size="sm">
-      <CardHeader><CardTitle>Visit history</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Visit history</CardTitle>
+        {visitorId && journey?.visitor && (
+          <Link href={`/admin/analytics/visitors/${visitorId}`} className="text-fine font-semibold text-primary-ink">Open this visitor</Link>
+        )}
+      </CardHeader>
       <CardContent>
-        {!hasVisitor || !journey ? (
+        {!visitorId || !journey ? (
           <EmptyState>No visit history. This person did not accept analytics cookies, or signed up before tracking began.</EmptyState>
-        ) : journey.sessions.length === 0 ? (
-          <EmptyState>No visits recorded for this visitor.</EmptyState>
         ) : (
-          <ol className="grid gap-5">
-            {journey.sessions.map((s, i) => (
-              <li key={s.id}>
-                <p className="font-semibold">
-                  Visit {i + 1} · {fmtDateTime(s.startedAt)}
-                </p>
-                <p className="text-fine text-ink-2">
-                  {[s.device, s.browser, s.os].filter(Boolean).join(' · ')}
-                  {s.referrer ? ` · from ${s.referrer}` : ''}
-                  {s.utmSource ? ` · ${s.utmSource}` : ''}
-                  {` · ${s.pageviews} ${s.pageviews === 1 ? 'page' : 'pages'}, ${s.engagedSeconds}s active`}
-                </p>
-                {s.events.length > 0 && (
-                  <ol className="mt-2 grid gap-1 border-l-2 border-rule pl-4">
-                    {s.events.map((e) => (
-                      <li key={e.id} className="grid grid-cols-[5.5rem_1fr] gap-2 text-fine">
-                        <span className="text-ink-2 tabular-nums">{fmtTime(e.ts)}</span>
-                        <span className="min-w-0 break-words">{describeEvent(e)}</span>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </li>
-            ))}
-            {journey.truncated && <li className="text-fine text-ink-2">Older activity is not shown.</li>}
-          </ol>
+          <VisitorTimeline sessions={journey.sessions} truncated={journey.truncated} ownHost={ownHost} />
         )}
       </CardContent>
     </Card>

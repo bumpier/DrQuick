@@ -76,6 +76,7 @@ export const SOURCE_LABELS: Record<string, string> = {
   'hero-gp': 'GP hero form',
   'recap-gp': 'GP closing form',
   landing: 'Landing page',
+  demo: 'Demo data',
 };
 export const sourceLabel = (s: string) => SOURCE_LABELS[s] ?? s;
 

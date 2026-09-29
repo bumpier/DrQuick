@@ -7,10 +7,11 @@ import { columnGeometry, columnPath, niceCeiling } from '@/lib/admin/charts';
    series, so one colour: primary-ink, never lime on white. Each column is its
    own hover and focus target with the bin and count; the hovered column lifts
    to forest. Columns are capped at 24px wide with a 4px rounded top. */
-export function Histogram({ bins, height = 160, ariaLabel, format = (v: number) => v.toLocaleString('en-GB') }: {
+export function Histogram({ bins, height = 160, ariaLabel, suffix = '', format = (v: number) => `${v.toLocaleString('en-GB')}${suffix}` }: {
   bins: Array<{ label: string; value: number }>;
   height?: number;
   ariaLabel: string;
+  suffix?: string;              // a unit for the values ('%'), for server callers that cannot pass `format`
   format?: (v: number) => string;
 }) {
   const [active, setActive] = useState<number | null>(null);
