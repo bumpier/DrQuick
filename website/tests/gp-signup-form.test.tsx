@@ -97,6 +97,7 @@ test('success posts the normalised contract, collapses the capture and moves foc
     role: 'gp',
     source: 'hero-gp',
     company: '',
+    landingPath: '/',           // attribution; no visitorId without consent
   });
   expect(form).toHaveClass('done');
   const status = container.querySelector('.status')!;

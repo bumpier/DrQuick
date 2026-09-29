@@ -6,12 +6,12 @@
 import type { Tile } from '@/app/landing-content';
 import { Card } from '@/components/ui/card';
 
-export function Steps({ headingId, title, tiles }: {
-  headingId: string; title: string; tiles: [Tile, Tile, Tile];
+export function Steps({ headingId, section, title, tiles }: {
+  headingId: string; section?: string; title: string; tiles: [Tile, Tile, Tile];
 }) {
   const [a, b, c] = tiles;
   return (
-    <section className="steps pt-section" aria-labelledby={headingId}>
+    <section className="steps pt-section" aria-labelledby={headingId} data-section={section}>
       <div className="wrap">
         <h2 id={headingId} data-reveal className="mb-heading max-w-[18ch]">{title}</h2>
         <div className="bento grid grid-cols-6 gap-4 max-cols:grid-cols-2" data-stagger>

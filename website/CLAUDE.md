@@ -8,7 +8,7 @@
 > `app/api/`; headers live in `next.config.ts`. The old `index.html` and
 > `preview/` remain as reference until milestone 4 and are no longer served.
 
-Pre-launch website for Dr Quick: on-demand private GP video consultations (England). A landing page for waitlist capture (patient and GP emails), six supporting pages, and a blog written by admins. No patient accounts, no health data, no tracking.
+Pre-launch website for Dr Quick: on-demand private GP video consultations (England). A landing page for waitlist capture (patient and GP emails), six supporting pages, and a blog written by admins. No patient accounts, no health data, no third-party tracking: first-party analytics only, identified only with consent (see Analytics).
 
 ## Files
 
@@ -94,12 +94,17 @@ A fixture-driven prototype of the patient app at `/patient/**` (route group `app
 All four forms (patient hero, patient closing band, GP hero, GP closing band) POST JSON to `/api/waitlist`:
 
 ```json
-{ "email": "...", "role": "patient" | "gp", "source": "hero" | "recap" | "hero-gp" | "recap-gp" }
+{ "email": "...", "role": "patient" | "gp", "source": "hero" | "recap" | "hero-gp" | "recap-gp",
+  "visitorId"?, "utmSource"?, "utmMedium"?, "utmCampaign"?, "referrer"?, "landingPath"? }
 ```
 
-The endpoint is built: `api/waitlist.js`, a Vercel serverless function with no npm dependencies. It stores email, role, source and an ISO timestamp in Redis over the REST API (Vercel KV or Upstash; both env var pairs are supported). It deliberately does **not** retain IP — the rate-limit key is a salted SHA-256 hash with a 600s TTL, never written into the waitlist record. Retrieve the list with `GET /api/waitlist-export` and a `WAITLIST_EXPORT_TOKEN` bearer token; without that variable set, the route refuses every request.
+The attribution keys come from `getAttribution()` in `lib/analytics/track.ts`; `visitorId` is present only with analytics consent. The endpoint (`app/api/waitlist/route.ts`) stores the sign-up in Postgres (`lib/waitlist.ts`, Drizzle). It deliberately does **not** retain IP — the rate-limit key is a salted SHA-256 hash with a 600s TTL, never written into the waitlist record. Retrieve the list with `GET /api/waitlist-export` and a `WAITLIST_EXPORT_TOKEN` bearer token; without that variable set, the route refuses every request.
 
 Responses the client handles: `200 {ok,alreadyJoined}`, `400` invalid, `429` rate limited, `503` store unconfigured, `502` write failed. Keep the honeypot field (`.hp`), client-side email validation, the distinct `.ok` / `.err` status states, and the focus move to the status region on success. Zero friction: email is the only field, ever.
+
+## Analytics
+
+First-party, no third parties. `components/ConsentBanner.tsx` asks once (Accept / Decline at equal weight; `dq_consent` cookie, 12 months; "Cookie settings" in the footer reopens it). `components/Analytics.tsx` (root layout) runs `lib/analytics/track.ts`: without consent, or with GPC / DNT, only anonymous pageviews with no ids and nothing stored; with consent, a `dq_vid` visitor cookie (13 months), a sessionStorage session and the full event set. It stands down on `/admin`, `/patient`, `/doctor`, `/dev`, `/unsubscribe` and with `?dq_heatmap=1`. Beacons go to `app/api/collect/route.ts` (`lib/analytics/ingest.ts` holds the event and props contract; no IP or UA string stored). Landing sections carry `data-section` names listed in `lib/analytics/sections.ts` — keep them stable. The forms emit funnel events through `track()`. Retention: `npm run analytics:prune` (13 months), from a nightly cron.
 
 ## Compliance constraints (from Docs/Dr_Quick_Research_Report.md — read it before big changes)
 

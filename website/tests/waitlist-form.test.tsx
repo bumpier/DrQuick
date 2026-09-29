@@ -44,6 +44,7 @@ test('success posts the contract, thanks the patient, collapses the capture and 
   expect(url).toBe('/api/waitlist');
   expect(JSON.parse(init!.body as string)).toEqual({
     email: 'name@example.com', role: 'patient', source: 'hero', company: '',
+    landingPath: '/', // attribution (lib/analytics/track.ts); no visitorId without consent
   });
   expect(form).toHaveClass('done');
   const status = container.querySelector('.status')!;

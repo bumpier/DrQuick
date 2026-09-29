@@ -1,8 +1,8 @@
 // Patient-flow content, patient mode only. The copy and the live tel: link are
 // compliance requirements; ported verbatim, icon included.
-export function UrgentBand() {
+export function UrgentBand({ section }: { section?: string } = {}) {
   return (
-    <aside className="urgent" data-reveal>
+    <aside className="urgent" data-reveal data-section={section}>
       {/* The white bar is drawn by .urgent p in the authored layer. */}
       <div className="wrap pt-0 pb-0">
         <p>

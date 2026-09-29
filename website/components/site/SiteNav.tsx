@@ -17,7 +17,7 @@ export function SiteNav() {
         </Link>
         <NavLinks className="max-cols:hidden" />
         <Button asChild size="lg" className="max-phone:h-11 max-phone:px-4">
-          <a href="/#join"><span className="max-phone:hidden">Join the waitlist</span><span className="phone:hidden">Join</span></a>
+          <a href="/#join" data-cta="site-nav"><span className="max-phone:hidden">Join the waitlist</span><span className="phone:hidden">Join</span></a>
         </Button>
         <SiteMenu className="cols:hidden" />
       </div>

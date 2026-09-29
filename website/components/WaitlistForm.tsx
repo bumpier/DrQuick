@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getAttribution, onFirstView, track } from '@/lib/analytics/track';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -15,6 +16,8 @@ export function WaitlistForm({ role, source, cta, inputId, reveal }: {
   inputId: string;
   reveal?: 'load' | '';
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const startedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const hpRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);
@@ -24,6 +27,22 @@ export function WaitlistForm({ role, source, cta, inputId, reveal }: {
   const [invalid, setInvalid] = useState(false);
 
   const busyLabel = role === 'gp' ? 'Registering…' : 'Joining…';
+
+  // Funnel events for the analytics (lib/analytics/track.ts). Each is a no-op
+  // without analytics consent. `form` is the source, so the four captures on
+  // the page stay distinguishable.
+  const t = (type: Parameters<typeof track>[0], props: Record<string, string | boolean> = {}) =>
+    track(type, { form: source, role, ...props });
+  useEffect(() => onFirstView(formRef.current, () => track('form_view', { form: source, role })), [role, source]);
+  const onInput = (e: React.FormEvent<HTMLFormElement>) => {
+    if (startedRef.current || (e.target as HTMLInputElement).name === 'company') return;
+    startedRef.current = true;
+    t('form_start');
+  };
+  const onFocus = (e: React.FocusEvent<HTMLFormElement>) => {
+    const el: EventTarget = e.target;
+    if (el instanceof HTMLInputElement && el.name && el.name !== 'company') t('field_focus', { field: el.name });
+  };
 
   // The status element keeps one identity across messages so the live region
   // announces text changes. The entry animation replays the way the flat page
@@ -52,32 +71,38 @@ export function WaitlistForm({ role, source, cta, inputId, reveal }: {
     const trap = hpRef.current?.value ?? '';
     if (!EMAIL.test(email)) {
       say({ kind: 'err', message: 'Enter a valid email address, like name@example.com.' });
+      t('field_error', { field: 'email', error: email ? 'invalid_email' : 'missing_email' });
       setInvalid(true);
       input.focus();
       return;
     }
     setBusy(true);
+    t('form_submit');
     try {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role, source, company: trap }),
+        body: JSON.stringify({ email, role, source, company: trap, ...getAttribution() }),
       });
       if (res.status === 429) {
+        t('form_fail', { error: 'rate_limited' });
         say({ kind: 'err', message: 'That is a few too many tries. Give it a couple of minutes.' });
         setInvalid(true);
         setBusy(false);
         return;
       }
-      if (!res.ok) throw new Error(String(res.status));
+      if (!res.ok) throw new Error(`http_${res.status}`);
       const data = (await res.json().catch(() => ({}))) as { alreadyJoined?: boolean };
+      t('form_success', { already: Boolean(data.alreadyJoined) });
       const joined = role === 'gp'
         ? "You're on the list. We'll be in touch before we open."
         : "You're on the list. We'll email you the day Dr Quick opens.";
       say({ kind: 'ok', message: data.alreadyJoined ? "You're already on the list. We'll be in touch." : joined });
       statusRef.current?.focus();
       setDone(true); // the button stays disabled inside the collapsing capture, as on the flat page
-    } catch {
+    } catch (err) {
+      const code = (err as Error)?.message ?? '';
+      t('form_fail', { error: code.startsWith('http_') ? code : 'network' });
       say({ kind: 'err', message: "Couldn't reach the server — try again in a moment." });
       setInvalid(true);
       setBusy(false);
@@ -86,12 +111,15 @@ export function WaitlistForm({ role, source, cta, inputId, reveal }: {
 
   return (
     <form
+      ref={formRef}
       data-role={role}
       data-source={source}
       data-reveal={reveal}
       noValidate
       className={done ? 'done' : undefined}
       onSubmit={onSubmit}
+      onInput={onInput}
+      onFocus={onFocus}
     >
       <div className="capture"><div><div className="row">
         <Input

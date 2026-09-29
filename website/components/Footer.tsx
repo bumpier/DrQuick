@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import { Wordmark } from '@/components/Wordmark';
 import { FOOTER_LINKS } from '@/lib/site';
+import { CookieSettingsButton } from '@/components/ConsentBanner';
 
 export function Footer() {
   return (
@@ -16,6 +17,7 @@ export function Footer() {
             {FOOTER_LINKS.map(({ href, label }) => (
               <li key={href}><Link href={href} className="no-underline hover:text-primary">{label}</Link></li>
             ))}
+            <li><CookieSettingsButton className="cursor-pointer font-semibold hover:text-primary" /></li>
           </ul>
         </nav>
       </div>

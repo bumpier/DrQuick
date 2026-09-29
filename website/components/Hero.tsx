@@ -5,15 +5,16 @@
 // than built here: the patient mode's is one email field and the GP's is a
 // four-field sign-up, but the headline, sub and art around them are the same
 // shape in both.
-export function Hero({ headerId, lines, sub, form, art }: {
+export function Hero({ headerId, section, lines, sub, form, art }: {
   headerId?: string;
+  section?: string;
   lines: [string, string];
   sub: string;
   form: React.ReactNode;
   art: React.ReactNode;
 }) {
   return (
-    <header className="hero pt-4 pb-4" id={headerId}>
+    <header className="hero pt-4 pb-4" id={headerId} data-section={section}>
       <div className="wrap grid grid-cols-[1.15fr_.85fr] gap-4 items-stretch max-cols:grid-cols-1">
         <div className="hero-copy flex flex-col justify-center rounded-2xl bg-white shadow-card px-tile-lead-pad py-hero-t max-phone:px-6 max-phone:py-10">
           <h1 tabIndex={-1}>

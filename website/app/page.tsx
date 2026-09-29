@@ -41,6 +41,7 @@ export default function Page() {
         {PATIENT_MODE && (
         <div className="mode" data-mode="patient">
           <Hero
+            section="patient-hero"
             lines={['See a GP', 'in minutes.']}
             sub="Talk to a GMC-registered doctor by secure video. Your price is shown in full before you book, and covers any prescription you need."
             form={<WaitlistForm role="patient" source="hero" cta="Join the waitlist" inputId="join" reveal="load" />}
@@ -50,18 +51,20 @@ export default function Page() {
               { slot: 'patient-home', tone: 'sage', glyph: 'home' },
             ]} />}
           />
-          <UrgentBand />
-          <Steps headingId="steps-title" title="As simple as it sounds." tiles={PATIENT_STEPS} />
-          <Covers headingId="covers-title" title="What a consultation does, and doesn’t, cover." cols={PATIENT_COVERS} />
+          <UrgentBand section="patient-urgent" />
+          <Steps headingId="steps-title" section="patient-how-it-works" title="As simple as it sounds." tiles={PATIENT_STEPS} />
+          <Covers headingId="covers-title" section="patient-covers" title="What a consultation does, and doesn’t, cover." cols={PATIENT_COVERS} />
           <PriceBand
             variant="price"
             headingId="price-title"
+            section="patient-price"
             headline={<><b className="rounded-lg bg-white px-[.18em] font-extrabold box-decoration-clone">Your price in full,</b> before you book.</>}
             fine="What you are quoted is what you pay: the price is fixed the moment you book and never changed after, with no booking fee and nothing else to pay Dr Quick afterwards."
           />
-          <Faq headingId="faq-title" title="Questions people ask." items={PATIENT_FAQ} />
+          <Faq headingId="faq-title" section="patient-faq" title="Questions people ask." items={PATIENT_FAQ} />
           <Recap
             headingId="recap-title"
+            section="patient-closing"
             title="Be first through the door."
             sub="GMC-registered GPs by secure video, with your price shown in full before you book. England at launch."
             form={<WaitlistForm role="patient" source="recap" cta="Join the waitlist" inputId="join2" reveal="" />}
@@ -72,6 +75,7 @@ export default function Page() {
         <div className="mode" data-mode="gp">
           <Hero
             headerId="gps"
+            section="gp-hero"
             lines={['Consult when', 'it suits you.']}
             sub="Paid per consultation, with no minimum hours and no retainer. Secure video, from wherever you are."
             form={<GpSignupForm source="hero-gp" cta="Sign up" inputId="gp-join" reveal="load" />}
@@ -81,17 +85,19 @@ export default function Page() {
               { slot: 'gp-notes', tone: 'stone', glyph: 'chat' },
             ]} />}
           />
-          <Steps headingId="gp-steps-title" title="How a shift works." tiles={GP_STEPS} />
-          <Covers headingId="gp-covers-title" title="What Dr Quick does, and doesn’t, do." cols={GP_COVERS} />
+          <Steps headingId="gp-steps-title" section="gp-shift" title="How a shift works." tiles={GP_STEPS} />
+          <Covers headingId="gp-covers-title" section="gp-scope" title="What Dr Quick does, and doesn’t, do." cols={GP_COVERS} />
           <PriceBand
             variant="pay"
             headingId="gp-pay-title"
+            section="gp-pay"
             headline={<><b className="text-primary-lift font-extrabold">Paid more</b> when demand is high.</>}
             fine="Paid per consultation you take, not per hour you are online. No minimum hours and no retainer, and what a consultation pays is shown in full before you accept it."
           />
-          <Faq headingId="gp-faq-title" title="Questions GPs ask." items={GP_FAQ} />
+          <Faq headingId="gp-faq-title" section="gp-faq" title="Questions GPs ask." items={GP_FAQ} />
           <Recap
             headingId="gp-recap-title"
+            section="gp-closing"
             title="Be first on the rota."
             sub="Paid per consultation, on the hours you choose. Patients in England at launch."
             form={<GpSignupForm source="recap-gp" cta="Sign up" inputId="gp-join2" reveal="" />}

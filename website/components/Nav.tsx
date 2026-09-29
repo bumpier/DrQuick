@@ -34,12 +34,12 @@ export function Nav() {
         {/* The phone nav shrinks the CTA a step; the form buttons keep the full size. */}
         <Button asChild size="lg" className="btn max-phone:h-11 max-phone:px-4">
           {PATIENT_MODE ? (
-            <a id="nav-cta" href="#join" data-focus="join">
+            <a id="nav-cta" href="#join" data-focus="join" data-cta="nav">
               <span className="cta-p"><span className="cta-long">Join the waitlist</span><span className="cta-short">Join</span></span>
               <span className="cta-g"><span className="cta-long">Sign up</span><span className="cta-short">Sign up</span></span>
             </a>
           ) : (
-            <a id="nav-cta" href="#gp-join" data-focus="gp-join">
+            <a id="nav-cta" href="#gp-join" data-focus="gp-join" data-cta="nav">
               <span className="cta-long">Sign up</span><span className="cta-short">Sign up</span>
             </a>
           )}

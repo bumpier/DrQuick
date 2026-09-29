@@ -3,17 +3,19 @@
 // privacy contact, the lawful basis and the hosting processors are bracketed
 // placeholders. This page is noindexed and carries a draft banner until a
 // lawyer has reviewed it and the placeholders are real. It describes only what
-// the code actually does: app/api/waitlist/route.ts and lib/waitlist.ts.
+// the code actually does: app/api/waitlist/route.ts and lib/waitlist.ts for the
+// waitlist, and lib/analytics/track.ts with app/api/collect/route.ts for the
+// analytics (retention: scripts/prune-analytics.mjs).
 import { CONTACT_EMAIL } from '@/lib/site';
 
-export const PRIVACY_UPDATED = '25 September 2026';
+export const PRIVACY_UPDATED = '29 September 2026';
 
 export const PRIVACY_MD = `
 ## Who we are
 
 Dr Quick is run by **[registered company name]**, **[registered address]**, company number **[number]**. We are the controller of the personal data described here. You can contact us about your data at **[privacy contact address]** or ${CONTACT_EMAIL}.
 
-Dr Quick has not launched. This notice covers the waitlist on this website only. A full notice covering consultations will be published before anyone is seen.
+Dr Quick has not launched. This notice covers the waitlist and the analytics on this website only. A full notice covering consultations will be published before anyone is seen.
 
 ## What we collect
 
@@ -21,12 +23,26 @@ Dr Quick has not launched. This notice covers the waitlist on this website only.
 
 **If you sign up as a GP:** your name, email address, mobile number and GMC reference number, that you signed up as a GP, which form you used, and when.
 
-That is everything. We do not ask for any health information on this website.
+If you accepted analytics cookies, we also link your sign-up to the anonymous visitor ID described below, so we can see how you found us and what you read before joining. Whether or not you accepted, your sign-up records which campaign link, referring site and page brought you to the form.
+
+We do not ask for any health information on this website.
 
 ## What we don’t collect
 
 - **No IP address is stored.** To stop abuse, we briefly keep a one-way scrambled code made from your IP address. It cannot be turned back into your address, and it is deleted after ten minutes.
-- **No tracking or advertising cookies,** and no analytics.
+- **No advertising cookies,** and nothing is shared with advertisers or other third parties.
+
+## Analytics
+
+We run our own analytics on this website to learn which pages and sections help people and where they give up. It is not a third-party service: everything stays in our own database.
+
+**If you have not chosen, or you declined:** we count page visits only. We record the page, the site that sent you, your device type (phone, tablet or computer) and your browser, with no ID, so no two visits can be linked to each other or to you. Nothing is stored on your device except a cookie remembering that you declined.
+
+**If you accept analytics cookies:** we set a cookie holding a random visitor ID (kept for 13 months) and keep a visit ID in your browser for the length of your visit. With them we record which pages you view, how long you spend on them, how far you scroll, how long each section is on screen, where on the page you click, and which form fields you use and whether they showed an error. We never record what you type.
+
+We do not use analytics if your browser sends a Global Privacy Control or Do Not Track signal. You can change your choice at any time with **Cookie settings** at the bottom of every page; declining removes the visitor ID cookie. Your choice is remembered for 12 months.
+
+Analytics data is deleted after 13 months. The one exception: if you joined the waitlist, a short summary of how you first found us stays linked to your sign-up for as long as we keep the sign-up, and is deleted with it.
 
 ## Why we use it
 

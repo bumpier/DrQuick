@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getAttribution, onFirstView, track } from '@/lib/analytics/track';
 import {
   GP_MESSAGES, MAX_EMAIL, MAX_NAME,
   firstInvalidField, normaliseGpSignup,
@@ -31,6 +32,8 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
     mobile: useRef<HTMLInputElement>(null),
     gmc: useRef<HTMLInputElement>(null),
   };
+  const formRef = useRef<HTMLFormElement>(null);
+  const startedRef = useRef(false);
   const hpRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);
   const [status, setStatus] = useState<Status>(null);
@@ -56,7 +59,23 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
     setStatus(next);
   };
 
-  const fail = (field: GpField, message = GP_MESSAGES[field]) => {
+  // Funnel events for the analytics (lib/analytics/track.ts); each is a no-op
+  // without analytics consent. Field names and error codes only, never values.
+  const t = (type: Parameters<typeof track>[0], props: Record<string, string | boolean> = {}) =>
+    track(type, { form: source, role: 'gp', ...props });
+  useEffect(() => onFirstView(formRef.current, () => track('form_view', { form: source, role: 'gp' })), [source]);
+  const onInput = (e: React.FormEvent<HTMLFormElement>) => {
+    if (startedRef.current || (e.target as HTMLInputElement).name === 'company') return;
+    startedRef.current = true;
+    t('form_start');
+  };
+  const onFocus = (e: React.FocusEvent<HTMLFormElement>) => {
+    const el: EventTarget = e.target;
+    if (el instanceof HTMLInputElement && el.name && el.name !== 'company') t('field_focus', { field: el.name });
+  };
+
+  const fail = (field: GpField, message = GP_MESSAGES[field], from: 'client' | 'server' = 'client') => {
+    t('field_error', { field, error: `invalid_${field}`, from });
     say({ kind: 'err', message });
     setInvalid(field);
     refs[field].current?.focus();
@@ -80,6 +99,7 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
     if (bad) return fail(bad);
 
     setBusy(true);
+    t('form_submit');
     try {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
@@ -89,9 +109,11 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
           role: 'gp',
           source,
           company: hpRef.current?.value ?? '',
+          ...getAttribution(),
         }),
       });
       if (res.status === 429) {
+        t('form_fail', { error: 'rate_limited' });
         say({ kind: 'err', message: 'That is a few too many tries. Give it a couple of minutes.' });
         setInvalid('email');
         setBusy(false);
@@ -103,13 +125,15 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         const field = (body.error ?? '').replace(/^invalid_/, '') as GpField;
         if (res.status === 400 && field in GP_MESSAGES) {
-          fail(field);
+          t('form_fail', { error: `invalid_${field}` });
+          fail(field, GP_MESSAGES[field], 'server');
           setBusy(false);
           return;
         }
-        throw new Error(String(res.status));
+        throw new Error(`http_${res.status}`);
       }
       const data = (await res.json().catch(() => ({}))) as { alreadyJoined?: boolean };
+      t('form_success', { already: Boolean(data.alreadyJoined) });
       say({
         kind: 'ok',
         message: data.alreadyJoined
@@ -118,7 +142,9 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
       });
       statusRef.current?.focus();
       setDone(true);
-    } catch {
+    } catch (err) {
+      const code = (err as Error)?.message ?? '';
+      t('form_fail', { error: code.startsWith('http_') ? code : 'network' });
       say({ kind: 'err', message: "Couldn't reach the server — try again in a moment." });
       setInvalid('email');
       setBusy(false);
@@ -146,12 +172,15 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
 
   return (
     <form
+      ref={formRef}
       data-role="gp"
       data-source={source}
       data-reveal={reveal}
       noValidate
       className={done ? 'done' : undefined}
       onSubmit={onSubmit}
+      onInput={onInput}
+      onFocus={onFocus}
     >
       <div className="capture"><div>
         <div className="fields">

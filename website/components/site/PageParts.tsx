@@ -90,8 +90,8 @@ export function JoinTile() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button asChild size="lg"><a href="/#join">Join the waitlist</a></Button>
-            <Button asChild size="lg" variant="secondary"><a href="/?role=gp#gp-join">I’m a GP</a></Button>
+            <Button asChild size="lg"><a href="/#join" data-cta="join-tile-patient">Join the waitlist</a></Button>
+            <Button asChild size="lg" variant="secondary"><a href="/?role=gp#gp-join" data-cta="join-tile-gp">I’m a GP</a></Button>
           </div>
         </div>
       </div>

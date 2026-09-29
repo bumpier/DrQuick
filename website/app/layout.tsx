@@ -3,6 +3,8 @@ import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { siteUrl } from '@/lib/site-url';
 import { DEFAULT_ROLE, PATIENT_MODE } from '@/lib/site-mode';
+import { Analytics } from '@/components/Analytics';
+import { ConsentBanner } from '@/components/ConsentBanner';
 
 // DESIGN.md (Lime & Forest): one friendly geometric face, Plus Jakarta Sans,
 // carries both the headlines and the reading. Only the weights the page sets
@@ -102,6 +104,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <script dangerouslySetInnerHTML={{ __html: ROLE_SCRIPT }} />
         {children}
+        {/* First-party analytics and the cookie choice; both stand down on the
+            admin, the prototypes and /dev (lib/analytics/track.ts). */}
+        <ConsentBanner />
+        <Analytics />
       </body>
     </html>
   );

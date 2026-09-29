@@ -15,7 +15,8 @@
     "deploy": "bash scripts/deploy.sh",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mjs",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "analytics:prune": "node scripts/prune-analytics.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

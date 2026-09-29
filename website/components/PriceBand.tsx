@@ -3,9 +3,10 @@
 // the payoff, which for a GP is what a consultation pays. Pricing is dynamic, so
 // neither tile carries a figure: the promise is that the figure arrives before
 // you commit, not that it never moves.
-export function PriceBand({ variant, headingId, headline, fine }: {
+export function PriceBand({ variant, headingId, section, headline, fine }: {
   variant: 'price' | 'pay';
   headingId: string;
+  section?: string;
   headline: React.ReactNode;
   fine: string;
 }) {
@@ -13,7 +14,7 @@ export function PriceBand({ variant, headingId, headline, fine }: {
     ? 'bg-primary text-ink'
     : 'band-grid bg-band text-white';
   return (
-    <section className={`${variant} pt-section`} aria-labelledby={headingId}>
+    <section className={`${variant} pt-section`} aria-labelledby={headingId} data-section={section}>
       <div className="wrap">
         <div data-reveal
           className={`${tile} rounded-2xl px-tile-lead-pad py-field-section grid grid-cols-[1.55fr_1fr] gap-x-16 gap-y-8 items-end max-cols:grid-cols-1 max-cols:items-start max-phone:px-6`}>

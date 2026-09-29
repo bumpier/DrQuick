@@ -4,11 +4,11 @@
 import type { CoversCol } from '@/app/landing-content';
 import { Card } from '@/components/ui/card';
 
-export function Covers({ headingId, title, cols }: {
-  headingId: string; title: string; cols: [CoversCol, CoversCol];
+export function Covers({ headingId, section, title, cols }: {
+  headingId: string; section?: string; title: string; cols: [CoversCol, CoversCol];
 }) {
   return (
-    <section className="covers pt-section" aria-labelledby={headingId}>
+    <section className="covers pt-section" aria-labelledby={headingId} data-section={section}>
       <div className="wrap">
         <h2 id={headingId} data-reveal className="mb-heading max-w-[20ch]">{title}</h2>
         <div data-stagger
