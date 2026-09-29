@@ -43,7 +43,16 @@ export const metadata: Metadata = {
   metadataBase: siteUrl(),
   title: HEAD.title,
   description: HEAD.description,
-  icons: { icon: '/assets/favicon.svg', apple: '/assets/favicon.svg' },
+  // The favicon set is written by ../Branding/src/site.py; the favicon is the
+  // logo's knob alone, because the switch is too thin to read at 16px.
+  icons: {
+    icon: [
+      { url: '/assets/favicon.ico', sizes: '48x48' },
+      { url: '/assets/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/assets/apple-touch-icon.png',
+  },
+  manifest: '/assets/site.webmanifest',
   openGraph: {
     type: 'website',
     siteName: 'Dr Quick',

@@ -126,7 +126,7 @@ Everything is round. Buttons, switches, tabs and badges are full pills. Fields a
 - **Card:** the tile. Variants: `default` (white), `band` (forest), `lime`, `wash`, `sage`, `stone`, `quiet`.
 - **Fields:** white inside a 2px `rule` border, which darkens to `outline` on hover and turns forest with the lime glow on focus. Invalid is the error border.
 - **Selected state:** the lime pill, with forest text, in the segmented switch, tabs and `PatientNav`. Checkboxes, radios and switches fill `primary-ink` with a white mark, because a control boundary needs 3:1.
-- **Wordmark** (`components/Wordmark.tsx`): "Dr" in the surface's text colour, then "Quick" on a lime pill in forest. It is defined once and reads the same on every surface.
+- **Wordmark** (`components/Wordmark.tsx`): the Plus switch logo (adopted 2026-09-29). "Dr" in the surface's text colour, then "Quick" on a lime pill in forest, ending in the switch's knob: a forest disc carrying a lime plus. It is the brand artwork as inline SVG, written by `../Branding/src/site.py`, with a visually hidden "DrQuick" for its accessible name, and it reads the same on every surface. The brand guidelines (clear space, minimum sizes, colourways, misuse) are served at `/brand` and live in `../Branding/`.
 - **Charts:** marks in `primary-ink`, comparison in `outline`, 2px strokes.
 
 ## shadcn token mapping

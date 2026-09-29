@@ -53,6 +53,13 @@ test('the metadata ports the flat page head: share card, icons, locale', async (
   expect(og.locale).toBe('en_GB');
   expect(og.images).toEqual([{ url: '/assets/og.png', width: 1200, height: 630 }]);
   expect(metadata.twitter).toMatchObject({ card: 'summary_large_image', images: ['/assets/og.png'] });
-  expect(metadata.icons).toMatchObject({ icon: '/assets/favicon.svg', apple: '/assets/favicon.svg' });
+  expect(metadata.icons).toMatchObject({
+    icon: [
+      { url: '/assets/favicon.ico', sizes: '48x48' },
+      { url: '/assets/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/assets/apple-touch-icon.png',
+  });
+  expect(metadata.manifest).toBe('/assets/site.webmanifest');
   expect(viewport.themeColor).toBe('#F5F7F2');
 });

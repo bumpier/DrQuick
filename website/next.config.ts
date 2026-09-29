@@ -47,7 +47,17 @@ const nextConfig: NextConfig = {
       // a draft must never be indexed as if it were in force.
       { source: '/privacy', headers: [NOINDEX] },
       { source: '/terms', headers: [NOINDEX] },
+      // The brand guidelines are a working document for partners and suppliers,
+      // not a page for patients or GPs to find.
+      { source: '/brand', headers: [NOINDEX] },
+      { source: '/brand/:path*', headers: [NOINDEX] },
     ];
+  },
+  // public/brand/ is the guide built in ../Branding/src (guide.py, then pdf.py
+  // copies it here). Next serves public files by exact path only, so /brand
+  // needs pointing at its index.html.
+  async rewrites() {
+    return [{ source: '/brand', destination: '/brand/index.html' }];
   },
 };
 

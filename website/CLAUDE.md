@@ -18,7 +18,8 @@ Pre-launch website for Dr Quick: on-demand private GP video consultations (Engla
 - `.impeccable/surfaces/index-html.md` — strategy that belongs only to this page.
 - `assets/doctors-bro.svg`, `assets/phone-illustration.svg`, `assets/doctor-online.svg` — retired Storyset illustrations, kept only for the flat `index.html` reference. The React app no longer ships any illustration (the 2026-09-25 rebrand replaced them with photo tiles); masters live in `../Illustrations/`.
 - `docs/photo-brief.md` — the shot list for the landing page's photo tiles and the rules the photographs must keep.
-- `assets/favicon.svg`, `assets/og.png` — tab icon (a lime cross on forest) and 1200×630 share image. **`og.png` still shows the retired TechMed look and needs redrawing in Lime & Forest.**
+- `public/assets/favicon.*`, `apple-touch-icon.png`, `android-chrome-*.png`, `maskable-512.png`, `site.webmanifest`, `og.png` — the favicon set (the logo's knob on a lime tile) and the 1200×630 share card (the reversed wordmark, "See a GP in minutes"). All are written by `../Branding/src/site.py` from the brand masters in `../Branding/`; regenerate rather than edit them.
+- `public/brand/` — the brand guidelines (HTML, PDF and font), served at `/brand` through a rewrite in `next.config.ts` and noindexed. Built in `../Branding/src` (`guide.py`, then `pdf.py` copies them here).
 - `assets/doctor-online.svg` — currently unused.
 - `app/api/waitlist/route.ts` — POST endpoint backing all four forms. `app/api/waitlist-export/route.ts` — token-protected CSV export. `app/api/waitlist-delete/route.ts` — token-protected erasure. `lib/waitlist-store.ts` — dependency-free Redis REST client. (The flat `api/` functions were retired in the migration.)
 - `next.config.ts` — security headers, the CSP and the noindex rules (replaced `vercel.json`). `.env.example` — the environment variables the API and the build need.
