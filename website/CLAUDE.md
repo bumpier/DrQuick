@@ -21,7 +21,7 @@ Pre-launch website for Dr Quick: on-demand private GP video consultations (Engla
 - `public/assets/favicon.*`, `apple-touch-icon.png`, `android-chrome-*.png`, `maskable-512.png`, `site.webmanifest`, `og.png` — the favicon set (the logo's knob on a lime tile) and the 1200×630 share card (the reversed wordmark, "See a GP in minutes"). All are written by `../Branding/src/site.py` from the brand masters in `../Branding/`; regenerate rather than edit them.
 - `public/brand/` — the brand guidelines (HTML, PDF and font), served at `/brand` through a rewrite in `next.config.ts` and noindexed. Built in `../Branding/src` (`guide.py`, then `pdf.py` copies them here).
 - `assets/doctor-online.svg` — currently unused.
-- `app/api/waitlist/route.ts` — POST endpoint backing all four forms. `app/api/waitlist-export/route.ts` — token-protected CSV export. `app/api/waitlist-delete/route.ts` — token-protected erasure. `lib/waitlist-store.ts` — dependency-free Redis REST client. (The flat `api/` functions were retired in the migration.)
+- `app/api/waitlist/route.ts` — POST endpoint backing all four forms. `app/api/waitlist-export/route.ts` — token-protected CSV export. `app/api/waitlist-delete/route.ts` — token-protected erasure. `lib/waitlist.ts` — the waitlist in Postgres. `lib/db/` — the Drizzle client and the whole schema; migrations in `drizzle/` (`npm run db:generate`, `db:migrate`). (The flat `api/` functions and the Redis store were retired.)
 - `next.config.ts` — security headers, the CSP and the noindex rules (replaced `vercel.json`). `.env.example` — the environment variables the API and the build need.
 
 ## Design rules — non-negotiable
@@ -68,12 +68,12 @@ The marketing pages live in route group `app/(site)/`: `/about`, `/how-it-works`
 
 A public blog at `/blog` written by named admins in a Markdown editor at `/admin/blog`. No comments.
 
-- **Storage.** `lib/blog-store.ts`, in the waitlist's Redis over `pipeline()`: `blog:post:<id>` (hash), `blog:slug:<slug>` (unique, taken with `SET NX`), `blog:all` and `blog:published` (sorted sets). With no store configured, development and tests use an in-memory backend; a production build with no store has no blog (reads empty, writes `store_unavailable`). Public reads never throw.
+- **Storage.** `lib/blog-store.ts`, in the `blog_posts` table (slug unique). Development with no `DATABASE_URL` uses PGlite in `.data/pglite`; tests use an in-memory PGlite (`tests/helpers/db.ts`); a production server with no database has no blog (reads empty, writes `store_unavailable`). Public reads never throw.
 - **Rendering.** `components/blog/Prose.tsx` (react-markdown + remark-gfm) is the one renderer for posts, the editor preview and the legal pages. Raw HTML never renders (`script-src` keeps `'unsafe-inline'`); images render only from `/assets/` (the CSP's `img-src 'self'`); a Markdown heading 1 becomes an h2. Every post ends with the standing "general information, not medical advice" notice and real `tel:999` / `tel:111` links. `/blog` and `/blog/[slug]` revalidate every 300s and on every admin change; `app/sitemap.ts` lists the public pages and published posts.
 - **Admins.** `ADMIN_USERS` holds `email|Display Name|scrypt:16384:<salt>:<hash>` entries separated by `;` — make one with `npm run admin:hash -- you@example.com "Your Name"`. Colons, never `$`: Next expands `$NAME` inside `.env` files. `ADMIN_SESSION_SECRET` (32+ characters) signs the `dq_admin` cookie (httpOnly, SameSite=Strict, path `/admin`, 8 hours); every read re-checks the admin is still listed, so removing an entry signs them out. Sign-in is throttled to five attempts per ten minutes per IP and email, and a wrong password and an unknown email get the same answer and the same scrypt cost. `proxy.ts` only redirects a request with no cookie; `requireAdmin()` in `lib/admin-auth.ts` is the real check, in the panel layout and at the top of every server action — keep it there in any new one.
 - **Compliance gate.** `lib/compliance.ts` is the one rule set: the medicine list, the banned phrases, the patient-surface patterns and `PUBLIC_COPY_RULES` for prose. The editor shows `checkCopy()` hits live, and `publishPostAction` re-runs it on the server and refuses on any hit; drafts can still be saved. Add a rule there and it applies to source, pages and posts at once. It is the one file the source scans exclude, because it has to name what it bans.
 - **CSP.** Unchanged: server actions submit by `fetch` after hydration (`connect-src 'self'`); `form-action 'none'` blocks only a no-JS submit, which the admin does not support.
-- **Local use.** `.env.local` (gitignored) with an `ADMIN_USERS` entry and a session secret; the in-memory store keeps posts until the dev server restarts.
+- **Local use.** `.env.local` (gitignored) with an `ADMIN_USERS` entry and a session secret; posts persist in `.data/pglite`.
 
 ## Patient surface (the find-a-GP flow, 2026-09-23)
 
@@ -102,6 +102,10 @@ The attribution keys come from `getAttribution()` in `lib/analytics/track.ts`; `
 
 Responses the client handles: `200 {ok,alreadyJoined}`, `400` invalid, `429` rate limited, `503` store unconfigured, `502` write failed. Keep the honeypot field (`.hp`), client-side email validation, the distinct `.ok` / `.err` status states, and the focus move to the status region on success. Zero friction: email is the only field, ever.
 
+## Admin (2026-09-29)
+
+`/admin` is the team's back office, behind the same sign-in as the blog: Overview; Waitlist (Patients, GPs pipeline, detail pages with status, notes, emails, visit timeline, resend, erase); Analytics (Traffic, Engagement, Funnels, Heatmaps, Visitors, Live); Finance (Revenue, Consultations, Payouts — empty until payments go live, `?demo=1` previews generated data that is never stored); Blog; System (Technical, Emails, Audit log, Settings). Queries live in `lib/admin/queries/`, one per area; every server action calls `requireAdmin()` and writes `audit()`; the audit log never stores a person's email. Stripe: `app/api/webhooks/stripe` answers 501 until `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set. Local demo analytics: `npm run db:seed:analytics` (refuses non-local databases).
+
 ## Analytics
 
 First-party, no third parties. `components/ConsentBanner.tsx` asks once (Accept / Decline at equal weight; `dq_consent` cookie, 12 months; "Cookie settings" in the footer reopens it). `components/Analytics.tsx` (root layout) runs `lib/analytics/track.ts`: without consent, or with GPC / DNT, only anonymous pageviews with no ids and nothing stored; with consent, a `dq_vid` visitor cookie (13 months), a sessionStorage session and the full event set. It stands down on `/admin`, `/patient`, `/doctor`, `/dev`, `/unsubscribe` and with `?dq_heatmap=1`. Beacons go to `app/api/collect/route.ts` (`lib/analytics/ingest.ts` holds the event and props contract; no IP or UA string stored). Landing sections carry `data-section` names listed in `lib/analytics/sections.ts` — keep them stable. The forms emit funnel events through `track()`. Retention: `npm run analytics:prune` (13 months), from a nightly cron.
@@ -127,7 +131,7 @@ First-party, no third parties. `components/ConsentBanner.tsx` asks once (Accept 
 ## Before deploy
 
 - `og:image` and `twitter:image` point at `https://REPLACE-WITH-PRODUCTION-DOMAIN/assets/og.png`. Substitute the real host or no crawler renders the share card. A relative path does not work — this placeholder is deliberately loud rather than silently broken.
-- Set `KV_REST_API_URL` / `KV_REST_API_TOKEN` (or the `UPSTASH_*` pair), `WAITLIST_EXPORT_TOKEN` and `RATE_LIMIT_SALT`. Without the store variables `/api/waitlist` returns 503 and the forms show an error; without the export token both `/api/waitlist-export` and `/api/waitlist-delete` refuse every request.
+- Set `DATABASE_URL` (docs/postgres-vps.md), `WAITLIST_EXPORT_TOKEN`, `RATE_LIMIT_SALT`, and for email `RESEND_API_KEY`, `EMAIL_FROM`, `ADMIN_ALERT_EMAILS` (docs/email.md). Without `DATABASE_URL` `/api/waitlist` returns 503, the forms show an error and nobody can sign in to the admin; without the export token both `/api/waitlist-export` and `/api/waitlist-delete` refuse every request.
 - Fill in the controller details marked `DEPLOY / LEGAL` in `index.html`.
 - No canonical URL is set, because the domain is unknown.
 
