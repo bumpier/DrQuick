@@ -4,6 +4,7 @@
 import { randomBytes } from 'node:crypto';
 import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
+import { audit } from '@/lib/admin/audit';
 import { emailLog, events, sessions, visitors, waitlistSignups, type WaitlistRole } from '@/lib/db/schema';
 
 export type Signup = typeof waitlistSignups.$inferSelect;
@@ -92,6 +93,30 @@ export async function erasePerson(db: DB, email: string): Promise<number> {
       await tx.delete(visitors).where(inArray(visitors.id, visitorIds));
     }
     await tx.delete(emailLog).where(eq(emailLog.to, email));
+    // The team's "new GP" alerts name the applicant too; they hang off the sign-up id.
+    const ids = gone.map((g) => g.id);
+    if (ids.length) await tx.delete(emailLog).where(inArray(emailLog.signupId, ids));
     return gone.length;
   });
+}
+
+// The sign-up an unsubscribe link belongs to, or null for an unknown, used or
+// malformed token. Tokens are 32 base64url characters (newToken).
+export async function findByToken(db: DB, token: string | null | undefined): Promise<Signup | null> {
+  if (!token || !/^[A-Za-z0-9_-]{16,64}$/.test(token)) return null;
+  const [row] = await db.select().from(waitlistSignups).where(eq(waitlistSignups.unsubscribeToken, token));
+  return row ?? null;
+}
+
+// The emails promise "Unsubscribe and we will delete it" (patients) and
+// "Withdraw and delete my details" (GPs), so confirming the link erases the
+// person, not just flags them. The audit row keeps the sign-up id and role and
+// never the address. Only ever called on an explicit confirm (a POST): mail
+// scanners fetch every link in a message, so a GET must change nothing.
+export async function unsubscribeByToken(db: DB, token: string): Promise<{ ok: true; role: WaitlistRole } | { ok: false }> {
+  const signup = await findByToken(db, token);
+  if (!signup) return { ok: false };
+  await erasePerson(db, signup.email);
+  await audit(db, 'self-service', 'self_erasure', signup.id, { role: signup.role });
+  return { ok: true, role: signup.role };
 }

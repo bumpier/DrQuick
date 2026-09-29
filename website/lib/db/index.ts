@@ -9,6 +9,7 @@
 //
 // Tests install their own in-memory PGlite with setDb() (tests/helpers/db.ts).
 // Env is read per call, not at module load, so tests can stub it.
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import * as schema from '@/lib/db/schema';
@@ -59,6 +60,9 @@ async function devDatabase(): Promise<DB> {
     import('drizzle-orm/pglite'),
     import('drizzle-orm/pglite/migrator'),
   ]);
+  // PGlite creates its own directory but not a missing parent; without this a
+  // fresh checkout (or a deleted .data) fails on the first query.
+  mkdirSync(path.join(process.cwd(), '.data'), { recursive: true });
   const client = new PGlite(path.join(process.cwd(), '.data', 'pglite'));
   const db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder: MIGRATIONS });

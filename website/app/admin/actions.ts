@@ -31,7 +31,7 @@ export async function signIn(_prev: SignInState, form: FormData): Promise<SignIn
   if (!(await startSession(admin.email))) {
     return { error: 'Sign-in is not set up on this server (ADMIN_SESSION_SECRET).', email };
   }
-  redirect('/admin/blog'); // throws, so it sits outside any try
+  redirect('/admin'); // throws, so it sits outside any try
 }
 
 export async function signOut() {

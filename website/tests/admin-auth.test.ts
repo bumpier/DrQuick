@@ -106,7 +106,7 @@ describe('sign in and out', () => {
 
   test('the right credentials set a strict, httpOnly cookie on /admin and go to the blog', async () => {
     await expect(signIn({ error: null, email: '' }, form('editor@example.com', 'correct horse battery')))
-      .rejects.toThrow('NEXT_REDIRECT /admin/blog');
+      .rejects.toThrow('NEXT_REDIRECT /admin');
     const cookie = jar.get(SESSION_COOKIE)!;
     expect(cookie.opts).toMatchObject({ httpOnly: true, sameSite: 'strict', path: '/admin' });
     expect(readSession(cookie.value)?.email).toBe('editor@example.com');

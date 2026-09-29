@@ -1,31 +1,28 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Wordmark } from '@/components/Wordmark';
 import { requireAdmin } from '@/lib/admin-auth';
-import { signOut } from '../actions';
 
 // Every signed-in admin page: the session is checked here, and again in every
-// server action, since a layout does not re-render on every action.
+// server action, since a layout does not re-render on every action. The rail is
+// the shadcn sidebar; below 900px it becomes a sheet behind the top bar's button.
 export default async function PanelLayout({ children }: { children: ReactNode }) {
   const admin = await requireAdmin();
   return (
-    <>
-      <header className="sticky top-0 z-10 border-b border-rule bg-white">
-        <div className="flex h-16 items-center gap-6 px-6 max-phone:gap-3 max-phone:px-4">
-          <Link href="/admin/blog" className="text-xl no-underline" aria-label="Dr Quick admin, home"><Wordmark /></Link>
-          <nav aria-label="Admin">
-            <Link href="/admin/blog" className="inline-flex h-10 items-center rounded-pill bg-primary px-4 text-label font-semibold text-ink no-underline">Blog</Link>
-          </nav>
-          <div className="ml-auto flex items-center gap-3">
-            <span className="text-fine font-semibold text-ink-2 max-phone:sr-only">{admin.name}</span>
-            <form action={signOut} className="max-w-none">
-              <Button type="submit" size="sm" variant="secondary">Sign out</Button>
-            </form>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-[1400px] px-6 py-10 max-phone:px-4">{children}</main>
-    </>
+    <TooltipProvider>
+      <SidebarProvider>
+        <AdminSidebar name={admin.name} email={admin.email} />
+        <SidebarInset className="min-w-0">
+          <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-rule bg-white px-4 md:hidden">
+            <SidebarTrigger aria-label="Open the admin menu" />
+            <Link href="/admin" className="text-lg no-underline" aria-label="Dr Quick admin, overview"><Wordmark /></Link>
+          </header>
+          <div className="mx-auto w-full max-w-[1280px] px-8 py-10 max-cols:px-4 max-cols:py-6">{children}</div>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }
