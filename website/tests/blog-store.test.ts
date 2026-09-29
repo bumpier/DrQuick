@@ -1,6 +1,10 @@
-import { test, expect, beforeEach, vi, describe } from 'vitest';
+import { beforeAll, test, expect, beforeEach, vi, describe } from 'vitest';
+import { resetDb, useTestDb } from './helpers/db';
+import { setDb, type DB } from '@/lib/db';
+let testDb: DB;
+beforeAll(async () => { testDb = await useTestDb(); });
 import {
-  deletePost, getPost, getPublishedBySlug, listAll, listPublished, resetMemoryStore, savePost, setStatus,
+  deletePost, getPost, getPublishedBySlug, listAll, listPublished, savePost, setStatus,
 } from '@/lib/blog-store';
 import { readingMinutes, slugify, validatePost, type PostInput } from '@/lib/blog';
 
@@ -9,10 +13,11 @@ const input = (over: Partial<PostInput> = {}): PostInput => ({
   slug: 'what-a-fit-note-is', title: 'What a fit note is', summary: 'A short guide.', body: 'Some **text**.', tone: 'wash', ...over,
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  setDb(testDb);
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
-  resetMemoryStore();
+  await resetDb(testDb);
 });
 
 describe('the post helpers', () => {
@@ -31,7 +36,7 @@ describe('the post helpers', () => {
   });
 });
 
-describe('the in-memory store (development and tests)', () => {
+describe('the store', () => {
   test('a new post is a draft: listed for admins, invisible to the public', async () => {
     const saved = await savePost(input(), AUTHOR, undefined, 1000);
     expect(saved.ok).toBe(true);
@@ -80,57 +85,26 @@ describe('the in-memory store (development and tests)', () => {
   });
 });
 
-describe('the Redis store', () => {
-  function stubRedis(...responses: unknown[][]) {
-    vi.stubEnv('KV_REST_API_URL', 'https://kv.example');
-    vi.stubEnv('KV_REST_API_TOKEN', 'tok');
-    const fetchMock = vi.fn();
-    for (const results of responses) {
-      fetchMock.mockResolvedValueOnce({ ok: true, json: async () => results.map((result) => ({ result })) });
-    }
-    vi.stubGlobal('fetch', fetchMock);
-    return (i: number) => JSON.parse(fetchMock.mock.calls[i][1].body);
-  }
-
-  test('creating a post claims the slug with SET NX, then writes the hash and the index', async () => {
-    const body = stubRedis(['OK'], [12, 1, 0]);
-    const saved = await savePost(input(), AUTHOR, undefined, 1000);
-    expect(saved.ok).toBe(true);
+describe('the Postgres store', () => {
+  test('a post round-trips every field, dates as epoch ms', async () => {
+    const saved = await savePost(input({ tone: 'sage' }), AUTHOR, undefined, 1000);
     const id = saved.ok ? saved.value.id : '';
-    expect(body(0)).toEqual([['SET', 'blog:slug:what-a-fit-note-is', id, 'NX']]);
-    const write = body(1);
-    expect(write[0].slice(0, 2)).toEqual(['HSET', `blog:post:${id}`]);
-    expect(write[1]).toEqual(['ZADD', 'blog:all', 1000, id]);
-    expect(write[2]).toEqual(['ZREM', 'blog:published', id]);
+    await setStatus(id, 'published', 3000);
+    const got = await getPost(id);
+    expect(got.ok && got.value).toMatchObject({
+      id, tone: 'sage', status: 'published', authorName: 'Sam Editor', createdAt: 1000, updatedAt: 3000, publishedAt: 3000,
+    });
   });
 
-  test('a taken slug writes nothing', async () => {
-    const body = stubRedis([null]);
-    expect(await savePost(input(), AUTHOR)).toEqual({ ok: false, error: 'slug_taken' });
-    expect(() => body(1)).toThrow();
-  });
-
-  test('the public list reads the published index, then each hash', async () => {
-    const hash = ['id', 'p1', 'slug', 's', 'title', 'T', 'summary', 'S', 'body', 'B', 'tone', 'sage', 'status', 'published',
-      'authorEmail', 'e', 'authorName', 'n', 'createdAt', '1', 'updatedAt', '2', 'publishedAt', '3'];
-    const body = stubRedis([['p1']], [hash]);
-    const posts = await listPublished();
-    expect(body(0)).toEqual([['ZREVRANGE', 'blog:published', 0, 99]]);
-    expect(body(1)).toEqual([['HGETALL', 'blog:post:p1']]);
-    expect(posts[0]).toMatchObject({ id: 'p1', tone: 'sage', status: 'published', publishedAt: 3 });
-  });
-
-  test('a store that fails shows the public an empty blog, never an error', async () => {
-    vi.stubEnv('KV_REST_API_URL', 'https://kv.example');
-    vi.stubEnv('KV_REST_API_TOKEN', 'tok');
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
+  test('a database that fails shows the public an empty blog, never an error', async () => {
+    setDb({ select: () => { throw new Error('down'); } } as unknown as DB);
     expect(await listPublished()).toEqual([]);
     expect(await getPublishedBySlug('x')).toBeNull();
   });
 });
 
-test('a production build with no store has no blog to write to', async () => {
-  vi.stubEnv('NODE_ENV', 'production');
+test('a production server with no database has no blog to write to', async () => {
+  setDb(null);
   expect(await listAll()).toEqual({ ok: false, error: 'store_unavailable' });
   expect(await listPublished()).toEqual([]);
 });

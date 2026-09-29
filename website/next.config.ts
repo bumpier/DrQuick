@@ -32,6 +32,9 @@ const SECURITY_HEADERS = [
 const NOINDEX = { key: 'X-Robots-Tag', value: 'noindex, nofollow' };
 
 const nextConfig: NextConfig = {
+  // Loaded with require() at runtime rather than bundled: PGlite ships WASM and
+  // data files it finds beside itself, and postgres.js is plain Node.
+  serverExternalPackages: ['@electric-sql/pglite', 'postgres'],
   async headers() {
     return [
       { source: '/(.*)', headers: SECURITY_HEADERS },

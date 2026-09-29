@@ -1,4 +1,8 @@
-import { test, expect, beforeEach, vi } from 'vitest';
+import { beforeAll, test, expect, beforeEach, vi } from 'vitest';
+import { resetDb, useTestDb } from './helpers/db';
+import { setDb, type DB } from '@/lib/db';
+let testDb: DB;
+beforeAll(async () => { testDb = await useTestDb(); });
 
 const jar = new Map<string, string>();
 vi.mock('next/headers', () => ({
@@ -17,7 +21,7 @@ vi.mock('next/cache', () => ({ revalidatePath: (...args: unknown[]) => revalidat
 
 import { deletePostAction, publishPostAction, savePostAction, unpublishPostAction } from '@/app/admin/(panel)/blog/actions';
 import { SESSION_COOKIE, hashPassword, signSession } from '@/lib/admin-auth';
-import { getPublishedBySlug, listAll, resetMemoryStore } from '@/lib/blog-store';
+import { getPublishedBySlug, listAll } from '@/lib/blog-store';
 import type { PostInput } from '@/lib/blog';
 
 const HASH = hashPassword('correct horse battery');
@@ -27,14 +31,15 @@ const clean: PostInput = {
   body: '## When you need one\n\nIf you are off work for more than seven days, your employer can ask for a fit note.',
 };
 
-beforeEach(() => {
+beforeEach(async () => {
+  setDb(testDb);
   vi.unstubAllEnvs();
   vi.stubEnv('ADMIN_SESSION_SECRET', 'y'.repeat(40));
   vi.stubEnv('ADMIN_USERS', `editor@example.com|Sam Editor|${HASH}`);
   jar.clear();
   jar.set(SESSION_COOKIE, signSession('editor@example.com')!);
   revalidatePath.mockClear();
-  resetMemoryStore();
+  await resetDb(testDb);
 });
 
 test('every action refuses a visitor with no session', async () => {

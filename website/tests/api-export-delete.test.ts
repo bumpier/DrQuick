@@ -1,14 +1,23 @@
-import { test, expect, beforeEach, describe, vi } from 'vitest';
+import { test, expect, beforeAll, beforeEach, describe, vi } from 'vitest';
+import { resetDb, useTestDb } from './helpers/db';
+import { setDb, type DB } from '@/lib/db';
+import { events, sessions, visitors, waitlistSignups } from '@/lib/db/schema';
+import { joinWaitlist } from '@/lib/waitlist';
+import { eq } from 'drizzle-orm';
 import { GET, csvCell } from '@/app/api/waitlist-export/route';
 import { POST as DELETE_POST } from '@/app/api/waitlist-delete/route';
 
-beforeEach(() => {
+let db: DB;
+beforeAll(async () => { db = await useTestDb(); });
+
+beforeEach(async () => {
   vi.unstubAllEnvs();
-  vi.unstubAllGlobals();
-  vi.stubEnv('KV_REST_API_URL', 'https://kv.example');
-  vi.stubEnv('KV_REST_API_TOKEN', 'tok');
   vi.stubEnv('WAITLIST_EXPORT_TOKEN', 'secret-token');
+  setDb(db);
+  await resetDb(db);
 });
+
+const at = (iso: string) => new Date(iso);
 
 const exportReq = (auth?: string) =>
   new Request('http://localhost/api/waitlist-export', {
@@ -20,15 +29,6 @@ const deleteReq = (body: unknown, auth?: string) =>
     headers: { 'Content-Type': 'application/json', ...(auth ? { authorization: auth } : {}) },
     body: JSON.stringify(body),
   });
-
-function stubPipeline(results: unknown[]) {
-  const fetchMock = vi.fn<typeof fetch>(async () => ({
-    ok: true,
-    json: async () => results.map((result) => ({ result })),
-  }) as Response);
-  vi.stubGlobal('fetch', fetchMock);
-  return fetchMock;
-}
 
 describe('csvCell', () => {
   test('escapes the formula-leading characters', () => {
@@ -56,65 +56,50 @@ describe('authorisation', () => {
   });
 });
 
-test('export renders sorted CSV with escaped cells', async () => {
-  const entries = [
-    'patient:b@example.com', JSON.stringify({ email: 'b@example.com', role: 'patient', source: 'hero', joinedAt: '2026-08-02T00:00:00.000Z' }),
-    'gp:=evil@example.com', JSON.stringify({ email: '=evil@example.com', role: 'gp', source: 'recap-gp', joinedAt: '2026-08-01T00:00:00.000Z' }),
-    'patient:broken@example.com', 'not-json',
-  ];
-  stubPipeline([entries]);
+test('export renders CSV oldest first, with escaped cells', async () => {
+  await joinWaitlist(db, { role: 'patient', email: 'b@example.com', source: 'hero' });
+  await joinWaitlist(db, { role: 'gp', email: '=evil@example.com', source: 'recap-gp', name: 'N', mobile: '07700900123', gmc: '1234567' });
+  await db.update(waitlistSignups).set({ createdAt: at('2026-08-02T00:00:00Z') }).where(eq(waitlistSignups.email, 'b@example.com'));
+  await db.update(waitlistSignups).set({ createdAt: at('2026-08-01T00:00:00Z') }).where(eq(waitlistSignups.email, '=evil@example.com'));
   const res = await GET(exportReq('Bearer secret-token'));
   expect(res.status).toBe(200);
   expect(res.headers.get('Content-Type')).toBe('text/csv; charset=utf-8');
   expect(res.headers.get('Content-Disposition')).toBe('attachment; filename="dr-quick-waitlist.csv"');
   const lines = (await res.text()).split('\n');
-  expect(lines[0]).toBe('email,role,name,mobile,gmc,source,joined_at');
-  expect(lines[1]).toContain('"broken@example.com"'); // corrupt row falls back to field key, sorts first (empty joinedAt)
-  expect(lines[2]).toContain(`"'=evil@example.com"`); // escaped, 08-01 before 08-02
-  expect(lines[3]).toContain('"b@example.com"');
+  expect(lines[0]).toBe('email,role,name,mobile,gmc,source,status,utm_source,joined_at');
+  expect(lines[1]).toBe(`"'=evil@example.com","gp","N","07700900123","1234567","recap-gp","new","","2026-08-01T00:00:00.000Z"`);
+  expect(lines[2]).toBe('"b@example.com","patient","","","","hero","subscribed","","2026-08-02T00:00:00.000Z"');
 });
 
-// One CSV covers both roles: a GP row fills the sign-up columns, a patient row
-// leaves them empty rather than the export splitting into two files.
-test('a GP row carries the sign-up columns and a patient row leaves them blank', async () => {
-  const entries = [
-    'gp:jane@example.com', JSON.stringify({
-      email: 'jane@example.com', role: 'gp', name: 'Dr Jane Okafor',
-      mobile: '07700900123', gmc: '1234567', source: 'hero-gp', joinedAt: '2026-08-01T00:00:00.000Z',
-    }),
-    'patient:b@example.com', JSON.stringify({
-      email: 'b@example.com', role: 'patient', source: 'hero', joinedAt: '2026-08-02T00:00:00.000Z',
-    }),
-  ];
-  stubPipeline([entries]);
-  const lines = (await (await GET(exportReq('Bearer secret-token'))).text()).split('\n');
-  expect(lines[1]).toBe('"jane@example.com","gp","Dr Jane Okafor","07700900123","1234567","hero-gp","2026-08-01T00:00:00.000Z"');
-  expect(lines[2]).toBe('"b@example.com","patient","","","","hero","2026-08-02T00:00:00.000Z"');
-});
-
-test('export without store config is 503; store failure is 502', async () => {
-  vi.stubEnv('KV_REST_API_URL', '');
-  vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
+test('export with no database is 503; a read failure is 502', async () => {
+  setDb(null);
   expect((await GET(exportReq('Bearer secret-token'))).status).toBe(503);
-  vi.stubEnv('KV_REST_API_URL', 'https://kv.example');
-  vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 500 })));
+  setDb({ select: () => { throw new Error('down'); } } as unknown as DB);
   expect((await GET(exportReq('Bearer secret-token'))).status).toBe(502);
 });
 
-test('delete removes the address from both role sets and the hash', async () => {
-  const fetchMock = stubPipeline([1, 0, 1]); // SREM patient=1, SREM gp=0, HDEL=1
+test('delete erases every sign-up for the address and the analytics linked to it', async () => {
+  const visitor = '0f8e2a8c-3b1d-4c55-9d0e-1a2b3c4d5e6f';
+  const now = new Date();
+  await db.insert(visitors).values({ id: visitor, firstSeen: now, lastSeen: now });
+  await db.insert(sessions).values({
+    id: '1f8e2a8c-3b1d-4c55-9d0e-1a2b3c4d5e6f', visitorId: visitor, startedAt: now, lastSeen: now,
+    entryPath: '/', exitPath: '/', currentPath: '/', device: 'desktop', browser: 'Chrome', os: 'macOS',
+  });
+  await db.insert(events).values({ visitorId: visitor, type: 'pageview', path: '/', ts: now });
+  await joinWaitlist(db, { role: 'patient', email: 'a@b.co', source: 'hero', visitorId: visitor });
+  await joinWaitlist(db, { role: 'gp', email: 'a@b.co', source: 'hero-gp', name: 'N', mobile: '07700900123', gmc: '1234567' });
+  await joinWaitlist(db, { role: 'patient', email: 'keep@b.co', source: 'hero' });
+
   const res = await DELETE_POST(deleteReq({ email: ' A@B.CO ' }, 'Bearer secret-token'));
   expect(res.status).toBe(200);
   expect(await res.json()).toEqual({ ok: true, removed: 2 });
-  const body = JSON.parse(fetchMock.mock.calls[0][1]!.body as string);
-  expect(body).toEqual([
-    ['SREM', 'waitlist:patient', 'a@b.co'],
-    ['SREM', 'waitlist:gp', 'a@b.co'],
-    ['HDEL', 'waitlist:entries', 'patient:a@b.co', 'gp:a@b.co'],
-  ]);
+  expect((await db.select().from(waitlistSignups)).map((r) => r.email)).toEqual(['keep@b.co']);
+  expect(await db.select().from(visitors)).toEqual([]);
+  expect(await db.select().from(sessions)).toEqual([]);
+  expect(await db.select().from(events)).toEqual([]);
 });
 
 test('delete validates the email', async () => {
-  stubPipeline([]);
   expect((await DELETE_POST(deleteReq({ email: 'not-an-email' }, 'Bearer secret-token'))).status).toBe(400);
 });

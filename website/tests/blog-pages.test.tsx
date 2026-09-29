@@ -1,5 +1,9 @@
 // @vitest-environment jsdom
-import { test, expect, vi, beforeEach } from 'vitest';
+import { beforeAll, test, expect, vi, beforeEach } from 'vitest';
+import { resetDb, useTestDb } from './helpers/db';
+import { setDb, type DB } from '@/lib/db';
+let testDb: DB;
+beforeAll(async () => { testDb = await useTestDb(); });
 import { render, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
@@ -9,7 +13,7 @@ vi.mock('next/link', () => import('./helpers/next-link'));
 import BlogIndexPage from '@/app/(site)/blog/page';
 import BlogPostPage, { generateMetadata } from '@/app/(site)/blog/[slug]/page';
 import { Prose } from '@/components/blog/Prose';
-import { resetMemoryStore, savePost, setStatus } from '@/lib/blog-store';
+import { savePost, setStatus } from '@/lib/blog-store';
 import type { PostInput } from '@/lib/blog';
 
 const AUTHOR = { email: 'editor@example.com', name: 'Sam Editor' };
@@ -23,9 +27,10 @@ async function publish(p: PostInput, at: number) {
   return saved.value;
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  setDb(testDb);
   cleanup();
-  resetMemoryStore();
+  await resetDb(testDb);
 });
 
 test('the index says so when there is nothing published', async () => {

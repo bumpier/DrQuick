@@ -1,4 +1,6 @@
-import { test, expect, beforeEach, vi, describe } from 'vitest';
+import { test, expect, beforeAll, beforeEach, vi, describe } from 'vitest';
+import { resetDb, useTestDb } from './helpers/db';
+import { setDb, type DB } from '@/lib/db';
 
 // next/headers is request-scoped; stand in a cookie jar and a header bag.
 const jar = new Map<string, { value: string; opts?: Record<string, unknown> }>();
@@ -16,7 +18,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 import {
-  SESSION_COOKIE, adminAccounts, hashPassword, loginAllowed, readSession, requireAdmin, resetLoginThrottle,
+  SESSION_COOKIE, adminAccounts, hashPassword, loginAllowed, readSession, requireAdmin,
   signSession, verifyCredentials, verifyPassword,
 } from '@/lib/admin-auth';
 import { signIn, signOut } from '@/app/admin/actions';
@@ -24,13 +26,17 @@ import { signIn, signOut } from '@/app/admin/actions';
 const SECRET = 'x'.repeat(40);
 const HASH = hashPassword('correct horse battery');
 
-beforeEach(() => {
+let db: DB;
+beforeAll(async () => { db = await useTestDb(); });
+
+beforeEach(async () => {
   vi.unstubAllEnvs();
+  setDb(db);
   vi.stubEnv('ADMIN_SESSION_SECRET', SECRET);
   vi.stubEnv('ADMIN_USERS', `Editor@Example.com|Sam Editor|${HASH};broken-entry;other@example.com|Alex Other|${HASH}`);
   jar.clear();
   reqHeaders.set('x-forwarded-for', '203.0.113.9');
-  resetLoginThrottle();
+  await resetDb(db);
 });
 
 describe('passwords', () => {
@@ -129,9 +135,9 @@ describe('sign in and out', () => {
   });
 
   test('a production server with no store says so, rather than blaming the password', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
+    setDb(null);
     const result = await signIn({ error: null, email: '' }, form('editor@example.com', 'correct horse battery'));
-    expect(result.error).toMatch(/Redis store, which is not configured/);
+    expect(result.error).toMatch(/database, which is not configured/);
     expect(jar.has(SESSION_COOKIE)).toBe(false);
   });
 

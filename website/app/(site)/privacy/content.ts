@@ -3,7 +3,7 @@
 // privacy contact, the lawful basis and the hosting processors are bracketed
 // placeholders. This page is noindexed and carries a draft banner until a
 // lawyer has reviewed it and the placeholders are real. It describes only what
-// the code actually does: app/api/waitlist/route.ts and lib/waitlist-store.ts.
+// the code actually does: app/api/waitlist/route.ts and lib/waitlist.ts.
 import { CONTACT_EMAIL } from '@/lib/site';
 
 export const PRIVACY_UPDATED = '25 September 2026';

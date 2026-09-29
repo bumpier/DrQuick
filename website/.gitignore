@@ -4,3 +4,6 @@ next-env.d.ts
 .env*.local
 coverage/
 *.tsbuildinfo
+
+# Local development database (PGlite), made by `npm run dev` with no DATABASE_URL
+.data/

@@ -43,10 +43,26 @@ count=$(pm2 jlist | node -e "
 say "Installing dependencies"
 npm ci
 
+say "Migrating the database"
+npm run db:migrate || die "Migrations failed — the old build is still running. Check DATABASE_URL (docs/postgres-vps.md)."
+
 say "Building"
 npm run build
 
 say "Restarting $PM2_NAME on port $PORT"
+# pm2 restart keeps the process's old cwd, so a process started from another
+# checkout would come back serving that checkout's stale build. Recreate it here.
+if [ "$count" -eq 1 ]; then
+  cwd=$(pm2 jlist | node -e "
+    let s = ''; process.stdin.on('data', d => s += d).on('end', () =>
+      console.log(JSON.parse(s).find(p => p.name === process.argv[1]).pm2_env.pm_cwd));
+  " "$PM2_NAME")
+  if [ "$cwd" != "$PWD" ]; then
+    say "$PM2_NAME was running from $cwd; moving it to $PWD"
+    pm2 delete "$PM2_NAME"
+    count=0
+  fi
+fi
 if [ "$count" -eq 1 ]; then
   PORT="$PORT" pm2 restart "$PM2_NAME" --update-env
 else

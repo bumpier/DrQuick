@@ -22,7 +22,7 @@ export async function signIn(_prev: SignInState, form: FormData): Promise<SignIn
     if (!(await loginAllowed(ip, email))) return { error: 'Too many attempts. Try again in ten minutes.', email };
   } catch (err) {
     return (err as Error).message === 'store_unavailable'
-      ? { error: 'Sign-in needs the site’s Redis store, which is not configured on this server.', email }
+      ? { error: 'Sign-in needs the site’s database, which is not configured on this server (set DATABASE_URL).', email }
       : { error: 'Sign-in is unavailable right now. Try again shortly.', email };
   }
 

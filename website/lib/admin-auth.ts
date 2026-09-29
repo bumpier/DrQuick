@@ -11,10 +11,11 @@
 // ADMIN_SESSION_SECRET, in an httpOnly, SameSite=Strict cookie scoped to /admin.
 // The proxy (proxy.ts) only redirects when the cookie is missing; the real
 // check is requireAdmin() here, in every admin page and every server action.
-import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { configured, pipeline } from '@/lib/waitlist-store';
+import { getDb } from '@/lib/db';
+import { hashKey, hit } from '@/lib/rate-limit';
 
 export const SESSION_COOKIE = 'dq_admin';
 export const SESSION_HOURS = 8;
@@ -123,31 +124,15 @@ export async function endSession() {
 
 /* ------------------------------------------------------------- throttle */
 
-// Five attempts per ten minutes per IP and email, on the waitlist's pattern: a
-// salted hash as the key (never the raw IP), INCR plus EXPIRE NX. In
-// development and tests an in-memory map stands in; a production build with no
-// store throws 'store_unavailable' and sign-in is refused, since there is no
-// blog to edit without one.
+// Five attempts per ten minutes per IP and email, in the rate_limits table (a
+// salted hash as the key, never the raw IP). A production server with no
+// database throws 'store_unavailable' and sign-in is refused: every admin page
+// reads the database, so there would be nothing to sign in to.
 const ATTEMPTS = 5;
 const WINDOW_S = 600;
-const g = globalThis as typeof globalThis & { __drQuickLogin?: Map<string, { n: number; until: number }> };
 
-export async function loginAllowed(ip: string, email: string, now = Date.now()): Promise<boolean> {
-  const salt = process.env.RATE_LIMIT_SALT || 'dr-quick-admin';
-  const key = `rl:admin:${createHash('sha256').update(`${salt}|${ip}|${email.toLowerCase()}`).digest('hex').slice(0, 24)}`;
-  if (configured()) {
-    const [count] = await pipeline([['INCR', key], ['EXPIRE', key, WINDOW_S, 'NX']]);
-    return Number(count) <= ATTEMPTS;
-  }
-  if (process.env.NODE_ENV === 'production') throw new Error('store_unavailable');
-  const map = (g.__drQuickLogin ??= new Map());
-  const entry = map.get(key);
-  const fresh = !entry || entry.until <= now ? { n: 0, until: now + WINDOW_S * 1000 } : entry;
-  fresh.n += 1;
-  map.set(key, fresh);
-  return fresh.n <= ATTEMPTS;
-}
-
-export function resetLoginThrottle() {
-  g.__drQuickLogin = new Map();
+export async function loginAllowed(ip: string, email: string, now = new Date()): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error('store_unavailable');
+  return (await hit(db, hashKey('rl:admin', ip, email.toLowerCase()), WINDOW_S, now)) <= ATTEMPTS;
 }
