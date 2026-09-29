@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { EmptyState } from '@/components/app/EmptyState';
 import { AdminPageHeader, NoDatabase } from '@/components/admin/AdminPageHeader';
 import { DateRangePicker } from '@/components/admin/DateRangePicker';
+import { DemoBadge } from '@/components/admin/DemoBadge';
 import { Kpi, KpiRow } from '@/components/admin/Kpi';
 import { Sparkline } from '@/components/admin/Sparkline';
 import { StatusBadge } from '@/components/admin/StatusBadge';
@@ -10,9 +11,11 @@ import { TrendChart } from '@/components/admin/TrendChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { requireAdmin } from '@/lib/admin-auth';
 import { ago, delta, fmtCount, fmtDate, fmtPct } from '@/lib/admin/format';
+import { isDemo } from '@/lib/admin/queries/finance';
 import { overview } from '@/lib/admin/queries/overview';
 import { bucketLabel, parseRange } from '@/lib/admin/range';
 import { getDb } from '@/lib/db';
+import { demoSource } from '@/lib/finance/demo';
 import { gbp } from '@/lib/money';
 
 export const metadata: Metadata = { title: 'Overview' };
@@ -22,22 +25,27 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function OverviewPage({ searchParams }: Props) {
   await requireAdmin();
   const now = new Date();
-  const range = parseRange(await searchParams, now);
+  const params = await searchParams;
+  const range = parseRange(params, now);
+  // ?demo=1 previews the two finance figures from the demo generator, as the
+  // finance pages do; everything else on the page stays real.
+  const demo = isDemo(params);
   const header = <AdminPageHeader title="Overview" description="How the waitlist and the site are doing, at a glance." />;
   const db = await getDb();
   if (!db) return <>{header}<NoDatabase /></>;
 
-  const o = await overview(db, range, now);
+  const o = await overview(db, range, now, demo ? demoSource(now) : undefined);
   const labels = o.signupSeries.keys.map(bucketLabel);
   const per = range.bucket === 'day' ? 'day' : 'month';
   const anySignups = o.signups.patients + o.signups.gps > 0;
   const anyVisitors = o.visitors > 0;
   const paymentsLive = o.revenue !== 0 || o.prevRevenue !== 0;
+  const badge = demo ? <DemoBadge /> : undefined;
 
   return (
     <>
       {header}
-      <DateRangePicker range={range} basePath="/admin" now={now} />
+      <DateRangePicker range={range} basePath="/admin" keep={{ demo: demo ? '1' : undefined }} now={now} />
 
       <KpiRow>
         <Kpi label="Visitors" value={fmtCount(o.visitors)} change={delta(o.visitors, o.prevVisitors)}
@@ -55,9 +63,9 @@ export default async function OverviewPage({ searchParams }: Props) {
           note="Sign-ups divided by visitors" />
         <Kpi label="Revenue this month" value={gbp(o.revenue)}
           change={paymentsLive ? delta(o.revenue, o.prevRevenue) : undefined}
-          note={paymentsLive ? 'Payments taken, less refunds. Compared with last month.' : 'Payments are not live yet.'} />
+          note={paymentsLive ? 'Payments taken, less refunds. Compared with last month.' : 'Payments are not live yet.'}>{badge}</Kpi>
         <Kpi label="GP payouts pending" value={gbp(o.payouts.pence)} goodWhen="down"
-          note={o.payouts.count === 0 ? 'Nothing owed to GPs.' : `${fmtCount(o.payouts.count)} ${o.payouts.count === 1 ? 'payout' : 'payouts'} to send`} />
+          note={o.payouts.count === 0 ? 'Nothing owed to GPs.' : `${fmtCount(o.payouts.count)} ${o.payouts.count === 1 ? 'payout' : 'payouts'} to send`}>{badge}</Kpi>
       </KpiRow>
 
       <div className="mt-4 grid grid-cols-[3fr_2fr] gap-4 max-forms:grid-cols-1">

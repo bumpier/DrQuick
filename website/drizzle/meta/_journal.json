@@ -8,6 +8,13 @@
       "when": 1790681522711,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790684065230,
+      "tag": "0001_finance_webhook_idempotency",
+      "breakpoints": true
     }
   ]
 }

@@ -225,6 +225,7 @@ export const payments = pgTable('payments', {
   createdAt: created(),
 }, (t) => [
   index('payments_paid').on(t.paidAt),
+  index('payments_consultation').on(t.consultationId),
   uniqueIndex('payments_intent').on(t.stripePaymentIntentId),
 ]);
 
@@ -235,7 +236,12 @@ export const refunds = pgTable('refunds', {
   reason: text('reason'),
   stripeRefundId: text('stripe_refund_id'),
   createdAt: created(),
-}, (t) => [index('refunds_created').on(t.createdAt)]);
+}, (t) => [
+  index('refunds_created').on(t.createdAt),
+  index('refunds_payment').on(t.paymentId),
+  // The webhook inserts a refund once per Stripe refund, however often it is told.
+  uniqueIndex('refunds_stripe').on(t.stripeRefundId),
+]);
 
 export const PAYOUT_STATUSES = ['pending', 'processing', 'paid', 'failed'] as const;
 
@@ -249,7 +255,18 @@ export const payouts = pgTable('payouts', {
   stripeTransferId: text('stripe_transfer_id'),
   paidAt: timestamp('paid_at', { withTimezone: true }),
   createdAt: created(),
-}, (t) => [index('payouts_gp').on(t.gpId), index('payouts_period').on(t.periodEnd)]);
+}, (t) => [
+  index('payouts_gp').on(t.gpId),
+  index('payouts_period').on(t.periodEnd),
+  uniqueIndex('payouts_transfer').on(t.stripeTransferId),
+]);
+
+// Every Stripe event id the webhook has applied, so a redelivery is a no-op.
+export const stripeEvents = pgTable('stripe_events', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(),
+  receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const payoutItems = pgTable('payout_items', {
   payoutId: uuid('payout_id').notNull(),

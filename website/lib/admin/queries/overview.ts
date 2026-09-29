@@ -11,6 +11,8 @@ import type { DB } from '@/lib/db';
 import { waitlistSignups } from '@/lib/db/schema';
 import { rowsOf } from '@/lib/rate-limit';
 import { bucketKeys, type Range, type Span } from '@/lib/admin/range';
+import { collectedRevenue, dbSource, pendingPayouts } from '@/lib/admin/queries/finance';
+import { monthWindow, type FinanceSource } from '@/lib/finance/model';
 
 const iso = (d: Date) => d.toISOString();
 const n = (v: unknown) => Number(v ?? 0);
@@ -113,31 +115,9 @@ export async function liveSessions(db: DB, now = new Date(), limit = 10) {
   };
 }
 
-export function monthSpan(now: Date, offset = 0): Span {
-  const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1));
-  const to = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset + 1, 1));
-  return { from, to, fromDay: from.toISOString().slice(0, 10), toDay: new Date(to.getTime() - 86_400_000).toISOString().slice(0, 10) };
-}
-
-// Net revenue in pence: succeeded payments paid in the span, less refunds
-// made in it.
-export async function netRevenue(db: DB, s: Span): Promise<number> {
-  const [row] = rowsOf<{ paid: number; refunded: number }>(await db.execute(sql`
-    select
-      (select coalesce(sum(amount_pence), 0) from payments
-        where status = 'succeeded' and paid_at >= ${iso(s.from)} and paid_at < ${iso(s.to)})::bigint as paid,
-      (select coalesce(sum(amount_pence), 0) from refunds
-        where created_at >= ${iso(s.from)} and created_at < ${iso(s.to)})::bigint as refunded`));
-  return n(row?.paid) - n(row?.refunded);
-}
-
-export async function pendingPayouts(db: DB): Promise<{ pence: number; count: number }> {
-  const [row] = rowsOf<{ pence: number; c: number }>(await db.execute(sql`
-    select coalesce(sum(amount_pence), 0)::bigint as pence, count(*)::int as c from payouts where status = 'pending'`));
-  return { pence: n(row?.pence), count: n(row?.c) };
-}
-
-export async function overview(db: DB, range: Range, now = new Date()) {
+// The finance figures come from the finance pages' source, so the Overview
+// and /admin/finance can never disagree; pass the demo source to preview them.
+export async function overview(db: DB, range: Range, now = new Date(), finance: FinanceSource = dbSource(db)) {
   const [signups, prevSignups, visitors, prevVisitors, signupSeries, visitorSeries, latestGps, referrers, live, revenue, prevRevenue, payouts] =
     await Promise.all([
       signupCounts(db, range),
@@ -149,9 +129,9 @@ export async function overview(db: DB, range: Range, now = new Date()) {
       latestGpApplications(db),
       topReferrers(db, range),
       liveSessions(db, now),
-      netRevenue(db, monthSpan(now)),
-      netRevenue(db, monthSpan(now, -1)),
-      pendingPayouts(db),
+      collectedRevenue(finance, monthWindow(now)),
+      collectedRevenue(finance, monthWindow(now, -1)),
+      pendingPayouts(finance),
     ]);
   const conversion = (s: { patients: number; gps: number }, v: number) => (v > 0 ? (s.patients + s.gps) / v : null);
   return {

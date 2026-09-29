@@ -20,16 +20,18 @@ const STYLES = [
   { stroke: 'stroke-ink', fill: 'fill-ink', dash: '6 4', key: 'bg-ink' },
 ] as const;
 
-const GUTTER = 36;  // room for the y tick labels
+const GUTTER_DEFAULT = 36;  // room for the y tick labels
 const AXIS = 20;
 const TOP = 8;
 
-export function TrendChart({ series, labels, height = 180, ariaLabel, format = (v: number) => v.toLocaleString('en-GB') }: {
+export function TrendChart({ series, labels, height = 180, ariaLabel, format = (v: number) => v.toLocaleString('en-GB'), axisFormat = format, gutter: GUTTER = GUTTER_DEFAULT }: {
   series: TrendSeries[];
   labels: string[];
   height?: number;
   ariaLabel: string;
   format?: (v: number) => string;
+  axisFormat?: (v: number) => string;   // a shorter form for the y ticks (e.g. money)
+  gutter?: number;                      // width kept for those ticks
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const drawn = series.slice(0, 2);
@@ -90,7 +92,7 @@ export function TrendChart({ series, labels, height = 180, ariaLabel, format = (
                     <line className="stroke-rule" x1={GUTTER} x2={width} y1={TOP + height * (1 - f) + 0.5} y2={TOP + height * (1 - f) + 0.5} />
                     {f === 1 && (
                       <text className="fill-ink-2 text-[11px] tabular-nums" x={GUTTER - 8} y={TOP + 4} textAnchor="end">
-                        {format(ceiling)}
+                        {axisFormat(ceiling)}
                       </text>
                     )}
                   </g>

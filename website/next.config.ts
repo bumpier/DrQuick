@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import type { NextConfig } from 'next';
 
 const DEV = process.env.NODE_ENV === 'development';
@@ -46,7 +47,21 @@ const ADMIN_HEADERS = [
   NOINDEX,
 ];
 
+// Baked in when the config loads (at build, or when the dev server starts) for
+// the admin's Technical page. No git (a tarball deploy) leaves the SHA empty.
+function gitSha(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000 }).toString().trim();
+  } catch {
+    return '';
+  }
+}
+
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_BUILD_SHA: process.env.NEXT_PUBLIC_BUILD_SHA || gitSha(),
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+  },
   // Loaded with require() at runtime rather than bundled: PGlite ships WASM and
   // data files it finds beside itself, and postgres.js is plain Node.
   serverExternalPackages: ['@electric-sql/pglite', 'postgres'],
