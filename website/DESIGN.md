@@ -179,7 +179,8 @@ The find-a-GP flow at `/patient/book/*` adds composed patterns in `components/pa
 - **`ActionDock`**: one sticky action area at the bottom edge, primary first, with 52px targets. There is no draggable sheet.
 - **`ChoiceRow`**: a whole row is the target of a radio or checkbox. The chosen row is shown by a white fill and a 2px inset `primary-ink` ring, as well as by the control itself.
 - **`SearchPulse`**: the one looping motion on the patient surface, and it is functional. Two `primary-ink` rings scale out from a white core, only under `prefers-reduced-motion: no-preference`.
-- **`GpCard`**: the matched GP on the band, with a reference, the registration and why this GP was matched. It shows no name, face or rating.
+- **`GpCard`**: the matched GP on the band, with a reference, the registration and why this GP was matched. It shows no name or face. Since 2026-10-01 it shows the GP's average rating once five patients have given one: a lime star, the figure to one decimal place and the count, on one line under the registration.
+- **`Stars`**: five stars filled in proportion to a rating, so 4.55 is four and a bit over half, never five. Always beside the written figure and count, and hidden from assistive technology. On a light surface the fill is `primary-ink`, never lime.
 - **`PatientNav`**: a row in the top bar from 560px, and a fixed four-item tab bar below that. The active item is the lime pill (a lime-wash cell in the tab bar). It is hidden for the whole booking flow.
 - **Home**: a bento. The forest start card (or a lime resume tile while a consultation is live) and the 999 bar sit on the left; what needs you and recent consultations sit on the right, 16px apart.
 - **`FieldError`**: ink words with a red icon, and the invalid field's red border.

@@ -78,6 +78,19 @@ The page runs as two modes behind a nav switch — a GP page, which it opens on,
 
 Not decided, and not to be decided in code: whether a GP who withdraws of their own accord gets the fee back (the withdraw page says only that withdrawing does not refund it by itself, and to get in touch first); whether the fee carries VAT; whether the commission is of the price before or after Stripe's own charges (the code takes it of the full price the patient pays).
 
+### The doctor portal and ratings (the user's decisions, 2026-10-01)
+
+- **An approved GP has a portal at `/doctor`.** They sign in, go online, take the consultation they are offered, see what they have earned and where each payout is, and edit their profile. There is no separate registration: a GP claims the account through a one-time link emailed to the address they signed up with, and it unlocks when the team marks their application Active.
+- **A consultation is offered to one GP at a time.** The offer lasts 45 seconds; a decline or a timeout passes it to the next GP who is online, and never to the same GP twice. The oldest request goes first, to the GP who has been available longest. Price never moves a request up the queue. Before accepting, the GP sees the reason, the age band, whether the NHS record is shared, and what the consultation pays them, which is the figure they are then paid.
+- **Earnings are read-only.** The portal shows what a GP has earned, what is awaiting a payout, what is on its way and what has been paid, and where they stand on the commission tiers. Payouts are still made by the team; the portal cannot request or move money.
+- **Each GP has a rating out of five. This reverses the earlier "no ratings" rule.** A patient gives a completed consultation one to five stars, once, with no comment. The GP sees their average, how many patients rated them and the spread, and never which consultation a rating came from. A patient sees the rating of the GP they are matched with, still without a name or a face.
+
+Nothing creates a consultation yet: the patient side is still a prototype. Until a real patient flow exists, a live server has no offers, no earnings and no ratings, and no rating may be shown that a real patient did not give.
+
+Chosen as defaults while building, not by the user, and open to change: a patient sees a GP's rating only once five patients have rated them; a GP who lets an offer run out, or has just finished a consultation, is not offered another until they tap "Back online", and a GP who declines is; a request older than fifteen minutes is never offered; a GP's portal that goes silent for fifteen seconds loses its offer.
+
+Not decided, and not to be decided in code: whether a no-show or a call that ends early pays the GP anything (today it pays nothing); what a GP may be told about a low rating, and whether a rating can ever be removed; and, when a GP who has taken consultations asks to be erased, how much of their record must be kept (today their name and GMC number stay with the financial records and everything else goes).
+
 **Built (2026-08-27):** `/api/waitlist` is a Vercel serverless function with no npm dependencies, storing email, role, source and an ISO timestamp in Redis over the REST API. It does **not** retain IP addresses — the rate-limit key is a salted SHA-256 hash under a 600-second TTL and never enters the waitlist record. `/api/waitlist-export` returns CSV and `/api/waitlist-delete` executes an erasure request; both require a `WAITLIST_EXPORT_TOKEN` bearer token and refuse everything when it is unset.
 
 **Blocking before this page collects a real address:** UK GDPR Article 13 requires the data controller's registered name and address and a working privacy contact at the point of collection. The legal entity is still undecided (below), so the page cannot state them. A `DEPLOY / LEGAL` comment marks where they go.
@@ -134,7 +147,7 @@ Real, in-repo:
 **Absences future work must not fabricate:**
 
 - No customers, no patients, no consultations — the service has not launched.
-- No testimonials, no case studies, no press coverage, no reviews, no ratings.
+- No testimonials, no case studies, no press coverage, no reviews. No invented rating: a GP's rating is the average of the stars real patients gave (see "The doctor portal and ratings"), there are none until the service has consultations, and no marketing page shows one.
 - No CQC registration. No CQC rating. No registration number.
 - No named GPs, no GP headcount, no "X doctors online" figure. The superseded concept showed "6 GPs seeing patients right now" — that number was illustrative and is not real.
 - No app in any app store. No download links.
