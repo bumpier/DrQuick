@@ -44,6 +44,9 @@ export function normaliseMobile(value: unknown): string {
   return digits;
 }
 
+/** Whether an already-normalised number is a UK mobile. */
+export const isUkMobile = (mobile: string) => UK_MOBILE.test(mobile);
+
 export function normaliseGmc(value: unknown): string {
   return String(value ?? '').replace(/\s/g, '');
 }
