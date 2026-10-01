@@ -8,6 +8,8 @@ import {
   SettingsIcon, StethoscopeIcon, TimerIcon, UserSearchIcon, UsersIcon, type LucideIcon,
 } from 'lucide-react';
 
+import { activeNavHref } from '@/components/app/nav';
+
 export type AdminNavItem = { href: string; label: string; icon: LucideIcon };
 export type AdminNavGroup = { label: string; items: AdminNavItem[] };
 
@@ -56,11 +58,5 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = ADMIN_NAV.flatMap((g) => g.items)
 // The item a pathname belongs to: /admin/waitlist/gps/123 lights GPs, and
 // /admin lights Overview only when it is exactly /admin.
 export function activeHref(pathname: string): string | null {
-  const path = pathname.replace(/\/+$/, '') || '/';
-  let best: string | null = null;
-  for (const { href } of ADMIN_NAV_ITEMS) {
-    const hit = href === '/admin' ? path === '/admin' : path === href || path.startsWith(`${href}/`);
-    if (hit && (!best || href.length > best.length)) best = href;
-  }
-  return best;
+  return activeNavHref(pathname, ADMIN_NAV_ITEMS.map((item) => item.href), '/admin');
 }

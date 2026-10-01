@@ -52,6 +52,15 @@ test('the admin is never framed, not even by this origin, and is noindex', async
   expect(admin.headers).toContainEqual({ key: 'X-Robots-Tag', value: 'noindex, nofollow' });
 });
 
+test('the doctor portal is never framed either, and is noindex', async () => {
+  const rules = await nextConfig.headers!();
+  const doctor = rules.find((r) => r.source === '/doctor/:path*')!;
+  expect(rules.indexOf(doctor)).toBeGreaterThan(rules.findIndex((r) => r.source === '/(.*)'));
+  expect(doctor.headers).toContainEqual({ key: 'X-Frame-Options', value: 'DENY' });
+  expect(doctor.headers).toContainEqual({ key: 'Content-Security-Policy', value: ADMIN_CSP });
+  expect(doctor.headers).toContainEqual({ key: 'X-Robots-Tag', value: 'noindex, nofollow' });
+});
+
 test('unsubscribe links are noindex', async () => {
   const rules = await nextConfig.headers!();
   for (const path of ['/unsubscribe', '/unsubscribe/:path*']) {

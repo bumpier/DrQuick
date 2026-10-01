@@ -11,11 +11,12 @@
 // ADMIN_SESSION_SECRET, in an httpOnly, SameSite=Strict cookie scoped to /admin.
 // The proxy (proxy.ts) only redirects when the cookie is missing; the real
 // check is requireAdmin() here, in every admin page and every server action.
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
 import { hashKey, hit } from '@/lib/rate-limit';
+import { readToken, signToken } from '@/lib/signed-token';
 
 export const SESSION_COOKIE = 'dq_admin';
 export const SESSION_HOURS = 8;
@@ -68,28 +69,19 @@ function secret(): string | null {
   return s.length >= 32 ? s : null; // a short secret signs nothing
 }
 
-const mac = (payload: string, key: string) => createHmac('sha256', key).update(payload).digest('base64url');
-
 export function signSession(email: string, now = Date.now()): string | null {
   const key = secret();
   if (!key) return null;
-  const payload = b64(Buffer.from(JSON.stringify({ email, exp: now + SESSION_HOURS * 3600_000 })));
-  return `${payload}.${mac(payload, key)}`;
+  return signToken({ email, exp: now + SESSION_HOURS * 3600_000 }, key);
 }
 
 // The admin a token belongs to, if it is genuine, unexpired and the email is
 // still on the list.
 export function readSession(token: string | undefined, now = Date.now()): Admin | null {
   const key = secret();
-  if (!key || !token) return null;
-  const [payload, sig] = token.split('.');
-  if (!payload || !sig) return null;
-  const a = Buffer.from(sig);
-  const b = Buffer.from(mac(payload, key));
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  let data: { email?: unknown; exp?: unknown };
-  try { data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')); } catch { return null; }
-  if (typeof data.email !== 'string' || typeof data.exp !== 'number' || data.exp <= now) return null;
+  if (!key) return null;
+  const data = readToken(token, key, now);
+  if (!data || typeof data.email !== 'string') return null;
   const account = adminAccounts().get(data.email);
   return account ? { email: account.email, name: account.name } : null;
 }

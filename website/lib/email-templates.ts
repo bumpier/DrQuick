@@ -59,6 +59,43 @@ export function gpApplicationReceived(name: string, unsubscribeUrl: string, fee:
   };
 }
 
+// The one-time link that sets a portal password: `isNew` is a GP claiming their
+// account for the first time, otherwise it is a reset. Sent only to the address
+// the GP signed up with, which is what proves the account is theirs.
+export function doctorSetPassword(name: string, url: string, minutes: number, isNew: boolean): Email {
+  const paras = [
+    `Hello ${esc(name)},`,
+    isNew
+      ? 'Use the link below to choose a password for the Dr Quick doctor portal.'
+      : 'Use the link below to choose a new password for the Dr Quick doctor portal.',
+    `<a href="${esc(url)}" style="color:#2F6B0F;font-weight:700">Choose your password</a>`,
+    `The link works once and for ${minutes} minutes.`,
+  ];
+  const footer = 'If you did not ask for this, ignore this email. Nothing changes until the link is used.';
+  return {
+    subject: isNew ? 'Set up your Dr Quick doctor portal' : 'Reset your Dr Quick password',
+    html: layout(isNew ? 'Set up your portal' : 'Reset your password', paras, footer),
+    text: `${strip(paras.filter((p) => !p.startsWith('<a ')).join('\n\n'))}\n\nChoose your password: ${url}\n\n${footer}\n`,
+  };
+}
+
+// Sent when the team marks a GP Active. The portal is where they go online.
+export function doctorApproved(name: string, portalUrl: string, hasAccount: boolean): Email {
+  const paras = [
+    `Hello ${esc(name)},`,
+    'Your Dr Quick account is approved. You can now go online in the doctor portal and take consultations.',
+    hasAccount
+      ? `<a href="${esc(portalUrl)}" style="color:#2F6B0F;font-weight:700">Sign in to the portal</a>`
+      : `<a href="${esc(portalUrl)}" style="color:#2F6B0F;font-weight:700">Set up your portal sign-in</a>`,
+  ];
+  const footer = 'You are getting this because you signed up to consult with Dr Quick.';
+  return {
+    subject: 'Your Dr Quick account is approved',
+    html: layout('You’re approved', paras, footer),
+    text: `${strip(paras.filter((p) => !p.startsWith('<a ')).join('\n\n'))}\n\n${hasAccount ? 'Sign in' : 'Set up your sign-in'}: ${portalUrl}\n`,
+  };
+}
+
 // Internal only: never shown to the public, so not held to checkCopy().
 export function adminNewGp(
   signup: Pick<Signup, 'name' | 'email' | 'mobile' | 'gmc' | 'source'> & Partial<Pick<Signup, 'feeStatus'>>,

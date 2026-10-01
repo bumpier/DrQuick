@@ -6,7 +6,7 @@
 // stored anywhere: rate limits key on a salted hash, analytics on a random id.
 import { sql } from 'drizzle-orm';
 import {
-  bigserial, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
+  bigserial, boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
 
 // Relative, not '@/': drizzle-kit reads this file outside the app's bundler.
@@ -207,16 +207,56 @@ export const events = pgTable('events', {
 // Empty until consultations go live. Stripe ids are nullable so rows can be
 // written by the webhook (app/api/webhooks/stripe) once it is switched on.
 
+// A GP's account. 'onboarding' until the team marks the sign-up Active in the
+// waitlist pipeline; 'paused' is the team taking an active GP off the floor;
+// 'offboarded' can no longer sign in.
+export const GP_ACCOUNT_STATUSES = ['onboarding', 'active', 'paused', 'offboarded'] as const;
+export type GpAccountStatus = (typeof GP_ACCOUNT_STATUSES)[number];
+
 export const gps = pgTable('gps', {
   id: uuid('id').primaryKey().defaultRandom(),
   signupId: uuid('signup_id'),
   name: text('name').notNull(),
   email: text('email').notNull(),
   gmc: text('gmc').notNull(),
-  status: text('status', { enum: ['onboarding', 'active', 'paused', 'offboarded'] }).notNull().default('onboarding'),
+  status: text('status', { enum: GP_ACCOUNT_STATUSES }).notNull().default('onboarding'),
   stripeAccountId: text('stripe_account_id'),
+  // The portal sign-in (lib/doctor-auth.ts). The hash is null until the GP
+  // sets a password through an emailed link. A session cookie carries the epoch
+  // it was signed under, so a password change, which bumps it, ends every
+  // session signed before.
+  passwordHash: text('password_hash'),
+  sessionEpoch: integer('session_epoch').notNull().default(0),
+  // What the GP edits on their profile.
+  mobile: text('mobile'),
+  bio: text('bio').notNull().default(''),
+  languages: text('languages').notNull().default(''),
+  // The shift (lib/doctor/dispatch.ts). online_since null is offline;
+  // last_seen_at is the portal's heartbeat; available_since null is "not in
+  // rotation" (holding an offer, in a consultation, or yet to tap Back online)
+  // and otherwise is the fairness key: the longest available is offered first.
+  onlineSince: timestamp('online_since', { withTimezone: true }),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+  availableSince: timestamp('available_since', { withTimezone: true }),
   createdAt: created(),
-}, (t) => [uniqueIndex('gps_gmc').on(t.gmc)]);
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex('gps_gmc').on(t.gmc),
+  // The sign-in name. Always stored lower case.
+  uniqueIndex('gps_email').on(t.email),
+  index('gps_signup').on(t.signupId),
+]);
+
+// A one-time link to set a portal password: how a GP claims their account and
+// how they reset it. Only the SHA-256 of the token is stored; the token itself
+// exists in the email and nowhere else.
+export const doctorTokens = pgTable('doctor_tokens', {
+  tokenHash: text('token_hash').primaryKey(),
+  email: text('email').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: created(),
+}, (t) => [index('doctor_tokens_email').on(t.email)]);
 
 export const patients = pgTable('patients', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -236,9 +276,59 @@ export const consultations = pgTable('consultations', {
   startedAt: timestamp('started_at', { withTimezone: true }),
   endedAt: timestamp('ended_at', { withTimezone: true }),
   pricePence: integer('price_pence').notNull(),
+  // Until a GP accepts, a provisional split at the first commission tier; the
+  // accept writes the split that GP was quoted (consultation_offers.gp_fee_pence).
   gpFeePence: integer('gp_fee_pence').notNull(),
   platformFeePence: integer('platform_fee_pence').notNull(),
-}, (t) => [index('consultations_requested').on(t.requestedAt), index('consultations_gp').on(t.gpId)]);
+  // The three things a GP sees before accepting, and nothing more. The reason
+  // is health data: nothing may write it for a real patient until the privacy
+  // notice and the legal entity exist (CLAUDE.md, Compliance constraints).
+  reason: text('reason'),
+  ageBand: text('age_band'),
+  recordConsent: boolean('record_consent'),
+}, (t) => [
+  index('consultations_requested').on(t.requestedAt),
+  index('consultations_gp').on(t.gpId),
+  // A GP holds one consultation at a time, whatever the application does.
+  uniqueIndex('consultations_gp_live').on(t.gpId).where(sql`${t.status} = 'in_progress'`),
+  index('consultations_waiting').on(t.requestedAt).where(sql`${t.status} = 'requested'`),
+]);
+
+// One consultation offered to one GP for a short window (lib/doctor/dispatch.ts).
+// Every timestamp is the application's clock, passed in, never the database's:
+// the window is judged against one clock only. The literals in the partial
+// indexes are written inline because drizzle-kit drops a bound parameter.
+export const OFFER_STATUSES = ['offered', 'accepted', 'declined', 'expired', 'withdrawn'] as const;
+export type OfferStatus = (typeof OFFER_STATUSES)[number];
+
+export const consultationOffers = pgTable('consultation_offers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  consultationId: uuid('consultation_id').notNull(),
+  gpId: uuid('gp_id').notNull(),
+  status: text('status', { enum: OFFER_STATUSES }).notNull().default('offered'),
+  // What this GP is paid if they accept, at the commission tier they held when
+  // it was offered. The figure they were shown is the figure they are paid.
+  gpFeePence: integer('gp_fee_pence').notNull(),
+  offeredAt: timestamp('offered_at', { withTimezone: true }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  respondedAt: timestamp('responded_at', { withTimezone: true }),
+}, (t) => [
+  // A consultation is never offered to the same GP twice.
+  uniqueIndex('offers_consultation_gp').on(t.consultationId, t.gpId),
+  // One live offer per consultation and per GP.
+  uniqueIndex('offers_live_consultation').on(t.consultationId).where(sql`${t.status} = 'offered'`),
+  uniqueIndex('offers_live_gp').on(t.gpId).where(sql`${t.status} = 'offered'`),
+  index('offers_gp_offered').on(t.gpId, t.offeredAt),
+]);
+
+// A patient's rating of a completed consultation, one to five stars, once.
+// No comment field: free text about a consultation would be health data.
+export const consultationRatings = pgTable('consultation_ratings', {
+  consultationId: uuid('consultation_id').primaryKey(),
+  gpId: uuid('gp_id').notNull(),
+  stars: integer('stars').notNull(),
+  createdAt: created(),
+}, (t) => [index('ratings_gp').on(t.gpId)]);
 
 export const payments = pgTable('payments', {
   id: uuid('id').primaryKey().defaultRandom(),

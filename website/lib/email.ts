@@ -14,7 +14,7 @@ import { siteUrl } from '@/lib/site-url';
 import type { Signup } from '@/lib/waitlist';
 import { adminNewGp, gpApplicationReceived, patientWelcome, type Email } from '@/lib/email-templates';
 
-export type Template = 'patient_welcome' | 'gp_received' | 'admin_new_gp';
+export type Template = 'patient_welcome' | 'gp_received' | 'admin_new_gp' | 'doctor_set_password' | 'doctor_approved';
 
 export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);

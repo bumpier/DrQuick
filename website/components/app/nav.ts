@@ -31,6 +31,19 @@ export const DOCTOR_SECTION_OF: Record<string, string> = {
   offline: 'dashboard', 'online-idle': 'dashboard', 'no-patients-waiting': 'dashboard',
 };
 
+// The nav item a pathname belongs to, for a real (routed) surface: the longest
+// item it sits under, and the home item only on exactly the home path, so
+// /doctor/earnings/payouts/x lights Earnings and never Dashboard.
+export function activeNavHref(pathname: string, hrefs: readonly string[], home: string): string | null {
+  const path = pathname.replace(/\/+$/, '') || '/';
+  let best: string | null = null;
+  for (const href of hrefs) {
+    const hit = href === home ? path === home : path === href || path.startsWith(`${href}/`);
+    if (hit && (!best || href.length > best.length)) best = href;
+  }
+  return best;
+}
+
 export function screenIdFor(pathname: string): string {
   const path = pathname.replace(/\/+$/, '') || '/';
   if (path === '/doctor') return 'dashboard';

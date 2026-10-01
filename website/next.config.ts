@@ -73,7 +73,8 @@ const nextConfig: NextConfig = {
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       { source: '/patient/:path*', headers: [NOINDEX] },
-      { source: '/doctor/:path*', headers: [NOINDEX] },
+      // The doctor portal is a signed-in area like the admin: never framed.
+      { source: '/doctor/:path*', headers: ADMIN_HEADERS },
       { source: '/admin/:path*', headers: ADMIN_HEADERS },
       { source: '/dev/:path*', headers: [NOINDEX] },
       // The legal pages are drafts until the legal entity exists (PRODUCT.md);

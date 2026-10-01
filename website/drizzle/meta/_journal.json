@@ -29,6 +29,13 @@
       "when": 1790857432988,
       "tag": "0003_gp_fee_checkout_details",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790858475602,
+      "tag": "0004_doctor_portal",
+      "breakpoints": true
     }
   ]
 }
