@@ -151,7 +151,32 @@ export async function allSignups(db: DB): Promise<Signup[]> {
 // A right-to-erasure request: every sign-up for the address, the analytics of
 // any visitor those sign-ups were linked to, and the email log rows naming it.
 // One transaction, so an erasure never half-happens. Returns sign-ups removed.
+// A doctor who is offboarded cannot sign in, so erasing one in the middle of a
+// consultation would leave a consultation nobody could ever end. The erasure
+// waits until it has.
+export class ErasureBlocked extends Error {
+  constructor() { super('This doctor is in a consultation. Erase them once it has ended.'); }
+}
+
+// What erasing an address will do to a doctor portal account, so a page can
+// say so before anyone confirms: there is none; it will be deleted (it never
+// took a consultation); or it will be closed and its name and GMC number kept
+// with the financial records.
+export type PortalErasure = 'none' | 'deleted' | 'kept';
+
+export async function erasureEffect(db: DB, email: string): Promise<PortalErasure> {
+  const [account] = await db.select({ id: gps.id }).from(gps).where(eq(gps.email, email));
+  if (!account) return 'none';
+  const [taken] = await db.select({ id: consultations.id }).from(consultations).where(eq(consultations.gpId, account.id)).limit(1);
+  return taken ? 'kept' : 'deleted';
+}
+
 export async function erasePerson(db: DB, email: string): Promise<number> {
+  const [busy] = await db.select({ id: consultations.id }).from(consultations)
+    .innerJoin(gps, eq(gps.id, consultations.gpId))
+    .where(and(eq(gps.email, email), eq(consultations.status, 'in_progress'))).limit(1);
+  if (busy) throw new ErasureBlocked();
+
   // A GP with a checkout still open could otherwise pay after their details
   // are gone, leaving money with nothing to attach it to. Close it first; this
   // is best effort and never stops the erasure.
@@ -211,10 +236,18 @@ export async function findByToken(db: DB, token: string | null | undefined): Pro
 // person, not just flags them. The audit row keeps the sign-up id and role and
 // never the address. Only ever called on an explicit confirm (a POST): mail
 // scanners fetch every link in a message, so a GET must change nothing.
-export async function unsubscribeByToken(db: DB, token: string): Promise<{ ok: true; role: WaitlistRole } | { ok: false }> {
+export async function unsubscribeByToken(
+  db: DB, token: string,
+): Promise<{ ok: true; role: WaitlistRole } | { ok: false; busy?: true }> {
   const signup = await findByToken(db, token);
   if (!signup) return { ok: false };
-  await erasePerson(db, signup.email);
+  try {
+    await erasePerson(db, signup.email);
+  } catch (err) {
+    // Not now: nothing was deleted, and the link still works afterwards.
+    if (err instanceof ErasureBlocked) return { ok: false, busy: true };
+    throw err;
+  }
   // A GP who had paid the sign-up fee leaves a trace of that, so a withdrawal
   // with money attached never vanishes without the team being able to see it.
   await audit(db, 'self-service', 'self_erasure', signup.id, {

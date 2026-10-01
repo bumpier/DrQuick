@@ -4,7 +4,7 @@
 // the store. Protected by the same bearer token as the export, because self-serve
 // deletion by email alone would let anyone remove anyone else's entry.
 import { getDb } from '@/lib/db';
-import { erasePerson } from '@/lib/waitlist';
+import { ErasureBlocked, erasePerson } from '@/lib/waitlist';
 import { authorised } from '@/app/api/waitlist-export/route';
 
 export const runtime = 'nodejs';
@@ -30,6 +30,8 @@ export async function POST(request: Request) {
     // Every sign-up for the address, and the analytics linked to it.
     return json(200, { ok: true, removed: await erasePerson(db, email) });
   } catch (err) {
+    // A doctor mid-consultation: nothing was deleted; ask again once it has ended.
+    if (err instanceof ErasureBlocked) return json(409, { ok: false, error: 'in_consultation' });
     console.error('Waitlist delete failed:', (err as Error).message);
     return json(502, { ok: false, error: 'store_write_failed' });
   }

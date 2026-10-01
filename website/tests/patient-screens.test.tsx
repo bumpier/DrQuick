@@ -540,6 +540,9 @@ describe('done', () => {
     press('Continue');
     const group = screen.getByRole('radiogroup', { name: 'How was your consultation?' });
     expect(within(group).getAllByRole('radio')).toHaveLength(5);
+    // A GP sees their count and spread move as each rating arrives, so the
+    // prompt must not promise that a rating cannot be traced to its giver.
+    expect(root()).not.toHaveTextContent(/never who gave|anonymous/i);
     fireEvent.click(within(group).getByRole('radio', { name: '4 stars' }));
     expect(root()).toHaveTextContent('Thank you.');
     expect(screen.queryByRole('radiogroup')).toBeNull();

@@ -45,7 +45,7 @@ Migration `0004_doctor_portal`. Conventions as elsewhere: text status columns wi
 
 ## Accounts and sign-in
 
-- `lib/doctor/account.ts`. `requestSetPasswordLink` sends a link to a GP sign-up that has a name and a GMC number and is not rejected, or to an existing doctor who is not offboarded. It answers the same for every address. A new link replaces the last. `setPasswordWithToken` spends the link in a transaction: on an existing account it is a reset and bumps the epoch; otherwise it creates the `gps` row from the sign-up. A refused attempt (a short password, a GMC number another account holds) rolls back, so the link is still good.
+- `lib/doctor/account.ts`. `requestSetPasswordLink` sends a link to an existing doctor who is not offboarded, or to a GP sign-up that has a name and a GMC number, is not rejected, and whose fee is not unpaid or refunded. An unpaid sign-up is excluded because anyone can type anyone's GMC number into the form for nothing, and `gps.gmc` is unique: a stranger could otherwise lock a real GP out. The public form answers every address in the same words and runs the work in `after()`, once the response has gone, so the wait says nothing either. A link that reaches the inbox replaces the last; one whose email failed is withdrawn, the earlier one keeps working, and the admin is told. `setPasswordWithToken` spends the link in a transaction: on an existing account it is a reset and bumps the epoch; otherwise it creates the `gps` row from the sign-up. A refused attempt (a short password, a GMC number another account holds) rolls back, so the link is still good.
 - `lib/doctor-auth.ts`, modelled on `lib/admin-auth.ts`. Cookie `dq_doctor`, httpOnly, SameSite=Strict, path `/doctor`, 12 hours, signed with `DOCTOR_SESSION_SECRET`. The HMAC signing moved to `lib/signed-token.ts`, shared with the admin cookie. Every read loads the `gps` row and refuses an offboarded doctor or a stale epoch. The type the rest of the app handles has no password hash.
 - `proxy.ts` branches by area. It lets the three pre-sign-in pages and `/doctor/pulse` through; the poll answers 401 itself, because a redirected fetch would return the sign-in page with a 200.
 - Approval is the existing waitlist pipeline. `setStatusAction` calls `syncAccountStatus`: Active maps to `active`, Rejected to `offboarded`, anything else to `onboarding`, and anything but Active takes the doctor off the floor.
@@ -80,7 +80,7 @@ After a missed offer or a finished consultation the doctor rests until they tap 
 
 The poll is `POST /doctor/pulse`, a route handler. A server action would work but is wrong for a three-second loop: Next runs a client's actions one at a time, so a slow poll would queue in front of the Accept click. The actions (accept, decline, complete and the rest) are server actions that return the new state and never set a cookie or revalidate a path.
 
-`ShiftProvider` sits in the portal layout so an offer reaches the doctor on any page. It re-arms the poll only after each answer, drops an answer older than the doctor's last click, keeps polling in a hidden tab, and reloads once after a deploy when nothing is in hand.
+`ShiftProvider` sits in the portal layout so an offer reaches the doctor on any page. It re-arms the poll only after each answer, drops an answer older than the doctor's last click, and reloads once after a deploy when nothing is in hand. It stops while the tab is hidden and checks in at once when it is shown again: the poll is the heartbeat, and a doctor who cannot see the portal must not be offered a patient. When a poll cannot reach the server it shows "Connection lost"; when a click cannot, it says so in a toast and the panel stays up.
 
 ## Earnings
 
@@ -91,7 +91,7 @@ The poll is `POST /doctor/pulse`, a route handler. A server action would work bu
 `lib/ratings.ts` and the pure `lib/rating-rules.ts`.
 
 - `recordRating` writes one rating for a completed consultation, once. It is the only writer, and nothing in production calls it yet.
-- A doctor sees their average to two places, the count and the spread. A rating is never tied to a consultation.
+- A doctor sees their average to two places, the count and the spread. They are not shown which consultation a rating came from, but the figures move as each rating arrives, so they could work it out. No screen tells a patient that a rating cannot be traced. Batching ratings so that one cannot be traced is an open product decision.
 - A patient sees the matched GP's rating to one place, once five patients have given one. Still no name and no face.
 - A figure never rounds up to a five the doctor does not have, and the star row fills in proportion.
 - In the patient prototype, the receipt asks for the stars after a consultation the patient really finished and holds the answer on the screen. A first patient's GP shows no rating: nobody has rated anyone on an empty floor.
@@ -110,7 +110,8 @@ The "Doctor portal" card on a GP's application page shows whether the account is
 
 - **Health data.** `consultations.reason` is a presenting complaint. Only the demo seed fills it. A real patient flow must not write it until the privacy notice is complete and the legal entity exists.
 - **The patient side must drive the dispatcher** (above).
-- **Hidden tabs.** Browsers slow timers in a background tab. A doctor whose tab is hidden for long drops out of the rotation after fifteen seconds of silence, which fails safe.
+- **A doctor is offered a consultation only while the portal is in view.** A hidden tab does not check in, so within fifteen seconds its doctor is out of the rotation, and after two minutes offline. That keeps a patient from waiting on an offer nobody can see, at the cost that a doctor working in another tab gets nothing. Alerting a doctor who is looking elsewhere (a sound, a browser notification) is not built and is an open decision.
+- **Offboarding waits for a consultation to end.** Rejecting a doctor, and erasing one, are refused while they are in a consultation: an offboarded doctor cannot sign in, and nothing else can end it.
 - **Erasure.** Keeping a name and GMC number against financial records is a judgment about data protection that a person should confirm.
 - **No video.** The consultation screen shows a timer and the two ways to end; the call itself is not built.
 

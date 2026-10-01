@@ -27,6 +27,8 @@ function span(ms: number): string {
   return `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
 }
 
+const UNREACHED = 'That did not go through. Check your connection, refresh the page and try again.';
+
 const CONSENT: Record<string, string> = {
   true: 'Shared with you',
   false: 'Not shared. You may be unable to prescribe some treatments.',
@@ -60,15 +62,27 @@ export function ShiftPanel() {
     apply(result.state);
     return result;
   };
+  // A click that never reaches the server (the network dropped, or the page is
+  // from before a deploy) is said in words here. Left to throw, it would land
+  // in the framework's error screen, which replaces the whole portal and stops
+  // the poll with it.
   const run = (action: () => Promise<ShiftActionResult>) => start(async () => {
-    const result = settle(await action());
-    if (!result.ok) toast.error(result.error);
+    try {
+      const result = settle(await action());
+      if (!result.ok) toast.error(result.error);
+    } catch {
+      toast.error(UNREACHED);
+    }
   });
   // Ending a consultation changes the figures on the page, which the server drew.
   const end = (action: () => Promise<ShiftActionResult>) => async () => {
-    const result = settle(await action());
-    router.refresh();
-    return result;
+    try {
+      const result = settle(await action());
+      router.refresh();
+      return result;
+    } catch {
+      return { ok: false as const, error: UNREACHED };
+    }
   };
 
   const busy = pending || undefined;

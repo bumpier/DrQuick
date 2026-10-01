@@ -11,13 +11,13 @@ import { audit } from '@/lib/admin/audit';
 import { getSignup, statusesFor } from '@/lib/admin/queries/waitlist';
 import { getDb } from '@/lib/db';
 import { waitlistSignups } from '@/lib/db/schema';
-import { requestSetPasswordLink } from '@/lib/doctor/account';
-import { setAccountPaused, syncAccountStatus } from '@/lib/doctor/admin';
+import { accountStatusFor, requestSetPasswordLink } from '@/lib/doctor/account';
+import { inConsultation, setAccountPaused, syncAccountStatus } from '@/lib/doctor/admin';
 import { renderFor, sendEmail } from '@/lib/email';
 import { doctorApproved } from '@/lib/email-templates';
 import { NOTES_MAX } from '@/lib/admin/format';
 import { siteUrl } from '@/lib/site-url';
-import { erasePerson, UUID } from '@/lib/waitlist';
+import { ErasureBlocked, erasePerson, UUID } from '@/lib/waitlist';
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -40,6 +40,11 @@ export async function setStatusAction(id: string, status: string): Promise<Actio
   if (!signup) return GONE;
   if (!statusesFor(signup.role).includes(status)) return { ok: false, error: 'That is not a status this sign-up can have.' };
   if (signup.status === status) return { ok: true, message: 'No change.' };
+  // Rejecting ends the doctor's sign-in, and a consultation they were in the
+  // middle of could then never be ended by anyone.
+  if (signup.role === 'gp' && accountStatusFor(status) === 'offboarded' && await inConsultation(db, signup.id)) {
+    return { ok: false, error: 'This doctor is in a consultation. Change their status once it has ended.' };
+  }
 
   const now = new Date();
   await db.update(waitlistSignups).set({
@@ -51,17 +56,23 @@ export async function setStatusAction(id: string, status: string): Promise<Actio
 
   // The pipeline is where a GP is approved, so their portal account follows
   // it: Active lets them go online, anything else takes them off the floor.
+  let approvalEmail: 'sent' | 'failed' | 'skipped' | null = null;
   if (signup.role === 'gp') {
     const account = await syncAccountStatus(db, signup.id, status, now);
     if (status === 'active') {
       const claimed = Boolean(account?.claimed);
       const url = new URL(claimed ? '/doctor/login' : '/doctor/register', siteUrl()).toString();
-      await sendEmail(db, signup.email, 'doctor_approved', doctorApproved(signup.name ?? 'there', url, claimed), signup.id);
+      approvalEmail = await sendEmail(db, signup.email, 'doctor_approved', doctorApproved(signup.name ?? 'there', url, claimed), signup.id);
     }
   }
 
   refresh(signup.role, signup.id);
-  return { ok: true, message: 'Status updated.' };
+  // The status is saved either way; the admin is told if the doctor was not.
+  const untold = approvalEmail === 'failed' || approvalEmail === 'skipped';
+  return {
+    ok: true,
+    message: untold ? 'Status updated, but the approval email was not sent. Let them know another way.' : 'Status updated.',
+  };
 }
 
 /* ------------------------------------------------ the doctor's portal */
@@ -91,13 +102,18 @@ export async function sendDoctorLinkAction(id: string): Promise<ActionResult> {
   if (!db) return NO_DB;
   const signup = await getSignup(db, String(id), 'gp');
   if (!signup) return GONE;
-  const issued = await requestSetPasswordLink(db, signup.email);
-  await audit(db, admin, 'doctor_link_sent', signup.id, { issued });
+  const outcome = await requestSetPasswordLink(db, signup.email);
+  await audit(db, admin, 'doctor_link_sent', signup.id, { outcome });
   refresh('gp', signup.id);
-  if (!issued) {
-    return { ok: false, error: 'No link was sent. A rejected GP, or an application with no name or GMC number, cannot have a portal account.' };
+  switch (outcome) {
+    case 'sent': return { ok: true, message: 'Sign-in link sent. It works once and for an hour.' };
+    case 'skipped': return { ok: false, error: 'Email is not set up on this server (RESEND_API_KEY and EMAIL_FROM), so nothing was sent.' };
+    case 'failed': return { ok: false, error: 'The email provider refused the message, so the link was not sent. The error is in the email history below.' };
+    case 'not_eligible': return {
+      ok: false,
+      error: 'No link was sent. A rejected GP, one whose sign-up fee is unpaid or refunded, or an application with no name or GMC number cannot have a portal account.',
+    };
   }
-  return { ok: true, message: 'Sign-in link sent. It works once and for an hour.' };
 }
 
 export async function saveNotesAction(id: string, notes: string): Promise<ActionResult> {
@@ -157,7 +173,13 @@ export async function erasePersonAction(id: string): Promise<ActionResult> {
   if (!db) return NO_DB;
   const signup = await getSignup(db, String(id));
   if (!signup) return GONE;
-  const removed = await erasePerson(db, signup.email);
+  let removed: number;
+  try {
+    removed = await erasePerson(db, signup.email);
+  } catch (err) {
+    if (err instanceof ErasureBlocked) return { ok: false, error: err.message };
+    throw err;
+  }
   await audit(db, admin, 'erase_person', signup.id, { role: signup.role, signupsRemoved: removed });
   refresh(signup.role, signup.id);
   redirect(`${listPath(signup.role)}?notice=erased`);

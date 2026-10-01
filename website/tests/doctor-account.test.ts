@@ -18,6 +18,14 @@ vi.mock('next/navigation', () => ({
   redirect: (to: string) => { throw Object.assign(new Error(`NEXT_REDIRECT ${to}`), { digest: `NEXT_REDIRECT;${to}` }); },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+// after() runs its callback once the response has gone. Here the callbacks are
+// collected, so a test can look at what the reply waited for and what it did not.
+const deferred = vi.hoisted(() => [] as Array<() => unknown>);
+vi.mock('next/server', async (original) => ({
+  ...(await original<typeof import('next/server')>()),
+  after: (work: () => unknown) => { deferred.push(work); },
+}));
+const afterResponse = async () => { for (const work of deferred.splice(0)) await work(); };
 
 import { hashPassword, verifyPassword } from '@/lib/admin-auth';
 import { DOCTOR_COOKIE, doctorForSession, signDoctorSession } from '@/lib/doctor-auth';
@@ -42,14 +50,19 @@ beforeEach(async () => {
   vi.stubEnv('RESEND_API_KEY', 're_test');
   vi.stubEnv('EMAIL_FROM', 'Dr Quick <hello@example.com>');
   sent.length = 0;
-  vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
-    sent.push(JSON.parse(String(init.body)));
-    return new Response(JSON.stringify({ id: 'em_1' }), { status: 200 });
-  }));
+  deferred.length = 0;
+  mailWorks();
   jar.clear();
   reqHeaders.set('x-forwarded-for', '203.0.113.9');
   await resetDb(db);
 });
+
+const mailWorks = () => vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
+  sent.push(JSON.parse(String(init.body)));
+  return new Response(JSON.stringify({ id: 'em_1' }), { status: 200 });
+}));
+const mailIsDown = () => vi.stubGlobal('fetch', vi.fn(async () =>
+  new Response(JSON.stringify({ message: 'provider is down' }), { status: 500 })));
 
 async function gpSignup(email = 'ada@example.com', gmc = '7000001', status = 'new') {
   const { signup } = await joinWaitlist(db, { role: 'gp', email, source: 'hero-gp', name: 'Dr Ada Example', gmc, mobile: '07700900123' });
@@ -72,24 +85,57 @@ test('a waitlist status maps to an account status', () => {
 
 describe('asking for a link', () => {
   test('an address nobody signed up with gets nothing: no token, no email', async () => {
-    expect(await requestSetPasswordLink(db, 'nobody@example.com', NOW)).toBe(false);
+    expect(await requestSetPasswordLink(db, 'nobody@example.com', NOW)).toBe('not_eligible');
     expect(await db.select().from(doctorTokens)).toHaveLength(0);
     expect(sent).toHaveLength(0);
   });
 
   test('a patient sign-up with the address does not count', async () => {
     await joinWaitlist(db, { role: 'patient', email: 'ada@example.com', source: 'hero' });
-    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe(false);
+    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe('not_eligible');
   });
 
   test('a rejected GP gets nothing', async () => {
     await gpSignup('ada@example.com', '7000001', 'rejected');
-    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe(false);
+    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe('not_eligible');
+  });
+
+  // Otherwise anyone could type another GP's GMC number into the sign-up, pay
+  // nothing, claim the account and lock the real GP out of theirs.
+  test.each(['unpaid', 'refunded'] as const)('a sign-up whose fee is %s cannot claim an account', async (feeStatus) => {
+    const signup = await gpSignup();
+    await db.update(waitlistSignups).set({ feeStatus }).where(eq(waitlistSignups.id, signup.id));
+    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe('not_eligible');
+    expect(sent).toHaveLength(0);
+  });
+
+  test('a sign-up whose fee is paid, or that predates the fee, can', async () => {
+    const paid = await gpSignup();
+    await db.update(waitlistSignups).set({ feeStatus: 'paid' }).where(eq(waitlistSignups.id, paid.id));
+    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe('sent');
+    await gpSignup('before@example.com', '7000009');
+    expect(await requestSetPasswordLink(db, 'before@example.com', NOW)).toBe('sent');
+  });
+
+  test('when the email cannot be sent, it says so, the earlier link still works and no dead one is left behind', async () => {
+    await gpSignup();
+    await requestSetPasswordLink(db, 'ada@example.com', NOW);
+    const first = emailedToken();
+    mailIsDown();
+    expect(await requestSetPasswordLink(db, 'ada@example.com', later(1))).toBe('failed');
+    expect(await linkIsLive(db, first, later(2))).toBe(true);
+    expect(await db.select().from(doctorTokens)).toHaveLength(1);
+  });
+
+  test('with no email provider set up, it says the email was skipped', async () => {
+    vi.stubEnv('RESEND_API_KEY', '');
+    await gpSignup();
+    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe('skipped');
   });
 
   test('a GP who signed up is emailed a link, and only its hash is stored', async () => {
     const signup = await gpSignup();
-    expect(await requestSetPasswordLink(db, ' ADA@example.com ', NOW)).toBe(true);
+    expect(await requestSetPasswordLink(db, ' ADA@example.com ', NOW)).toBe('sent');
     expect(sent).toHaveLength(1);
     expect(sent[0].to).toEqual(['ada@example.com']);
     const token = emailedToken();
@@ -165,7 +211,7 @@ describe('setting a password', () => {
       name: 'Dr Ada Example', email: 'ada@example.com', gmc: '7000001', status: 'active', passwordHash: hashPassword('the old password 1'),
     }).returning();
     const oldSession = signDoctorSession(gp)!;
-    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe(true);
+    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe('sent');
     const result = await setPasswordWithToken(db, emailedToken(), PASSWORD, later(5));
     expect(result.ok).toBe(true);
     const [after] = await db.select().from(gps);
@@ -179,7 +225,7 @@ describe('setting a password', () => {
     await db.insert(gps).values({
       name: 'Dr Ada Example', email: 'ada@example.com', gmc: '7000001', status: 'offboarded', passwordHash: hashPassword(PASSWORD),
     });
-    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe(false);
+    expect(await requestSetPasswordLink(db, 'ada@example.com', NOW)).toBe('not_eligible');
   });
 
   test('a GMC number another account already holds is refused, and the link is still good', async () => {
@@ -206,7 +252,21 @@ describe('the forms', () => {
     const unknown = await requestLink({ error: null, sent: false, email: '' }, form({ email: 'nobody@example.com' }));
     expect(known).toEqual({ error: null, sent: true, email: 'ada@example.com' });
     expect(unknown).toEqual({ error: null, sent: true, email: 'nobody@example.com' });
+    await afterResponse();
     expect(sent).toHaveLength(1);
+  });
+
+  // The words are the same for every address; the wait must be too. If the
+  // reply waited for the email, a slow answer would mean "this GP has applied".
+  test('the answer does not wait for the email, so how long it takes says nothing about the address', async () => {
+    await gpSignup();
+    const result = await requestLink({ error: null, sent: false, email: '' }, form({ email: 'ada@example.com' }));
+    expect(result.sent).toBe(true);
+    expect(sent).toHaveLength(0);
+    expect(await db.select().from(doctorTokens)).toHaveLength(0);
+    await afterResponse();
+    expect(sent).toHaveLength(1);
+    expect(await db.select().from(doctorTokens)).toHaveLength(1);
   });
 
   test('something that is not an email address is told so', async () => {
@@ -218,6 +278,7 @@ describe('the forms', () => {
   test('the fourth request for one address in an hour sends nothing', async () => {
     await gpSignup();
     for (let i = 0; i < 4; i += 1) await requestLink({ error: null, sent: false, email: '' }, form({ email: 'ada@example.com' }));
+    await afterResponse();
     expect(sent).toHaveLength(3);
   });
 

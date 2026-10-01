@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { DoctorSidebar } from '@/components/doctor/DoctorSidebar';
-import { OfferNotice, ShiftProvider } from '@/components/doctor/ShiftProvider';
+import { ConnectionNotice, OfferNotice, ShiftProvider } from '@/components/doctor/ShiftProvider';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Wordmark } from '@/components/Wordmark';
@@ -27,6 +27,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
           </header>
           <div className="mx-auto w-full max-w-[1080px] px-8 py-10 max-cols:px-4 max-cols:py-6">
             <ShiftProvider initial={initial}>
+              <ConnectionNotice />
               <OfferNotice />
               {children}
             </ShiftProvider>

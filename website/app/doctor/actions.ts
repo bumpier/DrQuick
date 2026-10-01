@@ -4,6 +4,7 @@
 // entry point.
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
 import { getDb } from '@/lib/db';
 import {
   currentDoctor, doctorLoginAllowed, endDoctorSession, startDoctorSession, verifyDoctorCredentials,
@@ -78,7 +79,15 @@ export async function requestLink(_prev: LinkState, form: FormData): Promise<Lin
   const db = await getDb();
   if (!db) return { error: NO_DB, sent: false, email };
   try {
-    if (await linkAllowed(db, await clientIp(), email)) await requestSetPasswordLink(db, email);
+    if (await linkAllowed(db, await clientIp(), email)) {
+      // After the response has gone, never before it. Looking the address up
+      // and sending the email takes far longer for a GP's address than for a
+      // stranger's, and a reply that waited for it would tell the two apart
+      // by the clock however alike the words are.
+      after(async () => {
+        try { await requestSetPasswordLink(db, email); } catch (err) { console.error('Set-password link failed:', (err as Error).message); }
+      });
+    }
   } catch {
     return { error: UNAVAILABLE, sent: false, email };
   }

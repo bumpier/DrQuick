@@ -7,7 +7,7 @@
 // type anyone's email into the form, so the form never says whether an address
 // has signed up and the link is the only proof of ownership.
 import { createHash, randomBytes } from 'node:crypto';
-import { and, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, eq, gt, isNull, lte, ne, sql } from 'drizzle-orm';
 import { hashPassword } from '@/lib/admin-auth';
 import type { DB } from '@/lib/db';
 import { doctorTokens, gps, waitlistSignups, type GpAccountStatus } from '@/lib/db/schema';
@@ -33,42 +33,66 @@ const digest = (token: string) => createHash('sha256').update(token).digest('hex
 export const setPasswordUrl = (token: string) =>
   new URL(`/doctor/set-password?token=${encodeURIComponent(token)}`, siteUrl()).toString();
 
+type GpSignup = typeof waitlistSignups.$inferSelect;
+
+// A sign-up that can become an account: it has the name and GMC number an
+// account needs, it has not been rejected, and its fee is not outstanding.
+// 'unpaid' is someone who filled in the form and never paid: anyone can type
+// anyone's GMC number there for nothing, and gps.gmc is unique, so letting that
+// claim an account would let a stranger lock a real GP out of theirs. A null
+// fee status is a sign-up from before there was a fee.
+const canBecomeAccount = (signup: GpSignup | undefined): signup is GpSignup & { name: string; gmc: string } =>
+  Boolean(signup?.name && signup.gmc && signup.status !== 'rejected'
+    && signup.feeStatus !== 'unpaid' && signup.feeStatus !== 'refunded');
+
+const signupFor = async (db: Pick<DB, 'select'>, email: string) => (await db.select().from(waitlistSignups)
+  .where(and(eq(waitlistSignups.role, 'gp'), eq(waitlistSignups.email, email))))[0];
+
 // Who a link may be sent to: an existing doctor who has not been offboarded,
-// or a GP sign-up complete enough to become an account and not rejected.
+// or a GP sign-up that can become an account.
 async function recipient(db: DB, email: string): Promise<{ name: string; signupId: string | null; isNew: boolean } | null> {
   const [gp] = await db.select().from(gps).where(eq(gps.email, email));
   if (gp) return gp.status === 'offboarded' ? null : { name: gp.name, signupId: gp.signupId, isNew: !gp.passwordHash };
-  const [signup] = await db.select().from(waitlistSignups)
-    .where(and(eq(waitlistSignups.role, 'gp'), eq(waitlistSignups.email, email)));
-  if (!signup || !signup.name || !signup.gmc || signup.status === 'rejected') return null;
-  return { name: signup.name, signupId: signup.id, isNew: true };
+  const signup = await signupFor(db, email);
+  return canBecomeAccount(signup) ? { name: signup.name, signupId: signup.id, isNew: true } : null;
 }
 
+// 'not_eligible': the address is no GP's, and nothing was done. Otherwise a
+// link was made, and this is what became of its email.
+export type LinkOutcome = 'not_eligible' | 'sent' | 'failed' | 'skipped';
+
 /**
- * Emails a set-password link to the address, if it belongs to a GP. True when
- * a link was issued; the caller must not tell the person which it was. A new
- * link replaces any earlier one for the address.
+ * Emails a set-password link to the address, if it belongs to a GP. The public
+ * form must never tell the person which outcome it was; the admin is told.
+ *
+ * A link that reaches the inbox replaces any earlier one for the address. One
+ * whose email failed is withdrawn and the earlier one is left working, so a
+ * mail outage cannot cost a doctor the only link they have.
  */
-export async function requestSetPasswordLink(db: DB, rawEmail: string, now = new Date()): Promise<boolean> {
+export async function requestSetPasswordLink(db: DB, rawEmail: string, now = new Date()): Promise<LinkOutcome> {
   const email = normaliseEmail(rawEmail);
   const who = await recipient(db, email);
-  if (!who) return false;
+  if (!who) return 'not_eligible';
 
   const token = randomBytes(32).toString('base64url');
-  // Unused links for this address stop working; spent and expired ones are swept.
-  await db.delete(doctorTokens).where(or(
-    and(eq(doctorTokens.email, email), isNull(doctorTokens.usedAt)),
-    lte(doctorTokens.expiresAt, now),
-  ));
+  const tokenHash = digest(token);
+  await db.delete(doctorTokens).where(lte(doctorTokens.expiresAt, now)); // spent time, swept
   await db.insert(doctorTokens).values({
-    tokenHash: digest(token), email, expiresAt: new Date(now.getTime() + LINK_MINUTES * 60_000), createdAt: now,
+    tokenHash, email, expiresAt: new Date(now.getTime() + LINK_MINUTES * 60_000), createdAt: now,
   });
 
   const url = setPasswordUrl(token);
   // With no mail provider on a development machine the link would be lost.
   if (!emailConfigured() && process.env.NODE_ENV === 'development') console.info(`Set-password link for ${email}: ${url}`);
-  await sendEmail(db, email, 'doctor_set_password', doctorSetPassword(who.name, url, LINK_MINUTES, who.isNew), who.signupId);
-  return true;
+  const outcome = await sendEmail(db, email, 'doctor_set_password', doctorSetPassword(who.name, url, LINK_MINUTES, who.isNew), who.signupId);
+
+  if (outcome === 'failed') {
+    await db.delete(doctorTokens).where(eq(doctorTokens.tokenHash, tokenHash));
+  } else {
+    await db.delete(doctorTokens)
+      .where(and(eq(doctorTokens.email, email), isNull(doctorTokens.usedAt), ne(doctorTokens.tokenHash, tokenHash)));
+  }
+  return outcome;
 }
 
 const live = (hash: string, now: Date) =>
@@ -109,10 +133,9 @@ export async function setPasswordWithToken(db: DB, token: string, password: stri
         .where(eq(gps.email, spent.email)).returning();
       if (existing) return { ok: true, gp: existing } as const;
 
-      const [signup] = await tx.select().from(waitlistSignups)
-        .where(and(eq(waitlistSignups.role, 'gp'), eq(waitlistSignups.email, spent.email)));
-      // The sign-up was erased, or lost its details, after the link was sent.
-      if (!signup?.name || !signup.gmc) return { ok: false, error: 'invalid_link' } as const;
+      const signup = await signupFor(tx, spent.email);
+      // The sign-up was erased, rejected or refunded after the link was sent.
+      if (!canBecomeAccount(signup)) return { ok: false, error: 'invalid_link' } as const;
       const [created] = await tx.insert(gps).values({
         signupId: signup.id, name: signup.name, email: signup.email, gmc: signup.gmc, mobile: signup.mobile,
         status: accountStatusFor(signup.status), passwordHash, createdAt: now, updatedAt: now,

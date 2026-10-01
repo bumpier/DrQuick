@@ -13,30 +13,42 @@ import { confirmUnsubscribe, type UnsubscribeResult } from './actions';
 // to them here, so they are told before they press the button. Whether a GP who
 // withdraws gets the fee back is a decision for the business (PRODUCT.md), not
 // something this page promises either way.
-export function UnsubscribeConfirm({ token, role, email, feePaid = false }: {
-  token: string; role: 'patient' | 'gp'; email: string; feePaid?: boolean;
+//
+// `portal` is what confirming does to a doctor portal account at this address
+// (erasureEffect in lib/waitlist.ts). A GP who has taken consultations keeps
+// their name and GMC number against the records of what they were paid, so
+// this page must not tell them everything is deleted.
+export function UnsubscribeConfirm({ token, role, email, feePaid = false, portal = 'none' }: {
+  token: string; role: 'patient' | 'gp'; email: string; feePaid?: boolean; portal?: 'none' | 'deleted' | 'kept';
 }) {
   const [result, setResult] = useState<UnsubscribeResult | null>(null);
   const [pending, start] = useTransition();
+  const kept = portal === 'kept';
 
   if (result?.done) {
     return (
-      <PageHero title="Done. Your details are deleted." lead="We will not email you again. If you change your mind, you can join again from the home page.">
+      <PageHero
+        title={kept ? 'Done. Your account is closed.' : 'Done. Your details are deleted.'}
+        lead={kept
+          ? 'We have kept your name and GMC number with the records of your consultations, and deleted the rest. We will not email you again.'
+          : 'We will not email you again. If you change your mind, you can join again from the home page.'}
+      >
         <Button asChild size="lg" variant="secondary"><Link href="/">Go to the home page</Link></Button>
       </PageHero>
     );
   }
 
   const gp = role === 'gp';
+  const everything = `We will delete everything you gave us: your name, ${email}, your mobile and your GMC number.`;
+  const whatIsKept = `We will close your doctor portal account and delete your sign-in, ${email}, your mobile and your profile. `
+    + 'We keep your name and GMC number with the records of the consultations you were paid for.';
+  const lead = kept ? whatIsKept
+    : gp ? `${everything}${portal === 'deleted' ? ' Your doctor portal account is deleted with them.' : ''}`
+    : `We will delete ${email} and stop emailing you.${portal === 'deleted' ? ' The doctor portal account at this address is deleted too.' : ''}`;
   return (
-    <PageHero
-      title={gp ? 'Withdraw your application?' : 'Leave the waitlist?'}
-      lead={gp
-        ? `We will delete everything you gave us: your name, ${email}, your mobile and your GMC number.`
-        : `We will delete ${email} and stop emailing you.`}
-    >
+    <PageHero title={gp ? 'Withdraw your application?' : 'Leave the waitlist?'} lead={lead}>
       <Button size="lg" aria-busy={pending || undefined} disabled={pending} onClick={() => start(async () => setResult(await confirmUnsubscribe(token)))}>
-        {gp ? 'Withdraw and delete my details' : 'Unsubscribe and delete my details'}
+        {kept ? 'Withdraw and close my account' : gp ? 'Withdraw and delete my details' : 'Unsubscribe and delete my details'}
       </Button>
       <Button asChild size="lg" variant="secondary"><Link href="/">Keep me on the list</Link></Button>
       {gp && feePaid && (

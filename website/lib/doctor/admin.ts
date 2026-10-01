@@ -34,6 +34,18 @@ export async function portalAccountFor(db: DB, signupId: string, now = new Date(
   };
 }
 
+/**
+ * Whether the GP's account is in the middle of a consultation. An offboarded
+ * doctor cannot sign in, so one must not be offboarded while this is true: the
+ * consultation would be left with nobody able to end it.
+ */
+export async function inConsultation(db: DB, signupId: string): Promise<boolean> {
+  const [busy] = await db.select({ id: consultations.id }).from(consultations)
+    .innerJoin(gps, eq(gps.id, consultations.gpId))
+    .where(and(eq(gps.signupId, signupId), eq(consultations.status, 'in_progress'))).limit(1);
+  return Boolean(busy);
+}
+
 // Taken off the floor: offline, out of the rotation. The dispatcher then
 // expires any offer they were holding and passes it on.
 const OFF_THE_FLOOR = { onlineSince: null, availableSince: null } as const;

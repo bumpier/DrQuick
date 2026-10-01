@@ -65,7 +65,8 @@ describe('the demo data', () => {
     await seedDoctorDemo(db, NOW);
     const [signup] = await db.select().from(waitlistSignups).where(eq(waitlistSignups.email, DEMO_APPLICANT_EMAIL));
     expect(signup).toMatchObject({ role: 'gp', status: 'active' });
-    expect(await requestSetPasswordLink(db, DEMO_APPLICANT_EMAIL, NOW)).toBe(true);
+    // 'skipped', not 'not_eligible': a link was made; this test has no email provider.
+    expect(await requestSetPasswordLink(db, DEMO_APPLICANT_EMAIL, NOW)).toBe('skipped');
   });
 
   test('running it twice replaces the demo data rather than doubling it', async () => {

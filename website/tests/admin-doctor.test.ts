@@ -149,6 +149,47 @@ describe('approving a GP', () => {
   });
 });
 
+// An offboarded doctor cannot sign in, so a consultation they were in the
+// middle of could never be ended by anyone.
+describe('a doctor in the middle of a consultation', () => {
+  async function consulting() {
+    const signup = await applicant();
+    const gp = await claim();
+    await setStatusAction(signup.id, 'active');
+    const [c] = await db.insert(consultations).values({
+      patientId: randomUUID(), gpId: gp.id, status: 'in_progress', requestedAt: new Date(), startedAt: new Date(),
+      pricePence: 4000, ...splitPrice(4000, 0),
+    }).returning();
+    return { signup, gp, c };
+  }
+
+  test('cannot be rejected until it has ended', async () => {
+    const { signup, c } = await consulting();
+    const result = await setStatusAction(signup.id, 'rejected');
+    expect(result.ok).toBe(false);
+    expect(result.ok === false && result.error).toMatch(/consultation/);
+    expect((await signupRow(signup.id)).status).toBe('active');
+    expect((await account()).status).toBe('active');
+
+    await db.update(consultations).set({ status: 'completed', endedAt: new Date() }).where(eq(consultations.id, c.id));
+    expect(await setStatusAction(signup.id, 'rejected')).toMatchObject({ ok: true });
+    expect((await account()).status).toBe('offboarded');
+  });
+
+  test('cannot be erased until it has ended, and nothing is half deleted', async () => {
+    const { signup, gp } = await consulting();
+    await expect(erasePerson(db, 'ada@example.com')).rejects.toThrow(/consultation/);
+    expect(await signupRow(signup.id)).toBeTruthy();
+    expect(await account()).toMatchObject({ id: gp.id, email: 'ada@example.com', status: 'active' });
+  });
+
+  test('can still be moved back down the pipeline: they keep their sign-in and can end it', async () => {
+    const { signup } = await consulting();
+    expect(await setStatusAction(signup.id, 'onboarding')).toMatchObject({ ok: true });
+    expect((await account()).status).toBe('onboarding');
+  });
+});
+
 describe('pausing a doctor', () => {
   async function activeDoctor() {
     const signup = await applicant();
@@ -195,6 +236,22 @@ describe('sending a sign-in link', () => {
     expect(sent[0].text).toMatch(/\/doctor\/set-password\?token=/);
     expect((await audits()).at(-1)).toMatchObject({ action: 'doctor_link_sent', target: signup.id });
     expect(await db.select().from(doctorTokens)).toHaveLength(1);
+  });
+
+  test('when the email provider refuses it, the admin is told it was not sent', async () => {
+    const signup = await applicant();
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ message: 'down' }), { status: 500 })));
+    const result = await sendDoctorLinkAction(signup.id);
+    expect(result.ok).toBe(false);
+    expect(result.ok === false && result.error).toMatch(/not sent|refused/i);
+    expect((await audits()).at(-1)).toMatchObject({ action: 'doctor_link_sent', meta: { outcome: 'failed' } });
+  });
+
+  test('with no email provider set up, the admin is told nothing was sent', async () => {
+    const signup = await applicant();
+    vi.stubEnv('RESEND_API_KEY', '');
+    const result = await sendDoctorLinkAction(signup.id);
+    expect(result.ok === false && result.error).toMatch(/not set up/);
   });
 
   test('a rejected GP is not sent one, and the admin is told', async () => {

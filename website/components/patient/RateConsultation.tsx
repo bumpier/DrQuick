@@ -36,7 +36,9 @@ export function RateConsultation() {
           </button>
         ))}
       </div>
-      <p className="text-fine text-ink-2">Your GP sees their average, never who gave which rating.</p>
+      {/* No promise here that a rating cannot be traced: a GP's count and spread
+          move as each one arrives, so they could work out whose it was. */}
+      <p className="text-fine text-ink-2">Your rating counts towards your GP’s average.</p>
     </div>
   );
 }

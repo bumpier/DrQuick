@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/site/PageParts';
 import { getDb } from '@/lib/db';
-import { findByToken } from '@/lib/waitlist';
+import { erasureEffect, findByToken } from '@/lib/waitlist';
 import { UnsubscribeConfirm } from './UnsubscribeConfirm';
 
 // Reached from the link in every confirmation email. Never indexed, and a
@@ -38,5 +38,10 @@ export default async function UnsubscribePage({ searchParams }: Props) {
       </PageHero>
     );
   }
-  return <UnsubscribeConfirm token={token} role={signup.role} email={signup.email} feePaid={signup.feeStatus === 'paid'} />;
+  return (
+    <UnsubscribeConfirm
+      token={token} role={signup.role} email={signup.email} feePaid={signup.feeStatus === 'paid'}
+      portal={await erasureEffect(db, signup.email)}
+    />
+  );
 }

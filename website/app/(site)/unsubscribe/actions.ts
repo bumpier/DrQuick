@@ -11,5 +11,7 @@ export async function confirmUnsubscribe(token: string): Promise<UnsubscribeResu
   const db = await getDb();
   if (!db) return { done: false, error: 'unavailable' };
   const result = await unsubscribeByToken(db, String(token ?? '').slice(0, 100));
-  return result.ok ? { done: true } : { done: false, error: 'invalid' };
+  if (result.ok) return { done: true };
+  // A doctor in the middle of a consultation: it can be done once that has ended.
+  return { done: false, error: result.busy ? 'unavailable' : 'invalid' };
 }

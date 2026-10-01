@@ -158,6 +158,15 @@ describe('an offer', () => {
     expect(await consultation(c.id)).toMatchObject({ status: 'requested', gpId: null });
   });
 
+  // Written after the guard existed, so it has never been seen to fail: it pins
+  // the behaviour rather than proving the guard.
+  test.each(['paused', 'onboarding'] as const)('a doctor the team has made %s cannot accept an offer they are still holding', async (status) => {
+    const { d, c, offer } = await onOffer();
+    await db.update(gps).set({ status }).where(eq(gps.id, d.id));
+    expect(await acceptOffer(db, d.id, offer.id, at(5))).toEqual({ ok: false, reason: 'not_active' });
+    expect(await consultation(c.id)).toMatchObject({ status: 'requested', gpId: null });
+  });
+
   test('accepting after the patient cancelled leaves nothing half done', async () => {
     const { d, c, offer } = await onOffer();
     await db.update(consultations).set({ status: 'cancelled' }).where(eq(consultations.id, c.id));
