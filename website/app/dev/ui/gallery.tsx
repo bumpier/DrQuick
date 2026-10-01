@@ -883,7 +883,7 @@ export function Gallery() {
         </div>
       </Section>
 
-      <Section id="gp-card" title="GpCard" note="The matched GP, the one band on the ready screen: a reference, the registration and why this GP was matched. No name, no face, no rating. With the NHS record refused, the card says what that may cost.">
+      <Section id="gp-card" title="GpCard" note="The matched GP, the one band on the ready screen: a reference, the registration and why this GP was matched, and their average rating once enough patients have given one. No name, no face. With the NHS record refused, the card says what that may cost.">
         <div className="grid grid-cols-2 gap-4 max-cols:grid-cols-1">
           <GpCard gp={GALLERY_GP} consent />
           <GpCard gp={{ ...GALLERY_GP, limitedPrescribing: true }} consent={false} />

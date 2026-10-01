@@ -9,13 +9,14 @@ import { useBooking } from '../BookingProvider';
 import { FlowStep } from '../FlowStep';
 import { NothingYet } from '../NothingYet';
 import { usePatient } from '../PatientProvider';
+import { RateConsultation } from '../RateConsultation';
 
 const minutesLabel = (n: number) => `${n} minute${n === 1 ? '' : 's'}`;
 
-// The receipt, and the end: no rating, no "how did it go". A seeded landing on
-// this URL previews the receipt the worked example would leave, but a URL
-// never writes history, so only a consultation the patient really finished
-// says it was saved.
+// The receipt, and the end. A seeded landing on this URL previews the receipt
+// the worked example would leave, but a URL never writes history, so only a
+// consultation the patient really finished says it was saved, and only that
+// one is asked for its one-to-five-star rating (since 2026-10-01).
 export function Done() {
   const { state } = useBooking();
   const { nextId } = usePatient();
@@ -55,6 +56,7 @@ export function Done() {
       <p className="text-body text-ink-2">
         {`Your ${money(receipt.cost)} covered the consultation and writing any prescription you need. The pharmacy charges separately for the medicine itself.`}
       </p>
+      {record && <RateConsultation />}
     </FlowStep>
   );
 }

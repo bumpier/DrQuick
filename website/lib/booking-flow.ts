@@ -19,6 +19,7 @@ import {
 } from '@/lib/booking';
 import { GPS, PATIENT_ACCOUNT, PRESCRIBING } from '@/lib/fixtures';
 import { floorFor, quoteFor } from '@/lib/pricing';
+import type { Rating } from '@/lib/rating-rules';
 
 export const BOOKING_STEPS = [
   'symptoms', 'safety-check', 'identity', 'nhs-gp', 'quote', 'finding', 'ready', 'call', 'outcome', 'done',
@@ -67,8 +68,8 @@ export type Hold =
   | { status: 'authorised' | 'captured' | 'declined'; amount: number }
   | { status: 'released'; amount: number; reason: 'no-gp' | 'cancelled' };
 
-export type MatchedGp = { ref: string; reasons: string[]; limitedPrescribing: boolean };
-export type MatchableGp = { ref: string; online: boolean; credentials: Record<string, { status: string }> };
+export type MatchedGp = { ref: string; reasons: string[]; limitedPrescribing: boolean; rating: Rating | null };
+export type MatchableGp = { ref: string; online: boolean; credentials: Record<string, { status: string }>; rating?: Rating | null };
 export type SavedPractice = { practice: string; postcode: string };
 
 /* Every GP offline: how the prototype reaches "no GP available" from a live
@@ -288,7 +289,9 @@ function resolve(state: BookingState, now: number, gps: MatchableGp[] = GPS): Bo
   return {
     ...state, screen: 'ready', nav: state.nav + 1,
     hold: { status: 'captured', amount }, queue: null, position: 1, etaSeconds: 0,
-    gp: match, matchedAt: now,
+    // A first patient is on a floor with no history: nobody has rated anyone
+    // yet, so their GP's card shows no rating rather than an invented one.
+    gp: state.seeded ? match : { ...match, rating: null }, matchedAt: now,
   };
 }
 

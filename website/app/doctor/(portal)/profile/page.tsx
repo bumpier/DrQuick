@@ -1,25 +1,33 @@
 import type { Metadata } from 'next';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { PasswordForm, ProfileForm } from '@/components/doctor/ProfileForms';
+import { RatingCard } from '@/components/doctor/RatingCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getDb } from '@/lib/db';
 import { requireDoctor } from '@/lib/doctor-auth';
 import { PASSWORD_MIN } from '@/lib/doctor/account';
+import { ratingSummary } from '@/lib/ratings';
 
 export const metadata: Metadata = { title: 'Profile' };
 
 export default async function ProfilePage() {
   const doctor = await requireDoctor();
+  const db = await getDb();
+  const rating = db ? await ratingSummary(db, doctor.id) : null;
   return (
     <>
       <AdminPageHeader title="Profile" />
       <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start gap-4 max-forms:grid-cols-1">
-        <Card>
-          <CardHeader><CardTitle>Your details</CardTitle></CardHeader>
-          <CardContent>
-            <ProfileForm initial={{ name: doctor.name, mobile: doctor.mobile ?? '', bio: doctor.bio, languages: doctor.languages }} />
-          </CardContent>
-        </Card>
         <div className="grid min-w-0 gap-4">
+          <Card>
+            <CardHeader><CardTitle>Your details</CardTitle></CardHeader>
+            <CardContent>
+              <ProfileForm initial={{ name: doctor.name, mobile: doctor.mobile ?? '', bio: doctor.bio, languages: doctor.languages }} />
+            </CardContent>
+          </Card>
+        </div>
+        <div className="grid min-w-0 gap-4">
+          {rating && <RatingCard summary={rating} />}
           <Card size="sm">
             <CardHeader>
               <CardTitle>Sign-in and registration</CardTitle>

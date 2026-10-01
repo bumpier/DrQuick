@@ -1,18 +1,21 @@
-import { CheckIcon } from 'lucide-react';
+import { CheckIcon, StarIcon } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { MatchedGp } from '@/lib/booking-flow';
+import { formatRating, publicRating, ratingsLabel } from '@/lib/rating-rules';
 
-// The payoff of the request, and the one band on its screen: Uber's driver
-// card without the driver's face, name or rating, none of which Dr Quick may
-// show. The trust it offers instead is the reference, the registration and
-// why this GP was the one matched.
+// The payoff of the request, and the one band on its screen: the driver card
+// of a ride app without the face or the name, neither of which this card may
+// show. The trust it offers is the reference, the registration, why this GP
+// was the one matched, and (since 2026-10-01) the average rating patients have
+// given them, shown only once enough patients have given one.
 export function GpCard({ gp, consent, status = 'Waiting for you' }: {
   gp: MatchedGp;
   consent: boolean | null;
   status?: string;
 }) {
+  const rating = publicRating(gp.rating);
   return (
     <Card variant="band" data-slot="gp-card" className="band-grid w-full max-w-[26rem]">
       <CardHeader>
@@ -26,6 +29,13 @@ export function GpCard({ gp, consent, status = 'Waiting for you' }: {
               <Badge className="bg-white/15 text-white">{status}</Badge>
             </CardTitle>
             <CardDescription>GMC-registered GP, licensed to practise in England</CardDescription>
+            {rating && (
+              <p data-slot="gp-rating" className="mt-1 flex flex-wrap items-center gap-x-1.5 text-body">
+                <StarIcon strokeWidth={2} aria-hidden="true" className="size-5 shrink-0 fill-current text-primary-lift" />
+                <span className="font-semibold">{formatRating(rating.average, 1)}</span>
+                <span className="text-band-muted">out of 5, from {ratingsLabel(rating.count)}</span>
+              </p>
+            )}
           </div>
         </div>
       </CardHeader>

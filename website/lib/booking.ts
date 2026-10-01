@@ -102,7 +102,8 @@ export function waitEstimate({ waiting, gpsOnline }: Floor): { position: number;
 
 /* --- who can take the consultation -------------------------------------- */
 
-type Gp = { ref: string; online: boolean; credentials: Record<string, { status: string }> };
+type Rating = { average: number; count: number };
+type Gp = { ref: string; online: boolean; credentials: Record<string, { status: string }>; rating?: Rating | null };
 
 /* A GP may work with a credential that is close to expiry — they may not work
    with one that has lapsed, is still pending, or was rejected. That is the
@@ -118,7 +119,7 @@ export function matchGp(
   gps: Gp[],
   prescribing: { ref: string; consults: number }[],
   booking?: { nhsGpConsent?: boolean | null },
-): { ref: string; reasons: string[]; limitedPrescribing: boolean } | null {
+): { ref: string; reasons: string[]; limitedPrescribing: boolean; rating: Rating | null } | null {
   const load = new Map(prescribing.map((row) => [row.ref, row.consults]));
   const eligible = gps.filter(isEligibleGp);
   if (eligible.length === 0) return null;
@@ -139,6 +140,8 @@ export function matchGp(
     // Anything but an explicit yes is a record the GP does not have, which is
     // the rule outcomeFor applies too, so a consent never asked for limits them.
     limitedPrescribing: booking?.nhsGpConsent !== true,
+    // The GP's average from patients. It plays no part in who is matched.
+    rating: best.rating ?? null,
   };
 }
 

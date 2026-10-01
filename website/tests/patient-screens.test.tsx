@@ -415,6 +415,21 @@ describe('ready', () => {
     expect(card()).not.toHaveTextContent('NHS record');   // the record was shared: no limit to state
   });
 
+  test('seeded: the card shows the GP’s rating as an average and a count, and still no name', () => {
+    renderBooking('ready', { query: SEEDED });
+    const rating = card().querySelector<HTMLElement>('[data-slot="gp-rating"]')!;
+    expect(rating).toHaveTextContent('4.8');
+    expect(rating).toHaveTextContent('60 ratings');
+    expect(card()).not.toHaveTextContent(/Dr\.? [A-Z][a-z]/);
+  });
+
+  test('blank: a first patient’s GP shows no rating, because nobody has given one', () => {
+    renderBooking('finding');
+    press('Prototype: skip the wait');
+    expect(shownScreen()).toBe('ready');
+    expect(card().querySelector('[data-slot="gp-rating"]')).toBeNull();
+  });
+
   test('consent refused on the way (nhs-gp → No → Continue without sharing): the card names the choice and its cost', () => {
     startClock();
     renderBooking('nhs-gp', { query: SEEDED });
@@ -518,6 +533,21 @@ describe('done', () => {
     expect(fact('Paid')).toBe('£40');
     expect(root()).not.toHaveTextContent('Saved to your account');
     expect(screen.getByText('You’ll get a summary by email.')).toBeInTheDocument();
+  });
+
+  test('after a consultation the patient is asked to rate it, once, and thanked', () => {
+    renderBooking('outcome', { query: SEEDED });
+    press('Continue');
+    const group = screen.getByRole('radiogroup', { name: 'How was your consultation?' });
+    expect(within(group).getAllByRole('radio')).toHaveLength(5);
+    fireEvent.click(within(group).getByRole('radio', { name: '4 stars' }));
+    expect(root()).toHaveTextContent('Thank you.');
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+  });
+
+  test('a URL landing is not a consultation, so it is not asked to rate one', () => {
+    renderBooking('done', { query: SEEDED });
+    expect(screen.queryByRole('radiogroup')).toBeNull();
   });
 
   test('a blank URL landing shows NOTHING_YET and no receipt', () => {

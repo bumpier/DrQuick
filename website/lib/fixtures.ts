@@ -5,12 +5,15 @@
 import { CREDENTIAL_LABELS } from '@/lib/alerts';
 import type { ConsultationRow } from '@/lib/booking';
 import type { PrescriptionRow } from '@/lib/patient';
+import type { Rating } from '@/lib/rating-rules';
 
 export type CredentialStatus = 'valid' | 'expiring' | 'expired' | 'pending' | 'rejected';
 export type Credential = { status: CredentialStatus; daysRemaining: number | null };
 export type CredentialKey = 'gmc' | 'licence' | 'cct' | 'dbs' | 'rightToWork' | 'indemnity' | 'revalidation';
 export type CredentialRecord = Record<CredentialKey, Credential>;
-export type Gp = { ref: string; online: boolean; credentials: CredentialRecord };
+// A rating here is a round, plainly synthetic figure, and only on a GP who
+// could have consulted (tests/lib/fixtures.test.ts holds both).
+export type Gp = { ref: string; online: boolean; credentials: CredentialRecord; rating: Rating | null };
 export type GateId = 'verification-pending' | 'verification-rejected' | 'indemnity-expired' | 'revalidation-due';
 export type SkillId = 'general-adult' | 'minor-illness' | 'womens-health' | 'mental-health' | 'paediatrics' | 'dermatology';
 export type Skill = { id: SkillId; label: string; defaultOn: boolean };
@@ -93,6 +96,7 @@ export const GPS: Gp[] = [
   {
     ref: 'GP-001',
     online: true,
+    rating: { average: 4.9, count: 120 },
     credentials: {
       gmc: credential('valid', 300),
       licence: credential('valid', 300),
@@ -106,6 +110,7 @@ export const GPS: Gp[] = [
   {
     ref: 'GP-002',
     online: true,
+    rating: { average: 4.8, count: 60 },
     credentials: {
       gmc: credential('valid', 250),
       licence: credential('valid', 250),
@@ -119,6 +124,7 @@ export const GPS: Gp[] = [
   {
     ref: 'GP-003',
     online: false,
+    rating: { average: 4.7, count: 40 },
     credentials: {
       gmc: credential('valid', 150),
       licence: credential('valid', 150),
@@ -132,6 +138,7 @@ export const GPS: Gp[] = [
   {
     ref: 'GP-004',
     online: false,
+    rating: null,   // still being verified: no consultations, so nothing to rate
     credentials: {
       gmc: credential('pending', null),
       licence: credential('pending', null),

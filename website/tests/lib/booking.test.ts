@@ -58,6 +58,12 @@ test('a matched GP carries the refused-consent limit through to the patient', ()
   assert.equal(matchGp(FLOOR_GPS, LOAD, { nhsGpConsent: true })!.limitedPrescribing, false);
 });
 
+test('the matched GP carries its rating, and none when it has none', () => {
+  const rated = FLOOR_GPS.map((gp) => (gp.ref === 'GP-002' ? { ...gp, rating: { average: 4.8, count: 60 } } : gp));
+  assert.deepEqual(matchGp(rated, LOAD, { nhsGpConsent: true })!.rating, { average: 4.8, count: 60 });
+  assert.equal(matchGp(FLOOR_GPS, LOAD, { nhsGpConsent: true })!.rating, null);
+});
+
 // A consent never asked for (a patient who landed on the queue by URL) is a
 // record the GP does not have, exactly as outcomeFor treats it.
 test('a consent never given limits the GP as a refused one does', () => {

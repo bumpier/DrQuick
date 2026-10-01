@@ -99,8 +99,23 @@ test('money is summed from what each consultation paid, never multiplied out', (
   assert.equal(fee(recent.filter((r) => r.when.startsWith('Yesterday'))), days.at(-2)!.earnings);
 });
 
-test('there is no rating anywhere in the fixtures', () => {
-  assert.ok(!JSON.stringify(F).toLowerCase().includes('rating'));
+// Ratings arrived on 2026-10-01 (the user's decision, reversing "no ratings").
+// What a fixture may hold is still bounded: a round, plainly synthetic average
+// and count on a GP, and none for a GP who could not have consulted.
+test('a fixture rating is round and synthetic, and a GP who cannot consult has none', () => {
+  for (const gp of F.GPS) {
+    const cleared = Object.values(gp.credentials).every((c) => c.status !== 'pending');
+    if (!cleared) { assert.equal(gp.rating, null, `${gp.ref} has never consulted`); continue; }
+    assert.ok(gp.rating, `${gp.ref} has a rating`);
+    assert.ok(gp.rating.average >= 1 && gp.rating.average <= 5);
+    assert.equal(gp.rating.average, Math.round(gp.rating.average * 10) / 10, 'one decimal place');
+    assert.equal(gp.rating.count % 10, 0, 'a round count');
+  }
+});
+
+test('nothing in the fixtures but a GP carries a rating', () => {
+  const { GPS: _gps, ...rest } = F;
+  assert.ok(!JSON.stringify(rest).toLowerCase().includes('rating'));
 });
 
 test('the gate records are reachable and each carries the status its gate needs', () => {
