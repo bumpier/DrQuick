@@ -25,6 +25,8 @@ Two audiences of **equal priority** on this surface (confirmed decision — the 
 
 Both audiences must get first-class, parallel entry points. Neither is a secondary afterthought.
 
+**The page opens on GPs (the user's decision, 2026-10-01).** The GP sign-up is the main page: the site's address shows the GP mode, the GP mode comes first in the document, and the head describes it. Patients keep a full page of their own, one tap away on the switch and at `?role=patient`. Supply is the durable moat (below), and this puts the entry point where the moat is built.
+
 ## Product Purpose
 
 Dr Quick is an on-demand, pay-per-consult, no-membership GP video consultation marketplace connecting patients to available GPs in real time — matched live rather than booked into a fixed future slot.
@@ -56,7 +58,7 @@ Success at this stage is validated demand and validated supply, not traffic. Per
 - **Market:** UK private-pay GP market ~£1.6bn; private consultations rose from 3% to 13% of all GP consultations over two decades. 139 tracked CQC providers; video GP price range £25–75.
 - **Critical path is regulatory, not technical.** CQC registration is the longest lead item: ~3–6 months end to end, £1,522 application fee, DBS checks are the bottleneck. Requires a Registered Manager and a Nominated Individual; directors face the Fit and Proper Persons test. In CQC's first sweep of online providers, 86% initially failed "safe."
 - **Regulatory geography — confirmed decision: England only at launch.** Scotland (HIS) and Wales (HIW) are separate regimes. No copy may imply UK-wide availability.
-- **Supply economics:** £24–33 per 15-minute consult ≈ £96–132/hour fully utilised, above the BMA locum floor. Private telehealth is **not** covered by CNSGP (NHS work only) — GPs need MDO cover at £1,500–4,000/yr each, which will kill casual supply unless Dr Quick buys block/corporate indemnity.
+- **Supply economics:** the business plan assumed £24–33 per 15-minute consult ≈ £96–132/hour fully utilised, above the BMA locum floor. **Superseded on 2026-10-01 by a commission:** a GP keeps 60% of the consultation price, 70% after 100 completed consultations and 75% after 500 (see "GP sign-up fee and commission" below). Against the plan's £32 base price that is £19.20, £22.40 and £24.00 a consultation, so a new GP starts below the plan's band and reaches its floor only at the top tier or at higher prices. Whether that still clears the locum floor is a question for whoever sets the price floor. Private telehealth is **not** covered by CNSGP (NHS work only) — GPs need MDO cover at £1,500–4,000/yr each, which will kill casual supply unless Dr Quick buys block/corporate indemnity.
 - **Realistic build cost:** £80–150k over 4–6 months with a senior 3–4 person team, plus £15–30k first-year compliance.
 
 ## Capabilities and Constraints
@@ -65,7 +67,16 @@ Success at this stage is validated demand and validated supply, not traffic. Per
 
 **Pages (2026-09-25):** the landing page plus About, How it works, Pricing, Contact, and draft Privacy and Terms pages, and a blog written by named admins in an on-site Markdown editor. Blog posts must pass the same compliance rules as the site (`lib/compliance.ts`: no medicine names, no CQC claim beyond the approved wording, no price figures or ranges, no time pressure, no UK-wide claim, no named doctor); publishing is blocked on any breach. The Privacy and Terms drafts block launch until the legal entity exists and a lawyer has reviewed them. No page collects anything beyond the waitlist forms on the landing page.
 
-Waitlist capture is the only data collection. The page runs as two modes behind a nav switch — a patient page and a GP page — and four forms (patient hero, patient closing band, GP hero, GP closing band) POST JSON to `/api/waitlist`: `{ "email": "...", "role": "patient" | "gp", "source": "hero" | "recap" | "hero-gp" | "recap-gp" }`. Email is the only field a person ever types. A honeypot field and client-side validation are in place.
+The page runs as two modes behind a nav switch — a GP page, which it opens on, and a patient page. The two patient forms (hero, closing band) POST JSON to `/api/waitlist`: `{ "email": "...", "role": "patient", "source": "hero" | "recap" }`; email is the only field a patient ever types. A honeypot field and client-side validation are in place.
+
+### GP sign-up fee and commission (the user's decisions, 2026-10-01)
+
+- **The GP sign-up is a pop-up that ends in a payment.** The GP hero, the closing band and the nav each open one pop-up: four fields (name, email, mobile, GMC number), the fee, and one button to Stripe's hosted payment page. `POST /api/gp-signup` stores the application as unpaid and creates the Stripe Checkout Session; the Stripe webhook records the fee as paid and only then sends the confirmation email and the team alert. `/api/waitlist` refuses the GP role, so there is no way to sign up as a GP without paying.
+- **The fee is £50, paid once** (`lib/gp-fee.ts`). It is stated beside every sign-up button before the click, in the pop-up above the pay button, in the FAQ and on Stripe's page.
+- **It is refunded in full if the GMC registration cannot be verified or the GP is not taken on.** That sentence is a commitment made to doctors next to a payment button; it is written once (`GP_FEE_REFUND`) and never paraphrased. Refunds are made by the team in the Stripe Dashboard, and the admin shows them once the webhook reports them. Nothing refunds automatically.
+- **Commission** (`lib/finance/commission.ts`): the GP keeps 60% of each consultation's price and Dr Quick 40%; after 100 completed consultations 70 / 30; after 500, 75 / 25, which is the top. The count is a GP's lifetime completed consultations, it never resets, and a tier applies to the consultations after its threshold, never back to earlier ones.
+
+Not decided, and not to be decided in code: whether a GP who withdraws of their own accord gets the fee back (the withdraw page says only that withdrawing does not refund it by itself, and to get in touch first); whether the fee carries VAT; whether the commission is of the price before or after Stripe's own charges (the code takes it of the full price the patient pays).
 
 **Built (2026-08-27):** `/api/waitlist` is a Vercel serverless function with no npm dependencies, storing email, role, source and an ISO timestamp in Redis over the REST API. It does **not** retain IP addresses — the rate-limit key is a salted SHA-256 hash under a 600-second TTL and never enters the waitlist record. `/api/waitlist-export` returns CSV and `/api/waitlist-delete` executes an erasure request; both require a `WAITLIST_EXPORT_TOKEN` bearer token and refuse everything when it is unset.
 
@@ -99,7 +110,7 @@ Recorded because they constrain what the site may ever promise:
 - Framework and migration timing for the eventual product web app.
 - Legal entity, Registered Manager, Nominated Individual, and medical director / Clinical Safety Officer appointments — status unknown to this repo.
 - The floor, the ceiling and the maximum multiplier for demand-based pricing. The flat £39 is settled as gone (2026-09-04); what replaces it is not specified anywhere — the business plan modelled £30–45, and nothing has decided whether peak may exceed it. Until those three numbers exist, no surface can quote a range honestly.
-- What a GP is paid under demand pricing, and whether it tracks the patient price. `PRODUCT.md` records £24–33 per 15-minute consult as supply economics; the prototype fixtures now vary per consultation around that band. The relationship between the two prices is undecided.
+- ~~What a GP is paid under demand pricing, and whether it tracks the patient price.~~ **Decided 2026-10-01:** a share of the patient price, in three tiers (above). What stays open is the list at the end of "GP sign-up fee and commission".
 - Native iOS/Android apps are anticipated (research recommends React Native + Expo) but are **not** part of this repository.
 
 ## Brand Commitments
