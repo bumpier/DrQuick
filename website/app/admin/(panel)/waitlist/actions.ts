@@ -11,8 +11,12 @@ import { audit } from '@/lib/admin/audit';
 import { getSignup, statusesFor } from '@/lib/admin/queries/waitlist';
 import { getDb } from '@/lib/db';
 import { waitlistSignups } from '@/lib/db/schema';
+import { requestSetPasswordLink } from '@/lib/doctor/account';
+import { setAccountPaused, syncAccountStatus } from '@/lib/doctor/admin';
 import { renderFor, sendEmail } from '@/lib/email';
+import { doctorApproved } from '@/lib/email-templates';
 import { NOTES_MAX } from '@/lib/admin/format';
+import { siteUrl } from '@/lib/site-url';
 import { erasePerson, UUID } from '@/lib/waitlist';
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
@@ -44,8 +48,56 @@ export async function setStatusAction(id: string, status: string): Promise<Actio
     ...(signup.role === 'patient' ? { unsubscribedAt: status === 'unsubscribed' ? now : null } : {}),
   }).where(eq(waitlistSignups.id, signup.id));
   await audit(db, admin, 'status_change', signup.id, { role: signup.role, from: signup.status, to: status });
+
+  // The pipeline is where a GP is approved, so their portal account follows
+  // it: Active lets them go online, anything else takes them off the floor.
+  if (signup.role === 'gp') {
+    const account = await syncAccountStatus(db, signup.id, status, now);
+    if (status === 'active') {
+      const claimed = Boolean(account?.claimed);
+      const url = new URL(claimed ? '/doctor/login' : '/doctor/register', siteUrl()).toString();
+      await sendEmail(db, signup.email, 'doctor_approved', doctorApproved(signup.name ?? 'there', url, claimed), signup.id);
+    }
+  }
+
   refresh(signup.role, signup.id);
   return { ok: true, message: 'Status updated.' };
+}
+
+/* ------------------------------------------------ the doctor's portal */
+
+// Pause takes an approved doctor off the floor without touching their
+// application; resume puts them back. Neither says anything to the doctor: the
+// portal tells them when they next look.
+export async function setDoctorPausedAction(id: string, paused: boolean): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const db = await getDb();
+  if (!db) return NO_DB;
+  const signup = await getSignup(db, String(id), 'gp');
+  if (!signup) return GONE;
+  if (!(await setAccountPaused(db, signup.id, Boolean(paused)))) {
+    return { ok: false, error: paused ? 'Only an approved doctor with a portal account can be paused.' : 'This doctor is not paused.' };
+  }
+  await audit(db, admin, paused ? 'doctor_pause' : 'doctor_resume', signup.id);
+  refresh('gp', signup.id);
+  return { ok: true, message: paused ? 'Doctor paused. They are offline and cannot go online.' : 'Doctor resumed. They can go online again.' };
+}
+
+// The same one-time link a GP can ask for themselves at /doctor/register, sent
+// on their behalf: to set up the portal, or because they are locked out.
+export async function sendDoctorLinkAction(id: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const db = await getDb();
+  if (!db) return NO_DB;
+  const signup = await getSignup(db, String(id), 'gp');
+  if (!signup) return GONE;
+  const issued = await requestSetPasswordLink(db, signup.email);
+  await audit(db, admin, 'doctor_link_sent', signup.id, { issued });
+  refresh('gp', signup.id);
+  if (!issued) {
+    return { ok: false, error: 'No link was sent. A rejected GP, or an application with no name or GMC number, cannot have a portal account.' };
+  }
+  return { ok: true, message: 'Sign-in link sent. It works once and for an hour.' };
 }
 
 export async function saveNotesAction(id: string, notes: string): Promise<ActionResult> {

@@ -10,8 +10,10 @@ import { GP_STATUSES, PATIENT_STATUSES } from '@/lib/db/schema';
 import { fmtDateTime, firstTouchChannel, sourceLabel, statusLabel } from '@/lib/admin/format';
 import { humanEmailError } from '@/lib/admin/email-errors';
 import type { Journey } from '@/lib/admin/queries/journey';
+import type { PortalAccount } from '@/lib/doctor/admin';
 import type { Signup } from '@/lib/waitlist';
 import { gbp } from '@/lib/money';
+import { PortalAccountCard } from './PortalAccountCard';
 import { EraseButton, NotesControl, ResendButton, StatusControl } from './SignupControls';
 import { FeeBadge, StatusBadge } from './StatusBadge';
 import { VisitorTimeline } from './VisitorTimeline';
@@ -31,6 +33,8 @@ const TEMPLATE_LABELS: Record<string, string> = {
   patient_welcome: 'You’re on the list',
   gp_received: 'Application received',
   admin_new_gp: 'New GP alert to the team',
+  doctor_set_password: 'Portal sign-in link',
+  doctor_approved: 'Account approved',
 };
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -42,11 +46,14 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-export function SignupDetail({ signup, emails, journey, ownHost }: {
+export function SignupDetail({ signup, emails, journey, ownHost, portal }: {
   signup: Signup;
   emails: EmailRow[];
   journey: Journey | null;
   ownHost: string | null;
+  // A GP's doctor-portal account: null when they have not claimed one, and
+  // left out altogether for a patient.
+  portal?: PortalAccount | null;
 }) {
   const gp = signup.role === 'gp';
   const statuses = gp ? GP_STATUSES : PATIENT_STATUSES;
@@ -173,6 +180,7 @@ export function SignupDetail({ signup, emails, journey, ownHost }: {
             <StatusControl id={signup.id} status={signup.status} options={statuses.map((s) => ({ value: s, label: statusLabel(signup.role, s) }))} />
           </CardContent>
         </Card>
+        {gp && portal !== undefined && <PortalAccountCard signupId={signup.id} account={portal} />}
         <Card size="sm">
           <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
           <CardContent><NotesControl id={signup.id} notes={signup.notes} /></CardContent>

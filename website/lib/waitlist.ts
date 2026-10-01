@@ -2,10 +2,13 @@
 // Server-only. The API route (app/api/waitlist) validates the input; this file
 // only stores it.
 import { randomBytes } from 'node:crypto';
-import { and, asc, eq, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
 import { audit } from '@/lib/admin/audit';
-import { emailLog, events, sessions, visitors, waitlistSignups, type PendingDetails, type WaitlistRole } from '@/lib/db/schema';
+import {
+  consultationOffers, consultations, doctorTokens, emailLog, events, gps, sessions, visitors, waitlistSignups,
+  type PendingDetails, type WaitlistRole,
+} from '@/lib/db/schema';
 import { expireFeeCheckout } from '@/lib/stripe';
 
 export type Signup = typeof waitlistSignups.$inferSelect;
@@ -157,6 +160,28 @@ export async function erasePerson(db: DB, email: string): Promise<number> {
   for (const { sessionId } of open) await expireFeeCheckout(sessionId);
 
   return db.transaction(async (tx) => {
+    // A GP's portal account goes too. One that never took a consultation is
+    // deleted outright. One that did is the payee on financial records the
+    // business has to keep, so the row stays with the name and GMC number
+    // those records need and loses everything else: the sign-in, the address,
+    // the mobile, the profile. They can no longer sign in.
+    const now = new Date();
+    for (const { id } of await tx.select({ id: gps.id }).from(gps).where(eq(gps.email, email))) {
+      await tx.delete(consultationOffers).where(and(eq(consultationOffers.gpId, id), eq(consultationOffers.status, 'offered')));
+      const [taken] = await tx.select({ id: consultations.id }).from(consultations).where(eq(consultations.gpId, id)).limit(1);
+      if (!taken) {
+        await tx.delete(consultationOffers).where(eq(consultationOffers.gpId, id));
+        await tx.delete(gps).where(eq(gps.id, id));
+      } else {
+        await tx.update(gps).set({
+          email: `erased+${id}@drquick.invalid`, signupId: null, status: 'offboarded', passwordHash: null,
+          sessionEpoch: sql`${gps.sessionEpoch} + 1`, mobile: null, bio: '', languages: '',
+          onlineSince: null, lastSeenAt: null, availableSince: null, updatedAt: now,
+        }).where(eq(gps.id, id));
+      }
+    }
+    await tx.delete(doctorTokens).where(eq(doctorTokens.email, email));
+
     const gone = await tx.delete(waitlistSignups).where(eq(waitlistSignups.email, email))
       .returning({ id: waitlistSignups.id, visitorId: waitlistSignups.visitorId });
     const visitorIds = gone.map((g) => g.visitorId).filter((v): v is string => v !== null);

@@ -7,6 +7,7 @@ import { hostOf } from '@/lib/admin/format';
 import { visitorJourney } from '@/lib/admin/queries/journey';
 import { emailHistory, getSignup } from '@/lib/admin/queries/waitlist';
 import { getDb } from '@/lib/db';
+import { portalAccountFor } from '@/lib/doctor/admin';
 import { siteUrl } from '@/lib/site-url';
 
 export const metadata: Metadata = { title: 'GP application' };
@@ -20,7 +21,9 @@ export default async function GpPage({ params }: { params: Promise<{ id: string 
 
   const signup = await getSignup(db, id, 'gp');
   if (!signup) notFound();
-  const [emails, journey] = await Promise.all([emailHistory(db, signup.id), visitorJourney(db, signup.visitorId)]);
+  const [emails, journey, portal] = await Promise.all([
+    emailHistory(db, signup.id), visitorJourney(db, signup.visitorId), portalAccountFor(db, signup.id),
+  ]);
 
   return (
     <>
@@ -29,7 +32,7 @@ export default async function GpPage({ params }: { params: Promise<{ id: string 
         description="A GP who applied to join. Check their GMC registration, then move them along the pipeline."
         back={back}
       />
-      <SignupDetail signup={signup} emails={emails} journey={journey} ownHost={hostOf(siteUrl().toString())} />
+      <SignupDetail signup={signup} emails={emails} journey={journey} ownHost={hostOf(siteUrl().toString())} portal={portal} />
     </>
   );
 }

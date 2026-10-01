@@ -143,7 +143,7 @@ export type EnvVar = { name: string; set: boolean; about: string };
 // Used when .env.example is not beside the server (it is, on the VPS).
 const FALLBACK_ENV = [
   'DATABASE_URL', 'WAITLIST_EXPORT_TOKEN', 'RATE_LIMIT_SALT', 'NEXT_PUBLIC_SITE_URL', 'ADMIN_USERS', 'ADMIN_SESSION_SECRET',
-  'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY', 'NEXT_PUBLIC_CONTACT_EMAIL', 'RESEND_API_KEY', 'EMAIL_FROM', 'ADMIN_ALERT_EMAILS',
+  'DOCTOR_SESSION_SECRET', 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY', 'NEXT_PUBLIC_CONTACT_EMAIL', 'RESEND_API_KEY', 'EMAIL_FROM', 'ADMIN_ALERT_EMAILS',
   'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET',
 ];
 
@@ -263,6 +263,9 @@ export const AUDIT_LABELS: Record<string, string> = {
   self_erasure: 'Erased themselves by unsubscribe link',
   export_csv: 'Downloaded a waitlist CSV',
   export_revenue_csv: 'Downloaded the revenue CSV',
+  doctor_pause: 'Paused a doctor',
+  doctor_resume: 'Resumed a doctor',
+  doctor_link_sent: 'Emailed a doctor a sign-in link',
 };
 export const auditLabel = (action: string) => AUDIT_LABELS[action] ?? action.replace(/_/g, ' ');
 
