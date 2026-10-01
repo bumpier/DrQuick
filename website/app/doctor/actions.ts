@@ -5,8 +5,11 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db';
-import { doctorLoginAllowed, endDoctorSession, startDoctorSession, verifyDoctorCredentials } from '@/lib/doctor-auth';
+import {
+  currentDoctor, doctorLoginAllowed, endDoctorSession, startDoctorSession, verifyDoctorCredentials,
+} from '@/lib/doctor-auth';
 import { PASSWORD_MIN, linkAllowed, requestSetPasswordLink, setPasswordWithToken } from '@/lib/doctor/account';
+import { goOffline } from '@/lib/doctor/shift';
 
 const NO_DB = 'The portal needs the site’s database, which is not configured on this server (set DATABASE_URL).';
 const NO_SECRET = 'Sign-in is not set up on this server (DOCTOR_SESSION_SECRET).';
@@ -47,7 +50,16 @@ export async function signIn(_prev: SignInState, form: FormData): Promise<SignIn
   redirect('/doctor'); // throws, so it sits outside any try
 }
 
+// A doctor who signs out is no longer there to take an offer, so they go
+// offline first and anything they were holding passes on. In the middle of a
+// consultation that is refused, and they are signed out all the same: the
+// consultation is still theirs to end when they sign back in.
 export async function signOut() {
+  const doctor = await currentDoctor();
+  const db = doctor ? await getDb() : null;
+  if (doctor && db) {
+    try { await goOffline(db, doctor.id); } catch (err) { console.error('Going offline at sign-out failed:', (err as Error).message); }
+  }
   await endDoctorSession();
   redirect('/doctor/login');
 }
