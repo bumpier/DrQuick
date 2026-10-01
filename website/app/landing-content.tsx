@@ -1,4 +1,6 @@
 import type { FaqItem } from '@/components/Faq';
+import { COMMISSION_TIERS, gpSharePercent, platformSharePercent } from '@/lib/finance/commission';
+import { GP_FEE_LABEL, GP_FEE_REFUND } from '@/lib/gp-fee';
 
 // Typed copy for the landing page, transcribed verbatim from the flat page.
 // Compliance sentences live here and are guarded by tests; do not paraphrase.
@@ -77,8 +79,32 @@ export const PATIENT_FAQ: FaqItem[] = [
   { q: 'Where can I use Dr Quick?', a: <p>England, at launch. Scotland, Wales and Northern Ireland are regulated separately, so they are not covered at launch.</p> },
 ];
 
+// The commission and the fee are read from their modules, so an answer here can
+// never state a figure the product does not pay or charge.
+const [T_START, T_MID, T_TOP] = COMMISSION_TIERS;
+
 export const GP_FAQ: FaqItem[] = [
   { q: 'Am I employed by Dr Quick?', a: <p>No. You would work as a self-employed contractor and invoice per consultation. There is no exclusivity and no notice period, so NHS, locum or partnership work carries on alongside it.</p> },
+  {
+    q: 'How much do I keep?',
+    a: (
+      <p>
+        You keep {gpSharePercent(T_START)}% of the price of each consultation, and Dr Quick keeps {platformSharePercent(T_START)}%.
+        After {T_MID.from} completed consultations you keep {gpSharePercent(T_MID)}%, and after {T_TOP.from} you
+        keep {gpSharePercent(T_TOP)}%, which is the top rate. The count is of consultations you complete, and it never
+        resets. What a consultation pays is shown in full before you accept it.
+      </p>
+    ),
+  },
+  {
+    q: 'What is the sign-up fee?',
+    a: (
+      <p>
+        {GP_FEE_LABEL}, paid once by card when you sign up. {GP_FEE_REFUND} The payment is taken by Stripe, so
+        Dr Quick never sees your card details.
+      </p>
+    ),
+  },
   { q: 'What indemnity do I need?', a: <p>Your own. Private telehealth is not covered by the NHS clinical negligence schemes, so you need cover from a medical defence organisation for this work. We check it before your first consultation and we do not provide it for you.</p> },
   { q: 'What gets checked before I start?', a: <p>GMC registration, your licence to practise, your place on the GP Register, an enhanced DBS check, right to work and indemnity. Nothing is matched to you until all of them are in place, and we re-check them as they fall due.</p> },
   { q: 'Do I have to prescribe?', a: <p>No. Whether a prescription is appropriate at all is entirely your clinical judgement, and nothing on the platform is measured on how often you write one. Schedule 2 and 3 controlled drugs are prohibited across the platform, so those requests do not reach you.</p> },
@@ -89,19 +115,24 @@ export const GP_FAQ: FaqItem[] = [
     a: (
       <p>
         We use your name, email address, mobile number and GMC reference number to check you on the
-        GMC register and to contact you about launching. That is all — we do not share them or sell
-        them, and we ask for nothing else today. We keep them until launch and for no more than twelve
-        months after that, then delete them. You can ask us to delete them sooner at any time, and if
-        you think we have handled them badly you can complain to the Information Commissioner’s Office.
+        GMC register and to contact you about launching. That is all — we do not sell them, and we ask
+        for nothing else today. The only company we pass anything to is Stripe, which takes the sign-up
+        fee: it receives your email address and your card details, and the card details never reach us.
+        We keep your details until launch and for no more than twelve months after that, then delete
+        them; a record of the payment is kept for as long as the law requires. You can ask us to delete
+        your details sooner at any time, and if you think we have handled them badly you can complain to
+        the Information Commissioner’s Office.
         {/* DEPLOY / LEGAL: UK GDPR Art 13 also requires the data controller's registered
             name and address and a working privacy contact — and this form now collects a
-            name, a mobile number and a GMC reference, not just an email, so the exposure
-            is larger than the patient one. PRODUCT.md records the legal entity as
-            undecided, so they cannot be written yet. Add them here and in the footer
-            before this page collects a single real doctor's details. */}
+            name, a mobile number and a GMC reference, not just an email, and takes a
+            payment, so the exposure is larger than the patient one. Stripe is a processor
+            and must be named in the privacy notice; a record of the payment has to be kept
+            for tax after the rest is deleted. PRODUCT.md records the legal entity as
+            undecided, so none of this can be written yet. Add it here and in the footer
+            before this page collects a single real doctor's details or takes a real fee. */}
       </p>
     ),
   },
   { q: 'Where are the patients?', a: <p>England at launch. Scotland, Wales and Northern Ireland are regulated separately, so they are not covered at launch.</p> },
-  { q: 'When does this start?', a: <p>We have not launched. Dr Quick will be a CQC-registered clinical service at launch, and no consultation happens before that registration is in place. Registering interest now puts you in the first group we talk to.</p> },
+  { q: 'When does this start?', a: <p>We have not launched. Dr Quick will be a CQC-registered clinical service at launch, and no consultation happens before that registration is in place. Signing up now puts you in the first group we talk to.</p> },
 ];

@@ -9,6 +9,7 @@
 // mail outage must not turn a saved sign-up into an error on the form.
 import type { DB } from '@/lib/db';
 import { emailLog } from '@/lib/db/schema';
+import { feeLabel } from '@/lib/gp-fee';
 import { siteUrl } from '@/lib/site-url';
 import type { Signup } from '@/lib/waitlist';
 import { adminNewGp, gpApplicationReceived, patientWelcome, type Email } from '@/lib/email-templates';
@@ -66,7 +67,13 @@ export const unsubscribeUrl = (token: string) => new URL(`/unsubscribe?token=${e
 
 export function renderFor(signup: Signup): { template: Template; email: Email } {
   return signup.role === 'gp'
-    ? { template: 'gp_received', email: gpApplicationReceived(signup.name ?? 'there', unsubscribeUrl(signup.unsubscribeToken)) }
+    ? {
+        template: 'gp_received',
+        email: gpApplicationReceived(
+          signup.name ?? 'there', unsubscribeUrl(signup.unsubscribeToken),
+          signup.feeStatus === 'paid' && signup.feePence != null ? feeLabel(signup.feePence) : null,
+        ),
+      }
     : { template: 'patient_welcome', email: patientWelcome(unsubscribeUrl(signup.unsubscribeToken)) };
 }
 

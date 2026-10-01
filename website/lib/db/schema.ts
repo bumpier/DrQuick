@@ -9,9 +9,15 @@ import {
   bigserial, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
 
+// Relative, not '@/': drizzle-kit reads this file outside the app's bundler.
+import { FEE_STATUSES, type FeeStatus } from '../gp-fee';
+
 const created = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
 /* ------------------------------------------------------------- waitlist */
+
+export { FEE_STATUSES, type FeeStatus };
+export type PendingDetails = { name: string; mobile: string; gmc: string };
 
 export const WAITLIST_ROLES = ['patient', 'gp'] as const;
 export type WaitlistRole = (typeof WAITLIST_ROLES)[number];
@@ -40,6 +46,24 @@ export const waitlistSignups = pgTable('waitlist_signups', {
   landingPath: text('landing_path'),
   unsubscribeToken: text('unsubscribe_token').notNull(),
   unsubscribedAt: timestamp('unsubscribed_at', { withTimezone: true }),
+  // The GP sign-up fee (lib/gp-fee.ts). Null on every patient row and on a GP
+  // who signed up before the fee existed; 'unpaid' from the moment a GP submits
+  // the form until Stripe confirms the payment. The Stripe ids are what the
+  // webhook matches a payment or a refund back to this row with.
+  feeStatus: text('fee_status', { enum: FEE_STATUSES }),
+  feePence: integer('fee_pence'),
+  feePaidAt: timestamp('fee_paid_at', { withTimezone: true }),
+  stripeCheckoutSessionId: text('stripe_checkout_session_id'),
+  stripePaymentIntentId: text('stripe_payment_intent_id'),
+  // The Stripe refund that marked the fee refunded, so that only that refund
+  // failing can put it back to paid.
+  feeRefundId: text('fee_refund_id'),
+  // The details typed with each checkout that has been started, keyed by its
+  // Stripe session id. The row itself keeps the FIRST details submitted for an
+  // address; when a checkout is paid, the details typed with THAT checkout
+  // replace them. So nobody can rewrite someone else's application by posting
+  // their email address: only the person who pays decides what it says.
+  pendingDetails: jsonb('pending_details').$type<Record<string, PendingDetails>>(),
   createdAt: created(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
@@ -48,6 +72,8 @@ export const waitlistSignups = pgTable('waitlist_signups', {
   uniqueIndex('waitlist_unsubscribe_token').on(t.unsubscribeToken),
   index('waitlist_created').on(t.createdAt),
   index('waitlist_visitor').on(t.visitorId),
+  // One payment pays one sign-up, however often Stripe tells us about it.
+  uniqueIndex('waitlist_fee_intent').on(t.stripePaymentIntentId),
 ]);
 
 /* ---------------------------------------------------------- rate limits */

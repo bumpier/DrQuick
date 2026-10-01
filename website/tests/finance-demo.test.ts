@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { DEMO_GPS, demoDataset, demoSource, prng } from '@/lib/finance/demo';
+import { COMMISSION_TIERS, gpSharePercent, splitPrice, tierFor } from '@/lib/finance/commission';
 import { figures, lastMonthKeys, monthWindow } from '@/lib/finance/model';
 import { BASE_PRICE, PRICE_CAP } from '@/lib/pricing';
 
@@ -21,20 +22,46 @@ describe('the demo generator', () => {
     expect(later.consultations.filter(before)).toEqual(earlier.consultations.filter(before));
   });
 
-  test('stays within the pricing rule, the GP fee band and the past', () => {
+  // One assertion over collected faults rather than six per row: there are
+  // thousands of rows, and a per-row expect ran this test close to its timeout.
+  test('stays within the pricing rule and the past, and every price is split to the penny', () => {
     const d = demoDataset(NOW);
     expect(d.gps).toHaveLength(DEMO_GPS);
     expect(d.consultations.length).toBeGreaterThan(5000);
+    const faults: string[] = [];
     for (const c of d.consultations) {
-      expect(c.pricePence).toBeGreaterThanOrEqual(BASE_PRICE * 100);
-      expect(c.pricePence).toBeLessThanOrEqual(PRICE_CAP * 100);
-      expect(c.gpFeePence).toBeGreaterThanOrEqual(2400);
-      expect(c.gpFeePence).toBeLessThanOrEqual(3300);
-      expect(c.platformFeePence).toBe(c.pricePence - c.gpFeePence);
-      expect(c.requestedAt.getTime()).toBeLessThanOrEqual(NOW.getTime());
+      if (c.pricePence < BASE_PRICE * 100 || c.pricePence > PRICE_CAP * 100) faults.push(`${c.id}: price ${c.pricePence}`);
+      if (c.platformFeePence !== c.pricePence - c.gpFeePence) faults.push(`${c.id}: the split does not add up`);
+      if (c.requestedAt.getTime() > NOW.getTime()) faults.push(`${c.id}: requested in the future`);
     }
-    for (const r of d.refunds) expect(r.createdAt.getTime()).toBeLessThanOrEqual(NOW.getTime());
-    for (const p of d.payments) if (p.paidAt) expect(p.paidAt.getTime()).toBeLessThanOrEqual(NOW.getTime());
+    for (const r of d.refunds) if (r.createdAt.getTime() > NOW.getTime()) faults.push(`${r.id}: refunded in the future`);
+    for (const p of d.payments) if (p.paidAt && p.paidAt.getTime() > NOW.getTime()) faults.push(`${p.id}: paid in the future`);
+    expect(faults).toEqual([]);
+  });
+
+  // The commission rule (lib/finance/commission.ts): a GP keeps 60% of a
+  // consultation until they have completed 100, then 70%, then 75% from 500.
+  test('each GP is paid by the commission tier they held going into the consultation', () => {
+    const d = demoDataset(NOW);
+    const served = new Map<string, number>();
+    const shares = new Set<number>();
+    const faults: string[] = [];
+    for (const c of d.consultations) {
+      // A request still queued or cancelled has no GP in the data; its fee was
+      // still set by a tier, checked against all three below.
+      if (!c.gpId) {
+        if (!COMMISSION_TIERS.some((t) => splitPrice(c.pricePence, t.from).gpFeePence === c.gpFeePence)) faults.push(`${c.id}: fee on no tier`);
+        continue;
+      }
+      const before = served.get(c.gpId) ?? 0;
+      if (splitPrice(c.pricePence, before).gpFeePence !== c.gpFeePence) faults.push(`${c.id}: not the tier held after ${before}`);
+      shares.add(gpSharePercent(tierFor(before)));
+      if (c.status === 'completed') served.set(c.gpId, before + 1);
+    }
+    expect(faults).toEqual([]);
+    // A year of demo trading takes the busiest GPs through all three tiers.
+    expect([...shares].sort()).toEqual([60, 70, 75]);
+    expect(Math.max(...served.values())).toBeGreaterThan(500);
   });
 
   test('is internally consistent: net = gross − refunds − fees, month by month and in total', async () => {

@@ -9,8 +9,8 @@
 
    The step and the cap are PROTOTYPE PLACEHOLDERS, not product decisions:
    PRODUCT.md records the floor, the ceiling and the multiplier as undecided.
-   Nothing here relates to what the GP is paid for the same consultation
-   (OFFER.fee); that relationship is undecided too.
+   What the GP is paid for the same consultation is a share of this quote,
+   set by lib/finance/commission.ts (decided 2026-10-01).
 
    A quote is computed once, when the patient reaches the quote screen, and is
    then frozen into the booking. Nothing after that moment may change it: the

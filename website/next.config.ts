@@ -80,6 +80,8 @@ const nextConfig: NextConfig = {
       // a draft must never be indexed as if it were in force.
       { source: '/privacy', headers: [NOINDEX] },
       { source: '/terms', headers: [NOINDEX] },
+      // Where Stripe returns a GP after the sign-up fee: one person's receipt.
+      { source: '/gp/:path*', headers: [NOINDEX] },
       // An unsubscribe link is personal to one address.
       { source: '/unsubscribe', headers: [NOINDEX] },
       { source: '/unsubscribe/:path*', headers: [NOINDEX] },

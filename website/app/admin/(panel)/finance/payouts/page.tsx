@@ -15,6 +15,7 @@ import { fmtCount, fmtDate } from '@/lib/admin/format';
 import { dbSource, isDemo, parsePayoutQuery } from '@/lib/admin/queries/finance';
 import { flatParams, withQuery } from '@/lib/admin/url';
 import { getDb } from '@/lib/db';
+import { COMMISSION_TIERS, gpSharePercent, nextTier, tierFor } from '@/lib/finance/commission';
 import { demoSource } from '@/lib/finance/demo';
 import { PAYOUT_STATUSES, PAYOUT_STATUS_LABELS } from '@/lib/finance/model';
 import { gbp } from '@/lib/money';
@@ -30,6 +31,18 @@ const NOTES: Record<string, string> = {
   paid: 'Arrived with the GP',
   failed: 'Did not arrive — needs a look',
 };
+
+// The commission rule in a sentence, and where one GP stands on it. Both read
+// lib/finance/commission.ts, the rule consultations are split by.
+const TIER_RULE = COMMISSION_TIERS
+  .map((t) => (t.from === 0 ? `${gpSharePercent(t)}% to start` : `${gpSharePercent(t)}% after ${fmtCount(t.from)} completed`))
+  .join(', ');
+
+function shareNote(served: number): string {
+  const next = nextTier(served);
+  const done = `${fmtCount(served)} completed`;
+  return next ? `${done}, ${fmtCount(next.remaining)} to ${gpSharePercent(next.tier)}%` : `${done}, top rate`;
+}
 
 export default async function PayoutsPage({ searchParams }: Props) {
   await requireAdmin();
@@ -77,6 +90,7 @@ export default async function PayoutsPage({ searchParams }: Props) {
           <CardTitle><Titled title="By GP" demo={demo} /></CardTitle>
           <p className="text-fine text-ink-2">
             Earned in {monthName} is the fees for completed consultations paid for this month (UTC).
+            Their share is what the GP keeps of each consultation now: {TIER_RULE}.
           </p>
         </CardHeader>
         <CardContent>
@@ -87,6 +101,7 @@ export default async function PayoutsPage({ searchParams }: Props) {
                   <TableHead>GP</TableHead>
                   <TableHead className="text-right">Earned in {monthName}</TableHead>
                   <TableHead className="text-right">Consultations</TableHead>
+                  <TableHead className="text-right">Their share</TableHead>
                   <TableHead className="text-right">Owed (pending or processing)</TableHead>
                   <TableHead className="text-right">Paid to date</TableHead>
                 </TableRow>
@@ -99,6 +114,10 @@ export default async function PayoutsPage({ searchParams }: Props) {
                     </th>
                     <TableCell data-label="Earned" className="text-right tabular-nums">{gbp(g.earnedThisMonth)}</TableCell>
                     <TableCell data-label="Consultations" className="text-right tabular-nums">{fmtCount(g.consultsThisMonth)}</TableCell>
+                    <TableCell data-label="Their share" className="text-right tabular-nums">
+                      {gpSharePercent(tierFor(g.servedToDate))}%
+                      <span className="block text-fine text-ink-2">{shareNote(g.servedToDate)}</span>
+                    </TableCell>
                     <TableCell data-label="Owed" className="text-right tabular-nums">{gbp(g.pending)}</TableCell>
                     <TableCell data-label="Paid to date" className="text-right tabular-nums">{gbp(g.paidToDate)}</TableCell>
                   </TableRow>

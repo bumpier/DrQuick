@@ -29,11 +29,11 @@ test('the metadata ports the flat page head: share card, icons, locale', async (
   vi.doMock('next/font/google', () => ({
     Plus_Jakarta_Sans: () => ({ variable: '--font-jakarta', className: '' }),
   }));
-  const { PATIENT_MODE } = await import('@/lib/site-mode');
+  const { DEFAULT_ROLE } = await import('@/lib/site-mode');
   const { metadata, viewport } = await import('@/app/layout');
-  // The head describes whichever audience actually ships. With only the GP mode
-  // live, a patient title would promise a page no one can reach.
-  if (PATIENT_MODE) {
+  // The head describes the audience the page opens on. A patient title over a
+  // page that opens on GPs would promise something the reader does not land on.
+  if (DEFAULT_ROLE === 'patient') {
     expect(metadata.title).toBe('Dr Quick — See a GP in minutes');
     expect(metadata.description).toContain('Your price shown in full before you book');
     expect(metadata.openGraph!.title).toBe('See a GP in minutes.');
@@ -44,8 +44,11 @@ test('the metadata ports the flat page head: share card, icons, locale', async (
     expect(metadata.openGraph!.title).toBe('Consult when it suits you.');
   }
   // Pricing is dynamic: no figure may reach a share card or a search result.
+  // The same goes for the GP sign-up fee and the commission: a number cached
+  // in a share card is a number we cannot change.
   for (const copy of [metadata.description, metadata.openGraph!.description, metadata.twitter!.description]) {
     expect(copy).not.toMatch(/£\d/);
+    expect(copy).not.toMatch(/\d\s?%/);
   }
   expect(String(metadata.metadataBase)).toBe('https://drquick.example/');
   const og = metadata.openGraph!;

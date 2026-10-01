@@ -66,9 +66,10 @@ test('export renders CSV oldest first, with escaped cells', async () => {
   expect(res.headers.get('Content-Type')).toBe('text/csv; charset=utf-8');
   expect(res.headers.get('Content-Disposition')).toBe('attachment; filename="dr-quick-waitlist.csv"');
   const lines = (await res.text()).split('\n');
-  expect(lines[0]).toBe('email,role,name,mobile,gmc,source,status,utm_source,joined_at');
-  expect(lines[1]).toBe(`"'=evil@example.com","gp","N","07700900123","1234567","recap-gp","new","","2026-08-01T00:00:00.000Z"`);
-  expect(lines[2]).toBe('"b@example.com","patient","","","","hero","subscribed","","2026-08-02T00:00:00.000Z"');
+  expect(lines[0]).toBe('email,role,name,mobile,gmc,source,status,utm_source,joined_at,fee_status,fee_paid_at');
+  // The fee columns are blank for a patient and for a GP from before the fee.
+  expect(lines[1]).toBe(`"'=evil@example.com","gp","N","07700900123","1234567","recap-gp","new","","2026-08-01T00:00:00.000Z","",""`);
+  expect(lines[2]).toBe('"b@example.com","patient","","","","hero","subscribed","","2026-08-02T00:00:00.000Z","",""');
 });
 
 test('export with no database is 503; a read failure is 502', async () => {

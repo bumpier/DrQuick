@@ -12,13 +12,17 @@ export const csvCell = (value: unknown): string => {
 
 // One CSV covers both roles: a GP row fills the sign-up columns, a patient row
 // leaves them blank rather than the export splitting into two files.
-export const CSV_HEADER = 'email,role,name,mobile,gmc,source,status,utm_source,joined_at';
+// The fee columns are the GP sign-up fee (lib/gp-fee.ts): blank for a patient
+// and for a GP who signed up before it existed.
+export const CSV_HEADER = 'email,role,name,mobile,gmc,source,status,utm_source,joined_at,fee_status,fee_paid_at';
 
 export function waitlistCsv(rows: Signup[]): string {
   return [
     CSV_HEADER,
     ...rows.map((r) =>
-      [r.email, r.role, r.name, r.mobile, r.gmc, r.source, r.status, r.utmSource, r.createdAt.toISOString()]
-        .map(csvCell).join(',')),
+      [
+        r.email, r.role, r.name, r.mobile, r.gmc, r.source, r.status, r.utmSource, r.createdAt.toISOString(),
+        r.feeStatus, r.feePaidAt?.toISOString(),
+      ].map(csvCell).join(',')),
   ].join('\n');
 }

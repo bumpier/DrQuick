@@ -2,8 +2,12 @@ import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { resetDb, useTestDb } from './helpers/db';
 import { setDb, type DB } from '@/lib/db';
-import { consultations, patients, payments, payouts, refunds, stripeEvents } from '@/lib/db/schema';
+import { appErrors, consultations, emailLog, patients, payments, payouts, refunds, stripeEvents, waitlistSignups } from '@/lib/db/schema';
+import { renderFor } from '@/lib/email';
 import { handleStripeEvent, signPayload, verifyStripeSignature, type StripeEvent } from '@/lib/finance/stripe-webhook';
+import { markFeePaid } from '@/lib/gp-fee-store';
+import { feePaymentFrom } from '@/lib/stripe';
+import { recordFeeCheckout, startGpSignup } from '@/lib/waitlist';
 import { POST } from '@/app/api/webhooks/stripe/route';
 
 let db: DB;
@@ -117,6 +121,214 @@ describe('event handling', () => {
     await seed();
     expect(await handleStripeEvent(db, ev('evt_z', 'customer.created', { id: 'cus_1' }))).toBe('ignored');
     expect(await db.select().from(stripeEvents)).toHaveLength(0);
+  });
+});
+
+/* The GP sign-up fee (lib/gp-fee.ts). A GP's application is stored unpaid by
+   app/api/gp-signup; this is where it becomes paid, and where a refund made in
+   the Stripe Dashboard is recorded. */
+describe('the GP sign-up fee', () => {
+  async function application() {
+    const { signup } = await startGpSignup(db, {
+      name: 'Dr Jane Okafor', email: 'jane@example.com', mobile: '07700900123', gmc: '1234567', source: 'hero-gp',
+    });
+    return signup;
+  }
+  const row = async (id: string) => (await db.select().from(waitlistSignups).where(eq(waitlistSignups.id, id)))[0];
+  const session = (signupId: string, over: Record<string, unknown> = {}) => ({
+    id: 'cs_test_fee0000000001', object: 'checkout.session', payment_status: 'paid', status: 'complete',
+    payment_intent: 'pi_fee_1', amount_total: 5000, currency: 'gbp', created: NOW - 30,
+    metadata: { kind: 'gp_signup_fee', signup_id: signupId }, ...over,
+  });
+  const sent = async () => (await db.select().from(emailLog)).map((l) => [l.to, l.template]);
+
+  test('a completed, paid checkout marks the fee paid and sends the confirmation and the team alert, once', async () => {
+    vi.stubEnv('ADMIN_ALERT_EMAILS', 'ops@example.com');
+    const s = await application();
+    expect(await sent()).toEqual([]);
+
+    expect(await handleStripeEvent(db, ev('evt_fee_1', 'checkout.session.completed', session(s.id)))).toBe('applied');
+    expect(await row(s.id)).toMatchObject({
+      feeStatus: 'paid', feePence: 5000, feePaidAt: new Date((NOW - 30) * 1000),
+      stripeCheckoutSessionId: 'cs_test_fee0000000001', stripePaymentIntentId: 'pi_fee_1',
+      status: 'new', // the pipeline is the team's to move, not the payment's
+    });
+    expect(await sent()).toEqual([['jane@example.com', 'gp_received'], ['ops@example.com', 'admin_new_gp']]);
+
+    // Stripe redelivers the event, and then sends the same news under a new id.
+    expect(await handleStripeEvent(db, ev('evt_fee_1', 'checkout.session.completed', session(s.id)))).toBe('duplicate');
+    expect(await handleStripeEvent(db, ev('evt_fee_2', 'checkout.session.completed', session(s.id)))).toBe('applied');
+    expect(await sent()).toHaveLength(2);
+  });
+
+  test('the confirmation states the amount that was actually paid, and the refund promise', async () => {
+    const s = await application();
+    await handleStripeEvent(db, ev('evt_fee_3', 'checkout.session.completed', session(s.id)));
+    const { email } = renderFor(await row(s.id));
+    expect(email.subject).toBe('You’re signed up with Dr Quick');
+    expect(email.text).toContain('Your £50 sign-up fee is paid');
+    expect(email.text).toContain('Refunded in full if we can’t verify your GMC registration or don’t take you on.');
+  });
+
+  test('a delayed payment method is not paid at "completed", only when its success arrives', async () => {
+    const s = await application();
+    await handleStripeEvent(db, ev('evt_fee_4', 'checkout.session.completed', session(s.id, { payment_status: 'unpaid' })));
+    expect((await row(s.id)).feeStatus).toBe('unpaid');
+    expect(await sent()).toEqual([]);
+    await handleStripeEvent(db, ev('evt_fee_5', 'checkout.session.async_payment_succeeded', session(s.id)));
+    expect((await row(s.id)).feeStatus).toBe('paid');
+    expect(await sent()).toEqual([['jane@example.com', 'gp_received']]);
+  });
+
+  test('a checkout that is not a sign-up fee, or names no sign-up of ours, changes nothing', async () => {
+    const s = await application();
+    await handleStripeEvent(db, ev('evt_fee_6', 'checkout.session.completed', session(s.id, { metadata: { kind: 'something_else', signup_id: s.id } })));
+    await handleStripeEvent(db, ev('evt_fee_7', 'checkout.session.completed', session('not-a-uuid')));
+    await handleStripeEvent(db, ev('evt_fee_8', 'checkout.session.completed', session('99999999-9999-4999-8999-999999999999')));
+    expect((await row(s.id)).feeStatus).toBe('unpaid');
+    expect(await sent()).toEqual([]);
+  });
+
+  // Paid means the whole fee, in pounds, whatever the metadata says: a session
+  // that completed for nothing, or for another amount or currency, is not it.
+  test('a session for the wrong amount, the wrong currency or no payment at all is not the fee being paid', async () => {
+    const s = await application();
+    const cases = [
+      { amount_total: 0, payment_status: 'no_payment_required' },
+      { amount_total: 0 },
+      { amount_total: 4999 },
+      { amount_total: 5000, currency: 'usd' },
+      { amount_total: '5000' },
+    ];
+    for (const [i, over] of cases.entries()) {
+      await handleStripeEvent(db, ev(`evt_fee_bad_${i}`, 'checkout.session.completed', session(s.id, over)));
+    }
+    expect((await row(s.id)).feeStatus).toBe('unpaid');
+    expect(await sent()).toEqual([]);
+  });
+
+  // Anyone can post anyone's email, so the row keeps the first details and a
+  // later post's details wait beside its checkout: they take effect only if
+  // that checkout is the one paid.
+  test('the details typed with the checkout that is paid become the application’s', async () => {
+    const s = await application();
+    await recordFeeCheckout(db, s, 'cs_test_fee0000000001', { name: 'Dr Jane Okafor', mobile: '07700900123', gmc: '1234567' });
+    await recordFeeCheckout(db, await row(s.id), 'cs_test_fee0000000002', { name: 'Dr J. Okafor', mobile: '07700900999', gmc: '7654321' });
+    expect(await row(s.id)).toMatchObject({ name: 'Dr Jane Okafor', gmc: '1234567' });
+
+    await handleStripeEvent(db, ev('evt_fee_d1', 'checkout.session.completed', session(s.id, { id: 'cs_test_fee0000000002' })));
+    expect(await row(s.id)).toMatchObject({
+      feeStatus: 'paid', name: 'Dr J. Okafor', mobile: '07700900999', gmc: '7654321', pendingDetails: null,
+    });
+    // The confirmation greets the person who paid.
+    expect(renderFor(await row(s.id)).email.text).toContain('Hello Dr J. Okafor,');
+  });
+
+  test('an unpaid checkout’s details are discarded when another one is paid, and a started application is never rewritten', async () => {
+    const s = await application();
+    await recordFeeCheckout(db, s, 'cs_test_fee0000000001', { name: 'Dr Jane Okafor', mobile: '07700900123', gmc: '1234567' });
+    await recordFeeCheckout(db, await row(s.id), 'cs_test_stranger00001', { name: 'A Stranger', mobile: '07700900000', gmc: '0000000' });
+    await handleStripeEvent(db, ev('evt_fee_d2', 'checkout.session.completed', session(s.id)));
+    expect(await row(s.id)).toMatchObject({ feeStatus: 'paid', name: 'Dr Jane Okafor', gmc: '1234567', pendingDetails: null });
+
+    await resetDb(db);
+    const t = await application();
+    await db.update(waitlistSignups).set({ status: 'gmc_verified' }).where(eq(waitlistSignups.id, t.id));
+    await recordFeeCheckout(db, await row(t.id), 'cs_test_fee0000000001', { name: 'A Stranger', mobile: '07700900000', gmc: '0000000' });
+    await handleStripeEvent(db, ev('evt_fee_d3', 'checkout.session.completed', session(t.id)));
+    expect(await row(t.id)).toMatchObject({ feeStatus: 'paid', name: 'Dr Jane Okafor', gmc: '1234567', status: 'gmc_verified' });
+  });
+
+  // Money taken that nothing can be attached to goes where the team will see
+  // it (the admin's Technical page), with the Stripe reference to refund.
+  test('a second payment for a paid sign-up is flagged for a refund, and changes nothing', async () => {
+    const s = await application();
+    await handleStripeEvent(db, ev('evt_fee_t1', 'checkout.session.completed', session(s.id)));
+    await handleStripeEvent(db, ev('evt_fee_t2', 'checkout.session.completed', session(s.id, { id: 'cs_test_fee0000000002', payment_intent: 'pi_fee_2' })));
+    expect(await row(s.id)).toMatchObject({ feeStatus: 'paid', stripePaymentIntentId: 'pi_fee_1' });
+    expect(await sent()).toHaveLength(1);
+    const flagged = (await db.select().from(appErrors)).map((e) => e.message);
+    expect(flagged).toEqual([`GP sign-up fee paid twice: payment pi_fee_2 is a second payment for sign-up ${s.id} and needs refunding in Stripe.`]);
+    expect(flagged.join()).not.toContain('jane@example.com');
+  });
+
+  test('a payment for a sign-up that was withdrawn or erased is flagged for a refund', async () => {
+    const s = await application();
+    await db.delete(waitlistSignups).where(eq(waitlistSignups.id, s.id));
+    expect(await handleStripeEvent(db, ev('evt_fee_9', 'checkout.session.completed', session(s.id)))).toBe('applied');
+    expect(await sent()).toEqual([]);
+    expect((await db.select().from(appErrors)).map((e) => e.message)).toEqual([
+      `GP sign-up fee paid for a sign-up that no longer exists: payment pi_fee_1 (sign-up ${s.id}) needs refunding in Stripe.`,
+    ]);
+  });
+
+  test('an event from a connected account, or from the other mode than the key, is not acted on', async () => {
+    const s = await application();
+    const paid = session(s.id);
+    // A connected account's owner chooses its metadata, so could name our sign-up.
+    expect(await handleStripeEvent(db, { ...ev('evt_fee_f1', 'checkout.session.completed', paid), account: 'acct_someone' })).toBe('ignored');
+    // A test-mode payment must never mark a live sign-up paid, nor the reverse.
+    vi.stubEnv('STRIPE_SECRET_KEY', 'rk_live_placeholder');
+    expect(await handleStripeEvent(db, { ...ev('evt_fee_f2', 'checkout.session.completed', paid), livemode: false })).toBe('ignored');
+    vi.stubEnv('STRIPE_SECRET_KEY', 'rk_test_placeholder');
+    expect(await handleStripeEvent(db, { ...ev('evt_fee_f3', 'checkout.session.completed', paid), livemode: true })).toBe('ignored');
+    expect((await row(s.id)).feeStatus).toBe('unpaid');
+    expect(await db.select().from(stripeEvents)).toHaveLength(0);
+    // The matching mode is acted on.
+    expect(await handleStripeEvent(db, { ...ev('evt_fee_f4', 'checkout.session.completed', paid), livemode: false })).toBe('applied');
+    expect((await row(s.id)).feeStatus).toBe('paid');
+  });
+
+  test('a full refund marks the fee refunded, a failed refund puts it back, a partial one leaves it paid', async () => {
+    const s = await application();
+    await handleStripeEvent(db, ev('evt_fee_10', 'checkout.session.completed', session(s.id)));
+    const refund = { id: 're_fee_1', amount: 5000, payment_intent: 'pi_fee_1', status: 'succeeded', created: NOW };
+
+    await handleStripeEvent(db, ev('evt_fee_11', 'refund.created', { ...refund, id: 're_fee_part', amount: 2000 }));
+    expect((await row(s.id)).feeStatus).toBe('paid');
+
+    await handleStripeEvent(db, ev('evt_fee_12', 'refund.created', refund));
+    expect((await row(s.id)).feeStatus).toBe('refunded');
+    // The fee is not a consultation payment, so the consultation refunds table is untouched.
+    expect(await db.select().from(refunds)).toEqual([]);
+
+    await handleStripeEvent(db, ev('evt_fee_13', 'refund.updated', { ...refund, status: 'failed' }));
+    expect((await row(s.id)).feeStatus).toBe('paid');
+
+    // A charge refunded in full, as charge.refunded reports it.
+    await handleStripeEvent(db, ev('evt_fee_14', 'charge.refunded', { id: 'ch_fee_1', payment_intent: 'pi_fee_1', refunded: true, amount_refunded: 5000 }));
+    expect((await row(s.id)).feeStatus).toBe('refunded');
+  });
+
+  // Only the refund that refunded the fee can un-refund it by failing.
+  test('an earlier refund failing late does not undo a later refund that succeeded', async () => {
+    const s = await application();
+    await handleStripeEvent(db, ev('evt_fee_r1', 'checkout.session.completed', session(s.id)));
+    const r1 = { id: 're_fee_1', amount: 5000, payment_intent: 'pi_fee_1', status: 'pending', created: NOW };
+    const r2 = { id: 're_fee_2', amount: 5000, payment_intent: 'pi_fee_1', status: 'succeeded', created: NOW + 60 };
+
+    await handleStripeEvent(db, ev('evt_fee_r2', 'refund.created', r1));
+    expect(await row(s.id)).toMatchObject({ feeStatus: 'refunded', feeRefundId: 're_fee_1' });
+    await handleStripeEvent(db, ev('evt_fee_r3', 'refund.updated', { ...r1, status: 'failed' }));
+    expect(await row(s.id)).toMatchObject({ feeStatus: 'paid', feeRefundId: null });
+
+    await handleStripeEvent(db, ev('evt_fee_r4', 'refund.created', r2));
+    expect(await row(s.id)).toMatchObject({ feeStatus: 'refunded', feeRefundId: 're_fee_2' });
+    // Stripe tells us about the first refund's failure again, after the second succeeded.
+    await handleStripeEvent(db, ev('evt_fee_r5', 'refund.updated', { ...r1, status: 'failed' }));
+    expect(await row(s.id)).toMatchObject({ feeStatus: 'refunded', feeRefundId: 're_fee_2' });
+  });
+
+  test('a refunded fee is not flipped back by the payment that was refunded, only by a new one', async () => {
+    const s = await application();
+    await handleStripeEvent(db, ev('evt_fee_15', 'checkout.session.completed', session(s.id)));
+    await handleStripeEvent(db, ev('evt_fee_16', 'charge.refunded', { id: 'ch_fee_1', payment_intent: 'pi_fee_1', refunded: true, amount_refunded: 5000 }));
+    // The welcome page reloaded, or a late event for the same payment.
+    expect(await markFeePaid(db, feePaymentFrom(session(s.id))!)).toBe('already');
+    expect((await row(s.id)).feeStatus).toBe('refunded');
+    // They sign up and pay again: a different payment.
+    await handleStripeEvent(db, ev('evt_fee_17', 'checkout.session.completed', session(s.id, { id: 'cs_test_fee0000000002', payment_intent: 'pi_fee_2' })));
+    expect(await row(s.id)).toMatchObject({ feeStatus: 'paid', stripePaymentIntentId: 'pi_fee_2' });
   });
 });
 

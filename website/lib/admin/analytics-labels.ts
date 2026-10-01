@@ -29,6 +29,9 @@ export const FORM_LABELS: Record<string, string> = {
   recap: 'patient form at the bottom',
   'hero-gp': 'GP form at the top',
   'recap-gp': 'GP form at the bottom',
+  // The GP form is one pop-up now; these say which button opened it.
+  'nav-gp': 'GP form from the nav',
+  'link-gp': 'GP form from a link',
 };
 // "the GP form" / "the patient form" — the short name used in sentences.
 export function formName(form: unknown, role?: unknown): string {

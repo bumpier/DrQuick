@@ -166,6 +166,7 @@ export type GpSummaryRow = {
   consultsThisMonth: number;
   pending: number;           // payouts pending or processing
   paidToDate: number;        // payouts paid
+  servedToDate: number;      // completed consultations, ever: what the commission tier is counted on
 };
 
 export type Page<T> = { rows: T[]; total: number; page: number; pages: number };

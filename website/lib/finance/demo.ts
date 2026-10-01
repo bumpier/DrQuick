@@ -6,12 +6,15 @@
 // The shape: launch at the start of the month eleven months before `now`,
 // demand ramping from a handful of consultations a day to about seventy, the
 // price from lib/pricing's placeholder rule (base plus a step per queue place,
-// capped), a GP fee in PRODUCT.md's 24–33 pound band, about 3% of money
-// refunded, 25 GPs joining over the year and paid weekly.
+// capped), the GP's fee from the commission tiers (lib/finance/commission.ts:
+// 60% of the price, then 70% and 75% as their completed consultations pass 100
+// and 500), about 3% of money refunded, 25 GPs joining over the year and paid
+// weekly.
 //
 // Each day draws from its own seeded generator, so a day's consultations never
 // change as `now` moves on; only today's live tail and the payout statuses do.
 import { BASE_PRICE, PRICE_CAP, PRICE_STEP } from '@/lib/pricing';
+import { splitPrice } from '@/lib/finance/commission';
 import { memorySource, type Dataset } from '@/lib/finance/memory';
 import { monthWindow, type ConsultationStatus, type FinanceSource, type PayoutStatus } from '@/lib/finance/model';
 
@@ -39,7 +42,6 @@ const mix = (...parts: number[]) => parts.reduce((h, p) => Math.imul(h ^ (p >>> 
 const uid = (kind: string, n: number) => `${kind}0000000-0000-4000-8000-${n.toString(16).padStart(12, '0')}`;
 
 const round50 = (pence: number) => Math.round(pence / 50) * 50;
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 function queuePrice(r: number): number {
   const position = r < 0.45 ? 1 : r < 0.7 ? 2 : r < 0.85 ? 3 : r < 0.93 ? 4 : r < 0.97 ? 5 : 6;
@@ -61,7 +63,9 @@ export function demoDataset(now = new Date(), seed = DEMO_SEED): Dataset {
   let nc = 0;
   let np = 0;
   let nr = 0;
-  const days = Math.floor((now.getTime() - launch.getTime()) / DAY);
+  // Each GP's completed consultations so far, for the commission tier.
+  const served = new Map<string, number>();
+  const days =Math.floor((now.getTime() - launch.getTime()) / DAY);
   for (let d = 0; d <= days; d += 1) {
     const rng = prng(mix(seed, d));
     const dayStart = launch.getTime() + d * DAY;
@@ -75,7 +79,6 @@ export function demoDataset(now = new Date(), seed = DEMO_SEED): Dataset {
       // sequence for a day never depends on the time of day it is read.
       const requestedAt = new Date(dayStart + (7 * 60 + rng() * 16 * 60) * MIN);
       const price = queuePrice(rng());
-      const gpFee = clamp(round50(2400 + (price - 3200) * 0.55 + rng() * 300), 2400, 3300);
       const gpId = gps[Math.floor(rng() * available)].id;
       const outcome = rng();
       const startedAt = new Date(requestedAt.getTime() + (1 + rng() * 6) * MIN);
@@ -90,9 +93,14 @@ export function demoDataset(now = new Date(), seed = DEMO_SEED): Dataset {
       let status: ConsultationStatus = outcome < 0.035 ? 'cancelled' : outcome < 0.045 ? 'no_show' : 'completed';
       if (status === 'completed' && startedAt > now) status = 'requested';
       else if (status === 'completed' && endedAt > now) status = 'in_progress';
+      // The GP's share is the tier they held going into this consultation, and
+      // only a completed one moves them towards the next.
+      const before = served.get(gpId) ?? 0;
+      const { gpFeePence, platformFeePence } = splitPrice(price, before);
+      if (status === 'completed') served.set(gpId, before + 1);
       data.consultations.push({
         id, gpId: status === 'requested' || status === 'cancelled' ? null : gpId, status, requestedAt,
-        pricePence: price, gpFeePence: gpFee, platformFeePence: price - gpFee,
+        pricePence: price, gpFeePence, platformFeePence,
       });
 
       // Cancelled: the hold is released (no payment) or the card was declined.

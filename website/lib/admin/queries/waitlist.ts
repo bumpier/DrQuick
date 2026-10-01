@@ -1,6 +1,6 @@
 // The waitlist tables and detail pages. Server-only. Search, filters, sort and
 // the page all come from the URL, so every list state is a link.
-import { and, asc, count, desc, eq, ilike, or, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
 import { emailLog, GP_STATUSES, PATIENT_STATUSES, waitlistSignups, type WaitlistRole } from '@/lib/db/schema';
 import { param, type Params } from '@/lib/admin/range';
@@ -105,6 +105,26 @@ export async function gpBoard(db: DB) {
   const rows = await db.select({
     id: waitlistSignups.id, name: waitlistSignups.name, email: waitlistSignups.email,
     gmc: waitlistSignups.gmc, status: waitlistSignups.status, createdAt: waitlistSignups.createdAt,
+    feeStatus: waitlistSignups.feeStatus,
   }).from(waitlistSignups).where(eq(waitlistSignups.role, 'gp')).orderBy(desc(waitlistSignups.createdAt));
   return GP_STATUSES.map((status) => ({ status, cards: rows.filter((r) => r.status === status) }));
+}
+
+// The sign-up fee across every GP application: what has been collected, who
+// started paying and stopped, and what went back.
+export type FeeSummary = { paid: number; collectedPence: number; unpaid: number; refunded: number };
+
+export async function feeSummary(db: DB): Promise<FeeSummary> {
+  const rows = await db.select({
+    feeStatus: waitlistSignups.feeStatus,
+    n: count(),
+    pence: sql<number>`coalesce(sum(${waitlistSignups.feePence}), 0)`,
+  }).from(waitlistSignups).where(eq(waitlistSignups.role, 'gp')).groupBy(waitlistSignups.feeStatus);
+  const of = (status: string) => rows.find((r) => r.feeStatus === status);
+  return {
+    paid: Number(of('paid')?.n ?? 0),
+    collectedPence: Number(of('paid')?.pence ?? 0),
+    unpaid: Number(of('unpaid')?.n ?? 0),
+    refunded: Number(of('refunded')?.n ?? 0),
+  };
 }

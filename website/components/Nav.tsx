@@ -1,22 +1,30 @@
 // Server markup; LandingBehavior wires the floating edge, the mode links and
-// the CTA focus at runtime. The bar's ground, border and shadow live in the
-// authored layer (flush at rest, lifted only once it floats), so the element
-// carries no surface utilities. The logo's letter-spacing sits exactly at the
-// -0.04em display floor. The switch is SegmentedLink — real links, never Tabs —
-// and the CTA is the shared Button rendered as the anchor it always was.
+// the CTA at runtime. The bar's ground, border and shadow live in the authored
+// layer (flush at rest, lifted only once it floats), so the element carries no
+// surface utilities. The logo's letter-spacing sits exactly at the -0.04em
+// display floor. The switch is SegmentedLink — real links, never Tabs — and the
+// CTA is the shared Button rendered as the anchor it always was.
+//
+// The switch and the CTA are authored for DEFAULT_ROLE (lib/site-mode.ts), the
+// mode the page opens on: its link comes first and is current, and the CTA is
+// its action. For GPs that is the sign-up pop-up (`data-gp-signup`, which
+// GpSignupDialog listens for); for patients it is a jump to the email field.
 //
 // With PATIENT_MODE off there is one audience, so there is nothing to switch
-// between: the control is not rendered, and the CTA is authored as the GP one
-// rather than left to the runtime role. Without JS, `data-role` is never set,
-// so a server-rendered patient CTA would show a label and an #join target that
-// no longer exist on the page.
+// between: the control is not rendered, and the CTA is the GP one outright.
 import { Button } from '@/components/ui/button';
 import { SegmentedLink, SegmentedLinkGroup } from '@/components/ui/segmented-link';
-import { PATIENT_MODE } from '@/lib/site-mode';
+import { DEFAULT_ROLE, PATIENT_MODE } from '@/lib/site-mode';
 import { NavLinks } from '@/components/site/NavLinks';
 import { Wordmark } from '@/components/Wordmark';
 
+const GP_FIRST = DEFAULT_ROLE === 'gp';
+const GP_ACTION = { href: '#gp-join', 'data-focus': 'gp-join', 'data-gp-signup': 'nav-gp' } as const;
+const PATIENT_ACTION = { href: '#join', 'data-focus': 'join' } as const;
+
 export function Nav() {
+  const patients = <SegmentedLink href="?role=patient" data-mode-link="patient" current={!GP_FIRST}>Patients</SegmentedLink>;
+  const gps = <SegmentedLink href="?role=gp" data-mode-link="gp" current={GP_FIRST}>GPs</SegmentedLink>;
   return (
     <nav className="site-nav">
       <div className="wrap flex items-center gap-8 h-19 max-phone:gap-3.5 max-phone:h-16">
@@ -27,19 +35,18 @@ export function Nav() {
         <NavLinks className="max-forms:hidden" />
         {PATIENT_MODE && (
           <SegmentedLinkGroup aria-label="Choose what you are here for">
-            <SegmentedLink href="?role=patient" data-mode-link="patient" current>Patients</SegmentedLink>
-            <SegmentedLink href="?role=gp" data-mode-link="gp">GPs</SegmentedLink>
+            {GP_FIRST ? <>{gps}{patients}</> : <>{patients}{gps}</>}
           </SegmentedLinkGroup>
         )}
         {/* The phone nav shrinks the CTA a step; the form buttons keep the full size. */}
         <Button asChild size="lg" className="btn max-phone:h-11 max-phone:px-4">
           {PATIENT_MODE ? (
-            <a id="nav-cta" href="#join" data-focus="join" data-cta="nav">
+            <a id="nav-cta" {...(GP_FIRST ? GP_ACTION : PATIENT_ACTION)} data-cta="nav">
               <span className="cta-p"><span className="cta-long">Join the waitlist</span><span className="cta-short">Join</span></span>
               <span className="cta-g"><span className="cta-long">Sign up</span><span className="cta-short">Sign up</span></span>
             </a>
           ) : (
-            <a id="nav-cta" href="#gp-join" data-focus="gp-join" data-cta="nav">
+            <a id="nav-cta" {...GP_ACTION} data-cta="nav">
               <span className="cta-long">Sign up</span><span className="cta-short">Sign up</span>
             </a>
           )}

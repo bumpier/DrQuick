@@ -240,11 +240,15 @@ export function dbSource(db: DB): FinanceSource {
     async gpSummary(now) {
       const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
       const to = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-      const rows = rowsOf<{ id: string; name: string; earned: number; consults: number; pending: number; paid: number }>(
+      const rows = rowsOf<{ id: string; name: string; earned: number; consults: number; pending: number; paid: number; served: number }>(
         await db.execute(sql`
           select g.id, g.name, coalesce(e.fees, 0)::bigint as earned, coalesce(e.n, 0)::int as consults,
-            coalesce(q.pending, 0)::bigint as pending, coalesce(q.paid, 0)::bigint as paid
+            coalesce(q.pending, 0)::bigint as pending, coalesce(q.paid, 0)::bigint as paid,
+            coalesce(s.served, 0)::int as served
           from gps g
+          left join (
+            select gp_id, count(*) as served from consultations where status = 'completed' group by gp_id
+          ) s on s.gp_id = g.id
           left join (
             select c.gp_id, sum(c.gp_fee_pence) as fees, count(distinct c.id) as n
             from payments p join consultations c on c.id = p.consultation_id
@@ -261,7 +265,7 @@ export function dbSource(db: DB): FinanceSource {
           order by earned desc, g.name collate "C" asc`));
       return rows.map((r) => ({
         gpId: r.id, name: r.name, earnedThisMonth: n(r.earned), consultsThisMonth: n(r.consults),
-        pending: n(r.pending), paidToDate: n(r.paid),
+        pending: n(r.pending), paidToDate: n(r.paid), servedToDate: n(r.served),
       }));
     },
 

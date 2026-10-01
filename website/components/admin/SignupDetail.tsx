@@ -11,8 +11,9 @@ import { fmtDateTime, firstTouchChannel, sourceLabel, statusLabel } from '@/lib/
 import { humanEmailError } from '@/lib/admin/email-errors';
 import type { Journey } from '@/lib/admin/queries/journey';
 import type { Signup } from '@/lib/waitlist';
+import { gbp } from '@/lib/money';
 import { EraseButton, NotesControl, ResendButton, StatusControl } from './SignupControls';
-import { StatusBadge } from './StatusBadge';
+import { FeeBadge, StatusBadge } from './StatusBadge';
 import { VisitorTimeline } from './VisitorTimeline';
 
 type EmailRow = typeof emailLog.$inferSelect;
@@ -20,6 +21,11 @@ type EmailRow = typeof emailLog.$inferSelect;
 // The GMC's public register search. The number is only a search term: the
 // admin checks the result by eye, so the link needs no particular format.
 export const gmcSearchUrl = (gmc: string) => `https://www.gmc-uk.org/search-the-register?search=${encodeURIComponent(gmc)}`;
+
+// The payment in the Stripe Dashboard, where a refund is made. A test-mode
+// payment lives under /test; the checkout session id says which mode it was.
+export const stripePaymentUrl = (paymentIntentId: string, sessionId?: string | null) =>
+  `https://dashboard.stripe.com/${sessionId?.startsWith('cs_test_') ? 'test/' : ''}payments/${encodeURIComponent(paymentIntentId)}`;
 
 const TEMPLATE_LABELS: Record<string, string> = {
   patient_welcome: 'You’re on the list',
@@ -83,6 +89,33 @@ export function SignupDetail({ signup, emails, journey, ownHost }: {
                 </Field>
               )}
               <Field label="Status"><StatusBadge role={signup.role} status={signup.status} /></Field>
+              {gp && (
+                <Field label="Sign-up fee">
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <FeeBadge status={signup.feeStatus} />
+                    {signup.feePaidAt && (
+                      <span className="tabular-nums">{gbp(signup.feePence)}, {fmtDateTime(signup.feePaidAt)}</span>
+                    )}
+                    {signup.stripePaymentIntentId && (
+                      <a href={stripePaymentUrl(signup.stripePaymentIntentId, signup.stripeCheckoutSessionId)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-fine font-semibold text-primary-ink">
+                        Open the payment in Stripe
+                        <ExternalLinkIcon strokeWidth={2} className="size-3.5" aria-hidden="true" />
+                        <span className="sr-only">(opens in a new tab)</span>
+                      </a>
+                    )}
+                  </span>
+                  {signup.feeStatus === 'paid' && (
+                    <span className="mt-1 block text-fine text-ink-2">
+                      The fee is promised back in full if the GMC check fails or they are not taken on. Refund it in Stripe and this updates itself.
+                    </span>
+                  )}
+                  {signup.feeStatus === 'unpaid' && (
+                    <span className="mt-1 block text-fine text-ink-2">
+                      They entered their details and left before paying. Nothing has been charged, and no confirmation email has gone out.
+                    </span>
+                  )}
+                </Field>
+              )}
               <Field label="Joined">{fmtDateTime(signup.createdAt)}</Field>
               {signup.unsubscribedAt && <Field label="Unsubscribed">{fmtDateTime(signup.unsubscribedAt)}</Field>}
               <Field label="Form">{sourceLabel(signup.source)}</Field>

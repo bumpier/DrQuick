@@ -153,9 +153,13 @@ describe('the lists', () => {
     expect(list.rows[0]).toMatchObject({ gpName: 'Beta GP', consultations: 1 });
     const summary = await src.gpSummary(NOW);
     expect(summary).toEqual([
-      { gpId: id('e', 2), name: 'Beta GP', earnedThisMonth: 3300, consultsThisMonth: 1, pending: 3300, paidToDate: 0 },
-      { gpId: id('e', 1), name: 'Alpha GP', earnedThisMonth: 2400, consultsThisMonth: 1, pending: 2400, paidToDate: 2800 },
+      // servedToDate is every completed consultation, ever: Alpha's August one
+      // counts as well as September's, Beta's no-show does not.
+      { gpId: id('e', 2), name: 'Beta GP', earnedThisMonth: 3300, consultsThisMonth: 1, pending: 3300, paidToDate: 0, servedToDate: 1 },
+      { gpId: id('e', 1), name: 'Alpha GP', earnedThisMonth: 2400, consultsThisMonth: 1, pending: 2400, paidToDate: 2800, servedToDate: 2 },
     ]);
+    // The in-memory source (the demo's) counts the same way.
+    expect(await memorySource(dataset()).gpSummary(NOW)).toEqual(summary);
     const detail = await src.payout(id('d', 3));
     expect(detail?.consultations.map((c) => c.id)).toEqual([id('c', 3)]);
     expect(await src.payout('not-a-uuid')).toBeNull();

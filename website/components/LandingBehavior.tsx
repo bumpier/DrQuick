@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { staggerDelay, heroDelay } from '@/lib/reveal';
+import { DEFAULT_ROLE } from '@/lib/site-mode';
 
 // A one-effect port of the flat page's behaviour script. The role switch and
 // the reveal grammar must work on server-rendered static markup, so they stay
@@ -83,12 +84,20 @@ export function LandingBehavior() {
         if (a.dataset.modeLink === role) a.setAttribute('aria-current', 'page');
         else a.removeAttribute('aria-current');
       });
-      if (cta) { cta.setAttribute('href', ACTION[role]); cta.dataset.focus = ACTION[role].slice(1); }
+      if (cta) {
+        cta.setAttribute('href', ACTION[role]);
+        cta.dataset.focus = ACTION[role].slice(1);
+        // For GPs the CTA opens the sign-up pop-up (GpSignupDialog listens for
+        // this attribute); for patients it jumps to the email field.
+        if (role === 'gp') cta.dataset.gpSignup = 'nav-gp';
+        else delete cta.dataset.gpSignup;
+      }
       revealMode(panel[role]);
       if (!switched) return;
       // The whole page changed underneath the reader, so start them at its top
       // and put focus on the new headline rather than leaving it on the switch.
-      try { history.replaceState(null, '', role === 'gp' ? '?role=gp' : location.pathname); } catch {}
+      // The default mode is the bare address; the other one is named in it.
+      try { history.replaceState(null, '', role === DEFAULT_ROLE ? location.pathname : `?role=${role}`); } catch {}
       window.scrollTo(0, 0);
       const h1 = panel[role]?.querySelector<HTMLElement>('h1');
       if (h1) h1.focus({ preventScroll: true });
@@ -99,7 +108,8 @@ export function LandingBehavior() {
       setMode(a.dataset.modeLink as 'patient' | 'gp', true);
     }));
 
-    setMode(root.getAttribute('data-role') === 'gp' ? 'gp' : 'patient', false);
+    const resolved = root.getAttribute('data-role');
+    setMode(resolved === 'gp' || resolved === 'patient' ? resolved : DEFAULT_ROLE, false);
 
     // The bar only earns a hard edge once it is actually floating over content.
     const sentinel = document.getElementById('nav-sentinel');
@@ -112,8 +122,10 @@ export function LandingBehavior() {
       cleanups.push(() => navIo.disconnect());
     }
 
-    // The nav CTA jumps to the active mode's form; put the caret where the action is.
+    // The nav CTA jumps to the patient form; put the caret where the action is.
+    // In GP mode it opens the pop-up instead, which takes the focus itself.
     if (cta) on(cta, 'click', () => {
+      if (cta.dataset.gpSignup) return;
       const el = document.getElementById(cta.dataset.focus ?? '');
       if (el) timer(() => el.focus({ preventScroll: true }), 320);
     });

@@ -10,7 +10,8 @@ import { XIcon } from "lucide-react"
 // The blocking gate. A white panel with the tier-3 shadow over an ink scrim —
 // no border, no blur. Enter and leave use the overlay grammar retimed to the
 // site's easing; the blanket reduced-motion rule in globals.css zeroes both.
-// Dashboard-only, so lucide is permitted for the close mark.
+// The built-in close mark is lucide, which the dashboards may use; the landing
+// page's GP sign-up pop-up passes showCloseButton={false} and draws its own.
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {

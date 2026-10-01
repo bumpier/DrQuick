@@ -5,8 +5,8 @@ import { setDb, type DB } from '@/lib/db';
 import { emailLog, rateLimits, waitlistSignups } from '@/lib/db/schema';
 import { POST } from '@/app/api/waitlist/route';
 
-// A GP sign-up carries four fields, not one. This is the shape the route now
-// requires for role "gp"; a patient still posts an email and nothing else.
+// A complete GP sign-up. This route no longer takes it (tests/api-gp-signup.test.ts
+// covers the one that does); a patient still posts an email and nothing else.
 const GP = {
   name: 'Dr Jane Okafor',
   email: 'jane@example.com',
@@ -82,46 +82,25 @@ test('the rate-limit key is a salted hash — the raw IP never reaches the store
 });
 
 test('a new address stores and reports alreadyJoined false; a repeat reports true', async () => {
-  let res = await POST(req({ ...GP, email: 'New@B.co ' }, { 'x-forwarded-for': '1.2.3.4' }));
+  let res = await POST(req({ email: 'New@B.co ', role: 'patient', source: 'hero' }, { 'x-forwarded-for': '1.2.3.4' }));
   expect(await res.json()).toEqual({ ok: true, alreadyJoined: false });
   const [row] = await rows();
-  expect(row).toMatchObject({ email: 'new@b.co', role: 'gp', source: 'hero-gp', status: 'new' }); // trimmed + lowercased
+  expect(row).toMatchObject({ email: 'new@b.co', role: 'patient', source: 'hero', status: 'subscribed' }); // trimmed + lowercased
   expect(row.createdAt).toBeInstanceOf(Date);
 
-  res = await POST(req({ ...GP, email: 'new@b.co' }, { 'x-forwarded-for': '1.2.3.4' }));
+  res = await POST(req({ email: 'new@b.co', role: 'patient' }, { 'x-forwarded-for': '1.2.3.4' }));
   expect(await res.json()).toEqual({ ok: true, alreadyJoined: true });
   expect(await rows()).toHaveLength(1);
 });
 
-test('the same address may join as a patient and as a GP, as two records', async () => {
-  await POST(req({ ...GP, email: 'both@b.co' }));
-  await POST(req({ email: 'both@b.co', role: 'patient' }));
-  expect((await rows()).map((r) => r.role).sort()).toEqual(['gp', 'patient']);
-});
-
-test('the GP record stores the sign-up fields, normalised', async () => {
-  await POST(req(
-    { ...GP, name: '  Dr   Jane  Okafor ', mobile: '+44 7700 900123', gmc: ' 1234567 ' },
-    { 'x-forwarded-for': '1.2.3.4' },
-  ));
-  // Whitespace collapsed, +44 folded to the 07 national form, GMC stripped.
-  expect((await rows())[0]).toMatchObject({
-    name: 'Dr Jane Okafor', mobile: '07700900123', gmc: '1234567', role: 'gp',
-  });
-});
-
-test('a GP sign-up missing a field is a 400 naming that field', async () => {
-  const cases: Array<[Record<string, unknown>, string]> = [
-    [{ name: '' }, 'invalid_name'],
-    [{ email: 'nope' }, 'invalid_email'],
-    [{ mobile: '0161 496 0000' }, 'invalid_mobile'],   // a landline is not a mobile
-    [{ gmc: '12345' }, 'invalid_gmc'],                 // seven digits, not five
-  ];
-  for (const [override, error] of cases) {
-    const res = await POST(req({ ...GP, ...override }));
-    expect(res.status, `${error} should be a 400`).toBe(400);
-    expect(await res.json()).toEqual({ ok: false, error });
-  }
+// A GP sign-up carries a fee and ends in a payment (app/api/gp-signup). If this
+// route still took the role, it would be a way to sign up as a GP without paying.
+test('the GP role is refused here, however complete the details, and nothing is stored', async () => {
+  const res = await POST(req({ ...GP }, { 'x-forwarded-for': '1.2.3.4' }));
+  expect(res.status).toBe(400);
+  expect(await res.json()).toEqual({ ok: false, error: 'gp_signup_moved' });
+  expect(await rows()).toEqual([]);
+  expect(await db.select().from(emailLog)).toEqual([]);
 });
 
 test('a patient still needs nothing but an email — the GP fields are not asked of them', async () => {
@@ -143,22 +122,23 @@ test('attribution is kept when well formed and dropped when not', async () => {
 });
 
 test('each new sign-up logs its confirmation email; with no Resend key it is skipped, not failed', async () => {
-  await POST(req({ ...GP }));
+  await POST(req({ email: 'a@b.co', role: 'patient' }));
   const log = await db.select().from(emailLog);
-  expect(log.map((l) => [l.template, l.status])).toEqual([['gp_received', 'skipped']]);
+  expect(log.map((l) => [l.template, l.status])).toEqual([['patient_welcome', 'skipped']]);
 });
 
-test('a GP sign-up alerts the team, and a mail outage never fails the sign-up', async () => {
+// The team alert is for GPs, and goes out when a GP's fee is paid
+// (tests/stripe-webhook.test.ts); a patient joining alerts nobody.
+test('a mail outage never fails the sign-up, and a patient joining alerts nobody', async () => {
   vi.stubEnv('RESEND_API_KEY', 're_test');
   vi.stubEnv('EMAIL_FROM', 'Dr Quick <hello@example.com>');
   vi.stubEnv('ADMIN_ALERT_EMAILS', 'ops@example.com');
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
-  const res = await POST(req({ ...GP }));
+  const res = await POST(req({ email: 'a@b.co', role: 'patient' }));
   expect(await res.json()).toEqual({ ok: true, alreadyJoined: false });
   const log = await db.select().from(emailLog);
   expect(log.map((l) => [l.to, l.template, l.status])).toEqual([
-    ['jane@example.com', 'gp_received', 'failed'],
-    ['ops@example.com', 'admin_new_gp', 'failed'],
+    ['a@b.co', 'patient_welcome', 'failed'],
   ]);
 });
 

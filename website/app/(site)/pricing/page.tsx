@@ -3,8 +3,13 @@ import { Covers } from '@/components/Covers';
 import { Card } from '@/components/ui/card';
 import { InfoTile, JoinTile, NumberedTile, PageHero, SiteSection, TextLink } from '@/components/site/PageParts';
 import { PATIENT_COVERS } from '@/app/landing-content';
+import { COMMISSION_TIERS, gpSharePercent } from '@/lib/finance/commission';
 
 export const dynamic = 'force-static';
+
+// A GP's share of the price, from the one rule (lib/finance/commission.ts).
+const GP_START = gpSharePercent(COMMISSION_TIERS[0]);
+const GP_TOP = gpSharePercent(COMMISSION_TIERS[COMMISSION_TIERS.length - 1]);
 
 export const metadata: Metadata = {
   title: 'Pricing',
@@ -50,7 +55,7 @@ export default function PricingPage() {
           <InfoTile tone="stone" title="The pharmacy charges separately."
             body="Your price covers the GP writing any prescription you need. You pay the pharmacy for the medicine itself, as with any private prescription." />
           <InfoTile title="No membership."
-            body="No subscription and no sign-up fee. You pay per consultation, only when you need one." />
+            body="No subscription, and nothing for a patient to pay to join. You pay per consultation, only when you need one." />
           <InfoTile title="Nobody pays to jump ahead."
             body="Paying never moves you ahead of someone more urgent. Price and clinical need are kept apart." />
         </div>
@@ -59,11 +64,11 @@ export default function PricingPage() {
       <SiteSection title="For GPs.">
         <Card variant="band" data-reveal className="band-grid grid grid-cols-[1.4fr_1fr] items-end gap-x-16 gap-y-6 px-tile-lead-pad py-field-section max-cols:grid-cols-1 max-phone:px-6">
           <p className="font-display text-title-lead font-extrabold leading-[1.15] tracking-[-.03em] max-w-[20ch]">
-            <span className="text-primary">Paid more</span> when demand is high.
+            Keep {GP_START}% of every consultation, <span className="text-primary">rising to {GP_TOP}%.</span>
           </p>
           <p className="text-body text-band-muted max-w-[40ch]">
-            Paid per consultation you take, not per hour online, and what a consultation pays is shown in full before you accept it.{' '}
-            <a href="/how-it-works#gps" className="font-semibold text-white underline underline-offset-4 decoration-2 hover:text-primary">How a shift works</a>
+            Your share of the price the patient pays, and more when demand is high. What a consultation pays is shown in full before you accept it. Signing up carries a one-off fee, shown before you pay.{' '}
+            <a href="/?role=gp#gps" className="font-semibold text-white underline underline-offset-4 decoration-2 hover:text-primary">See the GP page</a>
           </p>
         </Card>
       </SiteSection>

@@ -6,15 +6,17 @@ import { AdminPageHeader, NoDatabase } from '@/components/admin/AdminPageHeader'
 import { Pagination, SortHeader } from '@/components/admin/DataTable';
 import { ErasedNotice } from '@/components/admin/ErasedNotice';
 import { ListToolbar } from '@/components/admin/ListToolbar';
-import { StatusBadge } from '@/components/admin/StatusBadge';
+import { Kpi } from '@/components/admin/Kpi';
+import { FeeBadge, StatusBadge } from '@/components/admin/StatusBadge';
 import { Card } from '@/components/ui/card';
 import { SegmentedLink, SegmentedLinkGroup } from '@/components/ui/segmented-link';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { requireAdmin } from '@/lib/admin-auth';
 import { fmtCount, fmtDate, sourceLabel, statusLabel } from '@/lib/admin/format';
-import { gpBoard, listSignups, parseListQuery, sourcesFor, statusesFor } from '@/lib/admin/queries/waitlist';
+import { feeSummary, gpBoard, listSignups, parseListQuery, sourcesFor, statusesFor } from '@/lib/admin/queries/waitlist';
 import { flatParams, withQuery } from '@/lib/admin/url';
 import { getDb, type DB } from '@/lib/db';
+import { gbp } from '@/lib/money';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'GPs' };
@@ -55,10 +57,20 @@ export default async function GpsPage({ searchParams }: Props) {
     </SegmentedLinkGroup>
   );
 
+  const fees = await feeSummary(db);
+
   return (
     <>
       {header}
       {query.notice === 'erased' && <ErasedNotice />}
+      <div className="mb-6 grid grid-cols-3 gap-4 max-cols:grid-cols-1">
+        <Kpi label="Sign-up fees collected" value={gbp(fees.collectedPence)}
+          note={`${fmtCount(fees.paid)} ${fees.paid === 1 ? 'GP has' : 'GPs have'} paid`} />
+        <Kpi label="Started, not paid" value={fmtCount(fees.unpaid)}
+          note="Entered their details and left before paying" />
+        <Kpi label="Refunded" value={fmtCount(fees.refunded)}
+          note="Refunds are made in Stripe and show here" />
+      </div>
       {switcher}
       {view === 'board' ? <Board db={db} /> : <GpTable db={db} params={params} query={query} />}
     </>
@@ -98,6 +110,7 @@ async function Board({ db }: { db: DB }) {
                     <span className="block truncate font-semibold text-ink">{c.name || c.email}</span>
                     <span className="mt-0.5 block text-fine text-ink-2">GMC {c.gmc || '—'}</span>
                     <span className="block text-fine text-ink-2">Joined {fmtDate(c.createdAt)}</span>
+                    <span className="mt-1.5 block"><FeeBadge status={c.feeStatus} /></span>
                   </Link>
                 </li>
               ))}
@@ -140,6 +153,7 @@ async function GpTable({ db, params, query }: {
                 <SortHeader label="Email" column="email" className="max-cols:hidden" {...sortProps} />
                 <SortHeader label="Joined" column="joined" defaultDir="desc" className="max-phone:hidden" {...sortProps} />
                 <SortHeader label="Status" column="status" {...sortProps} />
+                <TableHead>Fee</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -152,6 +166,7 @@ async function GpTable({ db, params, query }: {
                   <TableCell className="text-ink-2 break-all whitespace-normal max-cols:hidden">{r.email}</TableCell>
                   <TableCell className="text-ink-2 max-phone:hidden">{fmtDate(r.createdAt)}</TableCell>
                   <TableCell><StatusBadge role="gp" status={r.status} /></TableCell>
+                  <TableCell><FeeBadge status={r.feeStatus} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>

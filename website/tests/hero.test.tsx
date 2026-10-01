@@ -4,8 +4,8 @@ import { render } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { Hero } from '@/components/Hero';
 import { WaitlistForm } from '@/components/WaitlistForm';
-import { GpSignupForm } from '@/components/GpSignupForm';
-import { PATIENT_MODE } from '@/lib/site-mode';
+import { GpSignupCta } from '@/components/GpSignupCta';
+import { DEFAULT_ROLE, PATIENT_MODE } from '@/lib/site-mode';
 import { HeroTiles } from '@/components/PhotoTile';
 import { Nav } from '@/components/Nav';
 import { UrgentBand } from '@/components/UrgentBand';
@@ -23,21 +23,36 @@ test('the hero skeleton is identical for both modes: masked lines, sub, form, ar
   expect(container.querySelector('.hero-art')).toBeInTheDocument();
 });
 
-// The capture is a slot, so the four-field sign-up drops into the same skeleton
-// the one-field capture uses: same masked lines, same sub, same art column.
+// The capture is a slot, so the GP sign-up drops into the same skeleton the
+// one-field capture uses: same masked lines, same sub, same art column. The
+// form itself lives in the pop-up; what sits here is the button that opens it
+// and the fee, named before the click.
 test('the GP sign-up occupies that same slot without changing the skeleton', () => {
   const { container } = render(
     <Hero headerId="gps" lines={['Consult when', 'it suits you.']} sub="sub copy"
-      form={<GpSignupForm source="hero-gp" cta="Sign up" inputId="gp-join" reveal="load" />}
+      form={<GpSignupCta source="hero-gp" id="gp-join" reveal="load" more={{ href: '#gp-pay-title', label: 'See what you keep' }} />}
       art={<div className="hero-art" data-reveal="load" />} />,
   );
   expect(container.querySelectorAll('h1 .ln[data-line] > span')).toHaveLength(2);
   expect(container.querySelector('.hero-art')).toBeInTheDocument();
-  const form = container.querySelector('form[data-source="hero-gp"]')!;
-  const visible = [...form.querySelectorAll('input')].filter((i) => !i.classList.contains('hp'));
-  expect(visible.map((i) => i.getAttribute('name'))).toEqual(['name', 'email', 'mobile', 'gmc']);
-  // The nav CTA jumps to #gp-join, so the id must stay on the first field.
-  expect(visible[0]).toHaveAttribute('id', 'gp-join');
+  expect(container.querySelector('form')).toBeNull();
+  // The nav CTA and the other pages link to #gp-join, so the id stays on the
+  // button; `data-gp-signup` is what the pop-up listens for.
+  const button = container.querySelector('button#gp-join')!;
+  expect(button).toHaveTextContent('Sign up as a GP');
+  expect(button).toHaveAttribute('type', 'button');
+  expect(button).toHaveAttribute('data-gp-signup', 'hero-gp');
+  expect(container.querySelector('.gp-cta')).toHaveAttribute('data-reveal', 'load');
+  expect(container.querySelector('.gp-cta a')).toHaveAttribute('href', '#gp-pay-title');
+});
+
+test('the fee and how it comes back are stated beside the button, before any click', () => {
+  const { container } = render(<GpSignupCta source="recap-gp" id="gp-join2" reveal="" />);
+  expect(container.querySelector('.note')).toHaveTextContent(
+    '£50 one-off sign-up fee. Refunded in full if we can’t verify your GMC registration or don’t take you on.',
+  );
+  expect(container.querySelector('button')).toHaveAttribute('data-gp-signup', 'recap-gp');
+  expect(container.querySelector('a')).toBeNull(); // the "see what you keep" link is the hero's only
 });
 
 test('the hero tiles hold three photo slots, placeholders invent no people or captions', () => {
@@ -58,8 +73,17 @@ test('the hero tiles hold three photo slots, placeholders invent no people or ca
 
 test.skipIf(!PATIENT_MODE)('the nav carries the switch, both CTA labels and the sentinel contract', () => {
   const { container } = render(<Nav />);
-  expect(container.querySelector('[data-mode-link="patient"]')).toHaveAttribute('aria-current', 'page');
-  expect(container.querySelector('#nav-cta')).toHaveAttribute('href', '#join');
+  // The switch and the CTA are authored for the mode the page opens on, which
+  // is the GP one: its link comes first and is current, and the CTA opens the
+  // sign-up pop-up. Both labels still ship, for the runtime role to choose.
+  expect(DEFAULT_ROLE).toBe('gp');
+  const links = [...container.querySelectorAll('[data-mode-link]')];
+  expect(links.map((a) => a.getAttribute('data-mode-link'))).toEqual(['gp', 'patient']);
+  expect(links[0]).toHaveAttribute('aria-current', 'page');
+  expect(links[1]).not.toHaveAttribute('aria-current');
+  const cta = container.querySelector('#nav-cta')!;
+  expect(cta).toHaveAttribute('href', '#gp-join');
+  expect(cta).toHaveAttribute('data-gp-signup', 'nav-gp');
   expect(container.querySelector('.cta-p .cta-long')).toHaveTextContent('Join the waitlist');
   expect(container.querySelector('.cta-g .cta-long')).toHaveTextContent('Sign up');
 });

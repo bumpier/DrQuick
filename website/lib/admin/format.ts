@@ -75,10 +75,22 @@ export const SOURCE_LABELS: Record<string, string> = {
   recap: 'Closing form',
   'hero-gp': 'GP hero form',
   'recap-gp': 'GP closing form',
+  'nav-gp': 'GP nav button',
+  'link-gp': 'GP sign-up link',
   landing: 'Landing page',
   demo: 'Demo data',
 };
 export const sourceLabel = (s: string) => SOURCE_LABELS[s] ?? s;
+
+// The GP sign-up fee (lib/gp-fee.ts). No status at all is a GP who signed up
+// before the fee existed.
+export const FEE_STATUS_LABELS: Record<string, string> = {
+  paid: 'Fee paid',
+  unpaid: 'Fee not paid',
+  refunded: 'Fee refunded',
+};
+export const feeStatusLabel = (status: string | null | undefined) =>
+  (status ? FEE_STATUS_LABELS[status] : undefined) ?? 'No fee asked';
 
 // The longest note an admin can keep on a sign-up.
 export const NOTES_MAX = 5000;

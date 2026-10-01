@@ -2,10 +2,11 @@
 // Server-only. The API route (app/api/waitlist) validates the input; this file
 // only stores it.
 import { randomBytes } from 'node:crypto';
-import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
 import { audit } from '@/lib/admin/audit';
-import { emailLog, events, sessions, visitors, waitlistSignups, type WaitlistRole } from '@/lib/db/schema';
+import { emailLog, events, sessions, visitors, waitlistSignups, type PendingDetails, type WaitlistRole } from '@/lib/db/schema';
+import { expireFeeCheckout } from '@/lib/stripe';
 
 export type Signup = typeof waitlistSignups.$inferSelect;
 
@@ -75,6 +76,71 @@ export async function joinWaitlist(db: DB, input: JoinInput): Promise<{ signup: 
   return { signup: existing, alreadyJoined: true };
 }
 
+export type GpStartInput = { email: string; source: string; name: string; mobile: string; gmc: string } & Attribution;
+
+// A GP submitting the sign-up: the row is written before the payment, marked
+// 'unpaid', so a doctor who leaves Stripe's page half way is someone the team
+// can see and follow up rather than someone who vanished. The fee is marked
+// paid by lib/gp-fee-store when Stripe confirms it.
+//
+// A doctor coming back to finish reuses their row, and the row is NOT rewritten
+// by the form: it keeps the first details submitted for the address. Anyone can
+// type anyone's email, so letting a later post replace the details would let a
+// stranger rewrite an application. What a later post typed is kept beside the
+// checkout it started (recordFeeCheckout) and takes effect only if that
+// checkout is paid (lib/gp-fee-store.ts).
+export async function startGpSignup(db: DB, input: GpStartInput): Promise<{ signup: Signup; alreadyPaid: boolean }> {
+  const inserted = await db.insert(waitlistSignups).values({
+    role: 'gp',
+    email: input.email,
+    name: input.name,
+    mobile: input.mobile,
+    gmc: input.gmc,
+    source: input.source,
+    status: 'new',
+    feeStatus: 'unpaid',
+    visitorId: input.visitorId ?? null,
+    utmSource: input.utmSource ?? null,
+    utmMedium: input.utmMedium ?? null,
+    utmCampaign: input.utmCampaign ?? null,
+    referrer: input.referrer ?? null,
+    landingPath: input.landingPath ?? null,
+    unsubscribeToken: newToken(),
+  }).onConflictDoNothing().returning();
+  if (inserted[0]) return { signup: inserted[0], alreadyPaid: false };
+
+  const mine = and(eq(waitlistSignups.role, 'gp'), eq(waitlistSignups.email, input.email));
+  const [existing] = await db.select().from(waitlistSignups).where(mine);
+  if (existing.feeStatus === 'paid') return { signup: existing, alreadyPaid: true };
+
+  // A GP from before the fee existed has no fee status; they owe it now.
+  if (existing.feeStatus) return { signup: existing, alreadyPaid: false };
+  const [updated] = await db.update(waitlistSignups).set({ feeStatus: 'unpaid', updatedAt: new Date() })
+    .where(mine).returning();
+  return { signup: updated, alreadyPaid: false };
+}
+
+// How many started checkouts a sign-up remembers the typed details of.
+const PENDING_KEPT = 5;
+
+// A checkout has been started for this sign-up: remember its id (the admin
+// shows that one was started) and the details typed with it, which become the
+// application's only if this checkout is the one that gets paid. Never touches
+// a sign-up that is already paid.
+export async function recordFeeCheckout(
+  db: DB, signup: Signup, sessionId: string, details: PendingDetails,
+): Promise<void> {
+  const kept = Object.entries(signup.pendingDetails ?? {}).slice(-(PENDING_KEPT - 1));
+  await db.update(waitlistSignups).set({
+    stripeCheckoutSessionId: sessionId,
+    pendingDetails: { ...Object.fromEntries(kept), [sessionId]: details },
+    updatedAt: new Date(),
+  }).where(and(
+    eq(waitlistSignups.id, signup.id),
+    or(isNull(waitlistSignups.feeStatus), ne(waitlistSignups.feeStatus, 'paid')),
+  ));
+}
+
 export async function allSignups(db: DB): Promise<Signup[]> {
   return db.select().from(waitlistSignups).orderBy(asc(waitlistSignups.createdAt));
 }
@@ -83,6 +149,13 @@ export async function allSignups(db: DB): Promise<Signup[]> {
 // any visitor those sign-ups were linked to, and the email log rows naming it.
 // One transaction, so an erasure never half-happens. Returns sign-ups removed.
 export async function erasePerson(db: DB, email: string): Promise<number> {
+  // A GP with a checkout still open could otherwise pay after their details
+  // are gone, leaving money with nothing to attach it to. Close it first; this
+  // is best effort and never stops the erasure.
+  const open = await db.select({ sessionId: waitlistSignups.stripeCheckoutSessionId }).from(waitlistSignups)
+    .where(and(eq(waitlistSignups.email, email), eq(waitlistSignups.feeStatus, 'unpaid'), isNotNull(waitlistSignups.stripeCheckoutSessionId)));
+  for (const { sessionId } of open) await expireFeeCheckout(sessionId);
+
   return db.transaction(async (tx) => {
     const gone = await tx.delete(waitlistSignups).where(eq(waitlistSignups.email, email))
       .returning({ id: waitlistSignups.id, visitorId: waitlistSignups.visitorId });
@@ -117,6 +190,10 @@ export async function unsubscribeByToken(db: DB, token: string): Promise<{ ok: t
   const signup = await findByToken(db, token);
   if (!signup) return { ok: false };
   await erasePerson(db, signup.email);
-  await audit(db, 'self-service', 'self_erasure', signup.id, { role: signup.role });
+  // A GP who had paid the sign-up fee leaves a trace of that, so a withdrawal
+  // with money attached never vanishes without the team being able to see it.
+  await audit(db, 'self-service', 'self_erasure', signup.id, {
+    role: signup.role, ...(signup.feeStatus ? { feeStatus: signup.feeStatus } : {}),
+  });
   return { ok: true, role: signup.role };
 }

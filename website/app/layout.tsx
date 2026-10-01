@@ -16,11 +16,12 @@ const jakarta = Plus_Jakarta_Sans({
   variable: '--font-jakarta',
 });
 
-// The head describes the audience the page opens on. With both modes live that
-// is the patient page; with PATIENT_MODE off the only page is the GP one, and a
-// patient title would promise a page that no longer exists. No figure appears in either set: pricing is dynamic, and a
-// number cached in a share card is a number we cannot change.
-const HEAD = PATIENT_MODE
+// The head describes the audience the page opens on (DEFAULT_ROLE): the GP page
+// since 2026-10-01. A patient title over a page that opens on GPs would promise
+// something the reader does not land on. No figure appears in either set:
+// pricing is dynamic, and a number cached in a share card is a number we cannot
+// change. That goes for the GP sign-up fee and the commission too.
+const HEAD = DEFAULT_ROLE === 'patient'
   ? {
       title: 'Dr Quick — See a GP in minutes',
       description:
@@ -61,9 +62,9 @@ export const metadata: Metadata = {
     title: HEAD.social,
     description: HEAD.socialDescription,
     locale: 'en_GB',
-    // assets/og.png is the patient share card ("See a GP in minutes"), which
-    // matches the default mode. If PATIENT_MODE goes off again the card and the
-    // page disagree — draw a GP card before sharing the link.
+    // assets/og.png is still the patient share card ("See a GP in minutes"),
+    // and the page now opens on GPs, so the card and the page disagree. Draw a
+    // GP card in ../Branding/src/site.py before sharing the link widely.
     images: [{ url: '/assets/og.png', width: 1200, height: 630 }],
   },
   twitter: {
@@ -78,17 +79,23 @@ export const viewport: Viewport = { themeColor: '#F5F7F2' };
 
 // Resolving the role before paint means the switch never flashes the wrong page;
 // without this script neither hiding rule matches and every mode in the DOM
-// renders, so a blocked script cannot blank the page. With one mode shipping
-// there is nothing to resolve — the role is pinned, and a stale `?role=patient`
-// link cannot ask for a mode that is not in the document.
+// renders, so a blocked script cannot blank the page. The page opens on
+// DEFAULT_ROLE; `?role=` asks for either mode by name, and failing that a hash
+// that belongs to one mode (its capture) opens that mode, so the links the other
+// pages carry to #join and #gp-join land on the right audience. With one mode
+// shipping there is nothing to resolve — the role is pinned, and a stale
+// `?role=patient` link cannot ask for a mode that is not in the document.
 const ROLE_SCRIPT = PATIENT_MODE
   ? `(function () {
   var d = document.documentElement;
   d.classList.add('js');
-  var role = 'patient';
+  var role = '${DEFAULT_ROLE}';
   try {
     var q = new URLSearchParams(location.search).get('role');
-    if (q === 'gp' || location.hash === '#gps' || location.hash === '#gp-join') role = 'gp';
+    var h = location.hash;
+    if (q === 'patient' || q === 'gp') role = q;
+    else if (h === '#join' || h === '#join2') role = 'patient';
+    else if (h === '#gps' || h === '#gp-join') role = 'gp';
   } catch (e) {}
   d.setAttribute('data-role', role);
 })();`
@@ -100,7 +107,10 @@ const ROLE_SCRIPT = PATIENT_MODE
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB" className={jakarta.variable} suppressHydrationWarning>
+    // data-role is authored as the default so the nav CTA reads right before, and
+    // without, the script: the mode-hiding rules need `.js` as well, so both
+    // modes still render when it is blocked.
+    <html lang="en-GB" data-role={DEFAULT_ROLE} className={jakarta.variable} suppressHydrationWarning>
       <body>
         <script dangerouslySetInnerHTML={{ __html: ROLE_SCRIPT }} />
         {children}

@@ -15,6 +15,20 @@
       "when": 1790684065230,
       "tag": "0001_finance_webhook_idempotency",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790855238788,
+      "tag": "0002_gp_signup_fee",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790857432988,
+      "tag": "0003_gp_fee_checkout_details",
+      "breakpoints": true
     }
   ]
 }

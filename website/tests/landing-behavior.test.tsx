@@ -3,7 +3,11 @@ import { test, expect, beforeEach, vi } from 'vitest';
 import { StrictMode } from 'react';
 import { render, fireEvent, cleanup } from '@testing-library/react';
 import { LandingBehavior } from '@/components/LandingBehavior';
+import { DEFAULT_ROLE } from '@/lib/site-mode';
 import { IOStub, installIOStub } from './helpers/io-stub';
+
+// The default role is the bare address; the other one is named in the query.
+const query = (role: 'patient' | 'gp') => (role === DEFAULT_ROLE ? '' : `?role=${role}`);
 
 function fixture() {
   return (
@@ -73,14 +77,43 @@ test('switching to GP swaps role, CTA, URL and focus', () => {
   const cta = document.getElementById('nav-cta') as HTMLAnchorElement;
   expect(cta.getAttribute('href')).toBe('#gp-join');
   expect(cta.dataset.focus).toBe('gp-join');
-  expect(window.location.search).toBe('?role=gp');
+  // For GPs the CTA is the sign-up pop-up's trigger (GpSignupDialog).
+  expect(cta.dataset.gpSignup).toBe('nav-gp');
+  expect(window.location.search).toBe(query('gp'));
   expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   const gp = container.querySelector('[data-mode="gp"]') as HTMLElement;
   expect(gp.dataset.revealed).toBe('true');
   expect(document.activeElement).toBe(gp.querySelector('h1'));
-  // Switching back to patient strips the query again.
+  // Switching back to patient puts the address, and the CTA, back.
   fireEvent.click(document.querySelector('[data-mode-link="patient"]') as HTMLElement);
-  expect(window.location.search).toBe('');
+  expect(window.location.search).toBe(query('patient'));
+  expect(cta.getAttribute('href')).toBe('#join');
+  expect(cta.dataset.gpSignup).toBeUndefined();
+});
+
+test('the page opens on GPs: the bare address is the GP page and patients are named in it', () => {
+  expect(DEFAULT_ROLE).toBe('gp');
+  expect([query('gp'), query('patient')]).toEqual(['', '?role=patient']);
+});
+
+test('with no role resolved before paint, the default role is the one shown', () => {
+  document.documentElement.removeAttribute('data-role');
+  const { container } = render(fixture());
+  expect(document.documentElement.getAttribute('data-role')).toBe(DEFAULT_ROLE);
+  expect((container.querySelector(`[data-mode="${DEFAULT_ROLE}"]`) as HTMLElement).dataset.revealed).toBe('true');
+});
+
+// In GP mode the nav CTA opens the pop-up, which takes the focus itself; moving
+// the caret to the page behind it would fight the dialog's focus trap.
+test('in GP mode the nav CTA does not move the caret', () => {
+  vi.useFakeTimers();
+  document.documentElement.setAttribute('data-role', 'gp');
+  render(fixture());
+  const cta = document.getElementById('nav-cta') as HTMLElement;
+  expect(cta.dataset.gpSignup).toBe('nav-gp');
+  fireEvent.click(cta);
+  vi.advanceTimersByTime(330);
+  expect(document.activeElement).not.toBe(document.getElementById('gp-join'));
 });
 
 test('the nav floats only once the sentinel has scrolled away', () => {

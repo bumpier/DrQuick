@@ -2,6 +2,7 @@
 // only (mail clients ignore stylesheets), Lime & Forest colours, and a text
 // part for every HTML part. The public-facing ones must pass checkCopy()
 // (tests/email.test.ts), the same rules the site's copy lives under.
+import { GP_FEE_REFUND } from '@/lib/gp-fee';
 import type { Signup } from '@/lib/waitlist';
 
 export type Email = { subject: string; html: string; text: string };
@@ -38,25 +39,35 @@ export function patientWelcome(unsubscribeUrl: string): Email {
   };
 }
 
-export function gpApplicationReceived(name: string, unsubscribeUrl: string): Email {
+// `fee` is the sign-up fee as paid ("£50"), or null for a GP who signed up
+// before there was one. It arrives formatted from the amount Stripe charged, so
+// the email states what was actually taken.
+export function gpApplicationReceived(name: string, unsubscribeUrl: string, fee: string | null = null): Email {
   const paras = [
     `Hello ${esc(name)},`,
-    'Thanks for your interest in consulting with Dr Quick. We have your details.',
-    'What happens next: we check your GMC registration, then a member of the team will contact you by email or phone to talk through how sessions, indemnity and pay work. There is no commitment until you have seen the contractor terms.',
+    fee
+      ? `Thanks for signing up to consult with Dr Quick. Your ${esc(fee)} sign-up fee is paid, and we have your details.`
+      : 'Thanks for your interest in consulting with Dr Quick. We have your details.',
+    'What happens next: we check your GMC registration, then a member of the team will contact you by email or phone to talk through how sessions, indemnity and pay work. You do not consult until you have seen and accepted the contractor terms.',
+    ...(fee ? [`${esc(GP_FEE_REFUND)} It goes back to the card you paid with.`] : []),
   ];
-  const footer = `You applied at drquick.co.uk. <a href="${esc(unsubscribeUrl)}" style="color:#2F6B0F">Withdraw and delete my details</a>.`;
+  const footer = `You signed up at drquick.co.uk. <a href="${esc(unsubscribeUrl)}" style="color:#2F6B0F">Withdraw and delete my details</a>.`;
   return {
-    subject: 'Your Dr Quick GP application',
-    html: layout('Application received', paras, footer),
+    subject: fee ? 'You’re signed up with Dr Quick' : 'Your Dr Quick GP application',
+    html: layout(fee ? 'You’re signed up' : 'Application received', paras, footer),
     text: `${strip(paras.join('\n\n'))}\n\nWithdraw and delete my details: ${unsubscribeUrl}\n`,
   };
 }
 
 // Internal only: never shown to the public, so not held to checkCopy().
-export function adminNewGp(signup: Pick<Signup, 'name' | 'email' | 'mobile' | 'gmc' | 'source'>, adminUrl: string): Email {
+export function adminNewGp(
+  signup: Pick<Signup, 'name' | 'email' | 'mobile' | 'gmc' | 'source'> & Partial<Pick<Signup, 'feeStatus'>>,
+  adminUrl: string,
+): Email {
   const rows: [string, string][] = [
     ['Name', signup.name ?? ''], ['Email', signup.email], ['Mobile', signup.mobile ?? ''],
     ['GMC', signup.gmc ?? ''], ['Form', signup.source],
+    ...(signup.feeStatus ? [['Sign-up fee', signup.feeStatus] as [string, string]] : []),
   ];
   const paras = [
     rows.map(([k, v]) => `<strong>${k}:</strong> ${esc(v)}`).join('<br>'),

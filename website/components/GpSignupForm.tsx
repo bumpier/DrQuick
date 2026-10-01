@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getAttribution, onFirstView, track } from '@/lib/analytics/track';
+import { GP_FEE_LABEL, GP_FEE_REFUND } from '@/lib/gp-fee';
 import {
   GP_MESSAGES, MAX_EMAIL, MAX_NAME,
   firstInvalidField, normaliseGpSignup,
@@ -13,18 +14,37 @@ import {
 
 type Status = { kind: 'ok' | 'err'; message: string } | null;
 
-// The GP sign-up. Four fields rather than the patient form's one: a doctor is
+// Which control opened the sign-up: the hero, the closing band, the nav, or a
+// link to #gp-join (another page's button, or the way back from Stripe).
+export type GpSignupSource = 'hero-gp' | 'recap-gp' | 'nav-gp' | 'link-gp';
+
+const MESSAGES = {
+  rateLimited: 'That is a few too many tries. Give it a couple of minutes.',
+  unreachable: "Couldn't reach the server — try again in a moment.",
+  paymentsOff: 'Sign-up payments aren’t switched on yet. Nothing was taken. Try again soon.',
+  checkoutFailed: 'We couldn’t open the payment page. Nothing was taken. Try again in a moment.',
+  alreadyPaid: 'This email address has already signed up and paid. We’ll be in touch before we open.',
+} as const;
+
+const toStripe = (url: string) => window.location.assign(url);
+
+// The GP sign-up, inside the pop-up (components/GpSignupDialog.tsx). Four
+// fields, the fee, and one button that hands over to Stripe: a doctor is
 // applying, not subscribing, and the register check needs a name and a GMC
-// number to run against. Everything else — the honeypot, the single live status
-// region, the collapsing capture, the replayed entry animation — is the same
-// grammar as WaitlistForm, so the page still has one way of behaving.
-export function GpSignupForm({ source, cta, inputId, reveal }: {
-  source: 'hero-gp' | 'recap-gp';
-  cta: string;
-  // The id of the FIRST field: the nav CTA jumps here, so it must stay the top
-  // of the form. The other three derive from it.
+// number to run against. The details are stored as an unpaid application and
+// the browser is sent to Stripe's hosted payment page; the fee is recorded as
+// paid by the server when Stripe says so, never by this form.
+//
+// The honeypot, the single live status region and the replayed entry animation
+// are the same grammar as WaitlistForm, so the page still has one way of
+// behaving.
+export function GpSignupForm({ source, inputId, onRedirect = toStripe }: {
+  source: GpSignupSource;
+  // The id of the FIRST field; the other three derive from it.
   inputId: string;
-  reveal?: 'load' | '';
+  // Where a successful submit sends the browser. Replaceable so a test can
+  // watch the hand-over without navigating.
+  onRedirect?: (url: string) => void;
 }) {
   const refs: Record<GpField, React.RefObject<HTMLInputElement | null>> = {
     name: useRef<HTMLInputElement>(null),
@@ -42,6 +62,7 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
   const [invalid, setInvalid] = useState<GpField | null>(null);
 
   const statusId = `${inputId}-status`;
+  const feeId = `${inputId}-fee`;
   const idFor = (field: GpField) => (field === 'name' ? inputId : `${inputId}-${field}`);
 
   // One identity across messages so the live region announces the change. The
@@ -81,8 +102,16 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
     refs[field].current?.focus();
   };
 
+  // A failure that is not about a field: say it, and leave the form usable.
+  const stop = (error: string, message: string) => {
+    t('form_fail', { error });
+    say({ kind: 'err', message });
+    setBusy(false);
+  };
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busy) return;
     say(null);
     setInvalid(null);
 
@@ -101,28 +130,22 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
     setBusy(true);
     t('form_submit');
     try {
-      const res = await fetch('/api/waitlist', {
+      const res = await fetch('/api/gp-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...signup,
-          role: 'gp',
           source,
           company: hpRef.current?.value ?? '',
           ...getAttribution(),
         }),
       });
-      if (res.status === 429) {
-        t('form_fail', { error: 'rate_limited' });
-        say({ kind: 'err', message: 'That is a few too many tries. Give it a couple of minutes.' });
-        setInvalid('email');
-        setBusy(false);
-        return;
-      }
+      const body = (await res.json().catch(() => ({}))) as { error?: string; url?: string; alreadyPaid?: boolean };
+
+      if (res.status === 429) return stop('rate_limited', MESSAGES.rateLimited);
       if (!res.ok) {
         // The route validates again; if it rejects a field, point at that field
         // rather than showing a generic failure over a form the reader can fix.
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
         const field = (body.error ?? '').replace(/^invalid_/, '') as GpField;
         if (res.status === 400 && field in GP_MESSAGES) {
           t('form_fail', { error: `invalid_${field}` });
@@ -130,24 +153,28 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
           setBusy(false);
           return;
         }
+        if (body.error === 'payments_unavailable') return stop('payments_unavailable', MESSAGES.paymentsOff);
+        if (body.error === 'checkout_failed') return stop('checkout_failed', MESSAGES.checkoutFailed);
         throw new Error(`http_${res.status}`);
       }
-      const data = (await res.json().catch(() => ({}))) as { alreadyJoined?: boolean };
-      t('form_success', { already: Boolean(data.alreadyJoined) });
-      say({
-        kind: 'ok',
-        message: data.alreadyJoined
-          ? "You're already signed up. We'll be in touch before we open."
-          : "You're signed up. We check your GMC registration, then get in touch before we open.",
-      });
-      statusRef.current?.focus();
-      setDone(true);
+
+      if (body.alreadyPaid) {
+        t('form_success', { already: true });
+        say({ kind: 'ok', message: MESSAGES.alreadyPaid });
+        statusRef.current?.focus();
+        setDone(true);
+        return;
+      }
+      // Only ever a secure address: the page this hands over to takes a card.
+      if (!body.url || !/^https:\/\//i.test(body.url)) return stop('checkout_failed', MESSAGES.checkoutFailed);
+
+      // The details are in; what is left happens on Stripe. The button stays
+      // busy, because the page is about to be replaced.
+      t('form_success', { already: false });
+      onRedirect(body.url);
     } catch (err) {
       const code = (err as Error)?.message ?? '';
-      t('form_fail', { error: code.startsWith('http_') ? code : 'network' });
-      say({ kind: 'err', message: "Couldn't reach the server — try again in a moment." });
-      setInvalid('email');
-      setBusy(false);
+      stop(code.startsWith('http_') ? code : 'network', MESSAGES.unreachable);
     }
   }
 
@@ -175,9 +202,8 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
       ref={formRef}
       data-role="gp"
       data-source={source}
-      data-reveal={reveal}
       noValidate
-      className={done ? 'done' : undefined}
+      className={`mt-6 max-w-none${done ? ' done' : ''}`}
       onSubmit={onSubmit}
       onInput={onInput}
       onFocus={onFocus}
@@ -200,9 +226,21 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
           })}
         </div>
         <input ref={hpRef} className="hp" type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+
+        {/* The price, at the moment of deciding: the amount, that it is paid
+            once, and how it comes back, directly above the button that leads
+            to paying it. */}
+        <div className="fee mt-5 rounded-lg bg-lime-wash px-4 py-3.5" id={feeId}>
+          <p className="flex items-baseline justify-between gap-4 font-bold">
+            <span>Sign-up fee, paid once</span>
+            <span className="font-display text-headline-sm font-extrabold tabular-nums">{GP_FEE_LABEL}</span>
+          </p>
+          <p className="mt-1 text-fine text-ink-2">{GP_FEE_REFUND}</p>
+        </div>
+
         {/* `.btn` stays on the element for the sizing rules in globals.css. */}
-        <Button className="btn submit" size="lg" type="submit" disabled={busy} aria-busy={busy || undefined}>
-          {busy ? 'Signing up…' : cta}
+        <Button className="btn submit" size="lg" type="submit" disabled={busy} aria-busy={busy || undefined} aria-describedby={feeId}>
+          {busy ? 'Opening Stripe…' : 'Continue to payment'}
         </Button>
       </div></div>
       <p ref={statusRef} className="status" id={statusId} role="status" aria-live="polite" tabIndex={-1}>
@@ -218,7 +256,10 @@ export function GpSignupForm({ source, cta, inputId, reveal }: {
         <span className="status-text">{status?.message ?? ''}</span>
       </p>
       <div className="capture"><div>
-        <p className="note">Used to verify you on the GMC register and to contact you about launching. Nothing else.</p>
+        <p className="note">
+          You pay by card on Stripe; Dr Quick never sees your card details. Your details are used to check the GMC register and to contact you about launching.{' '}
+          <a href="/privacy" className="font-semibold text-primary-ink underline underline-offset-2">Privacy</a>
+        </p>
       </div></div>
     </form>
   );

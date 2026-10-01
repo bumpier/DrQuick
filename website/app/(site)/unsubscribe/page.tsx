@@ -38,5 +38,5 @@ export default async function UnsubscribePage({ searchParams }: Props) {
       </PageHero>
     );
   }
-  return <UnsubscribeConfirm token={token} role={signup.role} email={signup.email} />;
+  return <UnsubscribeConfirm token={token} role={signup.role} email={signup.email} feePaid={signup.feeStatus === 'paid'} />;
 }

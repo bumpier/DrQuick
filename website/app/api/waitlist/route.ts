@@ -1,21 +1,17 @@
 // POST /api/waitlist
-//   patient: { email, role: "patient", source }
-//   gp:      { name, email, mobile, gmc, role: "gp", source }
+//   { email, role: "patient", source }
 //
-// A patient is subscribing, so email is still the only thing asked or stored.
-// A GP is applying, so the sign-up carries the four fields the register check
-// needs. No IP is retained in either case: the rate-limit key is a salted hash
-// with a short TTL and is never written into the waitlist record.
+// The patient waitlist. A patient is subscribing, so email is the only thing
+// asked or stored. No IP is retained: the rate-limit key is a salted hash with
+// a short TTL and is never written into the waitlist record.
 //
-// DEPLOY / LEGAL: the GP record is real personal data — a name, a mobile number
-// and a GMC reference are identifying on their own and together. UK GDPR Art 13
-// requires the controller's registered name and address and a working privacy
-// contact at the point of collection, and PRODUCT.md still records the legal
-// entity as undecided. Do not point this route at a live store until those are
-// filled in on the page.
+// GPs do not sign up here. Their sign-up carries four fields and a fee, and
+// lives at app/api/gp-signup; the role is refused below.
 //
-// The client validates these fields too; this is the authority. Both read the
-// same rules from lib/gp-signup so they cannot drift.
+// DEPLOY / LEGAL: UK GDPR Art 13 requires the controller's registered name and
+// address and a working privacy contact at the point of collection, and
+// PRODUCT.md still records the legal entity as undecided. Do not point this
+// route at a live store until those are filled in on the page.
 //
 // Stored in Postgres (lib/waitlist.ts). Optional attribution — the analytics
 // visitor id, first-touch UTM tags, referrer and landing path — rides along so
@@ -26,7 +22,7 @@ import { getDb } from '@/lib/db';
 import { hashKey, hit } from '@/lib/rate-limit';
 import { cleanAttribution, joinWaitlist } from '@/lib/waitlist';
 import { sendSignupEmails } from '@/lib/email';
-import { MAX_EMAIL, firstInvalidField, normaliseEmail, normaliseGpSignup } from '@/lib/gp-signup';
+import { MAX_EMAIL, normaliseEmail } from '@/lib/gp-signup';
 
 export const runtime = 'nodejs';
 
@@ -75,22 +71,14 @@ export async function POST(request: Request) {
     return json(400, { ok: false, error: 'invalid_role' });
   }
 
-  // The two roles collect different things, so they are validated differently and
-  // stored with different shapes. `error` names the offending field so the form
-  // can point at it rather than showing a generic failure over a fixable form.
-  let email: string;
-  let details: Record<string, string> = {};
-  if (role === 'gp') {
-    const signup = normaliseGpSignup(payload);
-    const bad = firstInvalidField(signup);
-    if (bad) return json(400, { ok: false, error: `invalid_${bad}` });
-    email = signup.email;
-    details = { name: signup.name, mobile: signup.mobile, gmc: signup.gmc };
-  } else {
-    email = normaliseEmail(payload.email);
-    if (!EMAIL.test(email) || email.length > MAX_EMAIL) {
-      return json(400, { ok: false, error: 'invalid_email' });
-    }
+  // A GP sign-up carries a fee, so it has its own route (app/api/gp-signup)
+  // that ends in a payment. Accepting the role here would be a way to sign up
+  // as a GP without paying.
+  if (role === 'gp') return json(400, { ok: false, error: 'gp_signup_moved' });
+
+  const email = normaliseEmail(payload.email);
+  if (!EMAIL.test(email) || email.length > MAX_EMAIL) {
+    return json(400, { ok: false, error: 'invalid_email' });
   }
 
   try {
@@ -100,7 +88,7 @@ export async function POST(request: Request) {
     }
 
     const { signup, alreadyJoined } = await joinWaitlist(db, {
-      role: role as 'patient' | 'gp', email, source, ...details, ...cleanAttribution(payload),
+      role: 'patient', email, source, ...cleanAttribution(payload),
     });
     if (!alreadyJoined) await sendSignupEmails(db, signup);
 

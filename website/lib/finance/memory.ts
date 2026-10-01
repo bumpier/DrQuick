@@ -171,6 +171,10 @@ export function memorySource(data: Dataset, demo = true): FinanceSource {
 
     async gpSummary(now) {
       const month = monthWindow(now);
+      const served = new Map<string, number>();
+      for (const c of data.consultations) {
+        if (c.gpId && c.status === 'completed') served.set(c.gpId, (served.get(c.gpId) ?? 0) + 1);
+      }
       const rows: GpSummaryRow[] = data.gps.map((g) => {
         const s = sumsIn(month, g.id);
         let pending = 0;
@@ -180,7 +184,10 @@ export function memorySource(data: Dataset, demo = true): FinanceSource {
           if (p.status === 'pending' || p.status === 'processing') pending += p.amountPence;
           if (p.status === 'paid') paidToDate += p.amountPence;
         }
-        return { gpId: g.id, name: g.name, earnedThisMonth: s.gpFees, consultsThisMonth: s.completed, pending, paidToDate };
+        return {
+          gpId: g.id, name: g.name, earnedThisMonth: s.gpFees, consultsThisMonth: s.completed, pending, paidToDate,
+          servedToDate: served.get(g.id) ?? 0,
+        };
       });
       return rows.sort((a, b) => b.earnedThisMonth - a.earnedThisMonth || cmp(a.name, b.name));
     },
