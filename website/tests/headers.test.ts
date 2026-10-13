@@ -1,5 +1,6 @@
-import { test, expect } from 'vitest';
-import nextConfig, { ADMIN_CSP, PROD_CSP } from '@/next.config';
+import { test, expect, vi } from 'vitest';
+import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
+import nextConfig, { ADMIN_CSP, CSP_SOURCE, DOCTOR_PERMISSIONS, PROD_CSP } from '@/next.config';
 
 test('the CSP is the vercel.json policy minus the Google Fonts hosts, frameable by this origin only', () => {
   expect(PROD_CSP).toBe(
@@ -20,7 +21,28 @@ test('every route carries the security header set', async () => {
   expect(get('X-Frame-Options')).toBe('SAMEORIGIN'); // the admin heatmap iframes public pages
   expect(get('Permissions-Policy')).toBe('geolocation=(), microphone=(), camera=(), interest-cohort=()');
   expect(get('Strict-Transport-Security')).toBe('max-age=63072000; includeSubDomains; preload');
-  expect(get('Content-Security-Policy')).toBe(PROD_CSP); // test env takes the prod branch
+  // The CSP is its own rule, so the doctor portal can be left out of it.
+  expect(get('Content-Security-Policy')).toBeUndefined();
+});
+
+// Next matches a header source the way it matches a route.
+const matches = (source: string, path: string) =>
+  Boolean(getPathMatch(source, { strict: true, removeUnnamedParams: true })(path));
+
+// The doctor portal's policy is set per request by proxy.ts, with a nonce
+// (lib/csp.ts): a second, static policy there would have to be met as well.
+test('every page but the doctor portal takes the static CSP', async () => {
+  const rules = await nextConfig.headers!();
+  const csp = rules.find((r) => r.source === CSP_SOURCE)!;
+  expect(csp.headers).toEqual([{ key: 'Content-Security-Policy', value: PROD_CSP }]); // test env takes the prod branch
+  for (const path of ['/', '/about', '/blog/a-post', '/patient', '/patient/book/call', '/admin/login', '/gp/welcome', '/doctors']) {
+    expect(matches(CSP_SOURCE, path), path).toBe(true);
+  }
+  for (const path of ['/doctor', '/doctor/', '/doctor/login', '/doctor/earnings/payouts', '/DOCTOR/login']) {
+    expect(matches(CSP_SOURCE, path), path).toBe(false);
+  }
+  expect(rules.indexOf(csp)).toBeGreaterThan(rules.findIndex((r) => r.source === '/(.*)'));
+  expect(rules.indexOf(csp)).toBeLessThan(rules.findIndex((r) => r.source === '/admin/:path*'));
 });
 
 test('assets are immutable-cached; the dashboard prefixes and the dev gallery are noindex', async () => {
@@ -52,13 +74,43 @@ test('the admin is never framed, not even by this origin, and is noindex', async
   expect(admin.headers).toContainEqual({ key: 'X-Robots-Tag', value: 'noindex, nofollow' });
 });
 
-test('the doctor portal is never framed either, and is noindex', async () => {
+// The video call runs here: the camera and microphone for this origin only,
+// a window no other site can reach, and the CSP from proxy.ts.
+test('the doctor portal is never framed, may use the camera, and is noindex', async () => {
   const rules = await nextConfig.headers!();
   const doctor = rules.find((r) => r.source === '/doctor/:path*')!;
   expect(rules.indexOf(doctor)).toBeGreaterThan(rules.findIndex((r) => r.source === '/(.*)'));
-  expect(doctor.headers).toContainEqual({ key: 'X-Frame-Options', value: 'DENY' });
-  expect(doctor.headers).toContainEqual({ key: 'Content-Security-Policy', value: ADMIN_CSP });
-  expect(doctor.headers).toContainEqual({ key: 'X-Robots-Tag', value: 'noindex, nofollow' });
+  expect(DOCTOR_PERMISSIONS).toBe('geolocation=(), microphone=(self), camera=(self), fullscreen=(self), interest-cohort=()');
+  expect(doctor.headers).toEqual([
+    { key: 'X-Frame-Options', value: 'DENY' },
+    { key: 'Permissions-Policy', value: DOCTOR_PERMISSIONS },
+    { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+    { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+  ]);
+});
+
+// The patient prototype's call is real only on a developer's machine
+// (devVideoRoom), so only there does /patient get the call's headers.
+test('in production the patient prototype keeps the camera off; in development it gets the portal’s', async () => {
+  const rules = await nextConfig.headers!();
+  expect(rules.find((r) => r.source === '/patient/:path*')!.headers).toEqual([{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]);
+
+  vi.stubEnv('NODE_ENV', 'development');
+  vi.resetModules();
+  try {
+    const dev = await import('@/next.config');
+    const devRules = await dev.default.headers!();
+    expect(devRules.find((r) => r.source === '/patient/:path*')!.headers).toEqual([
+      { key: 'Permissions-Policy', value: dev.DOCTOR_PERMISSIONS },
+      { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+    ]);
+    expect(matches(dev.CSP_SOURCE, '/patient/book/call')).toBe(false);
+    expect(matches(dev.CSP_SOURCE, '/doctor/login')).toBe(false);
+    expect(matches(dev.CSP_SOURCE, '/about')).toBe(true);
+  } finally {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  }
 });
 
 test('unsubscribe links are noindex', async () => {

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { TRUSTED_TYPES_REPORT_ONLY, doctorCsp, livekitOrigin, newNonce } from '@/lib/csp';
 
 // Next 16's proxy (formerly middleware). An optimistic check only: with no
 // session cookie at all, a page in a signed-in area redirects to that area's
@@ -18,11 +19,45 @@ const AREAS: readonly Area[] = [
   },
 ];
 
-export function proxy(request: NextRequest) {
-  const path = request.nextUrl.pathname;
-  const area = AREAS.find((a) => path === a.root || path.startsWith(`${a.root}/`));
-  if (!area || area.open.includes(path) || request.cookies.has(area.cookie)) return NextResponse.next();
-  return NextResponse.redirect(new URL(area.signIn, request.url));
+const within = (path: string, root: string) => path === root || path.startsWith(`${root}/`);
+
+// The pages that get the per-request CSP (lib/csp.ts): the doctor portal, and
+// in development the patient prototype, because the video call's keys live
+// there. Without regard to case, as next.config.ts leaves them out of its own.
+function strictCsp(path: string): boolean {
+  const lower = path.toLowerCase();
+  return within(lower, '/doctor') || (process.env.NODE_ENV === 'development' && within(lower, '/patient'));
 }
 
-export const config = { matcher: ['/admin', '/admin/:path*', '/doctor', '/doctor/:path*'] };
+export function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const area = AREAS.find((a) => within(path, a.root));
+  if (area && !area.open.includes(path) && !request.cookies.has(area.cookie)) {
+    return NextResponse.redirect(new URL(area.signIn, request.url));
+  }
+  if (!strictCsp(path)) return NextResponse.next();
+
+  const csp = doctorCsp({
+    nonce: newNonce(), livekitOrigin: livekitOrigin(process.env.LIVEKIT_URL), dev: process.env.NODE_ENV === 'development',
+  });
+  // Next reads the policy from the request to nonce its own scripts.
+  const headers = new Headers(request.headers);
+  headers.set('content-security-policy', csp);
+  const response = NextResponse.next({ request: { headers } });
+  response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Content-Security-Policy-Report-Only', TRUSTED_TYPES_REPORT_ONLY);
+  return response;
+}
+
+// /patient only for its development policy; in production the proxy passes it
+// through. The portal and the prototype are matched in any case, because
+// next.config.ts leaves them out of its static CSP without regard to case: a
+// page at /DOCTOR would otherwise have no policy at all. Next reads this list
+// at build time, so it is spelled out rather than computed.
+export const config = {
+  matcher: [
+    '/admin', '/admin/:path*',
+    '/:root([dD][oO][cC][tT][oO][rR])', '/:root([dD][oO][cC][tT][oO][rR])/:path*',
+    '/:root([pP][aA][tT][iI][eE][nN][tT])', '/:root([pP][aA][tT][iI][eE][nN][tT])/:path*',
+  ],
+};

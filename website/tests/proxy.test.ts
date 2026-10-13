@@ -1,5 +1,6 @@
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { doctorCsp } from '@/lib/csp';
 import { config, proxy } from '@/proxy';
 import { DOCTOR_NAV, activeNavHref } from '@/components/app/nav';
 
@@ -52,8 +53,57 @@ describe('the doctor portal', () => {
   });
 });
 
-test('the proxy runs on both areas and nothing else', () => {
-  expect(config.matcher).toEqual(['/admin', '/admin/:path*', '/doctor', '/doctor/:path*']);
+// The patient prototype is matched only for its development-only policy below.
+// Both are matched in any case: next.config.ts leaves them out of its static
+// CSP without regard to case, so a page at /DOCTOR must still get this one.
+test('the proxy runs on the two signed-in areas and the patient prototype, in any case, and nothing else', () => {
+  expect(config.matcher).toEqual([
+    '/admin', '/admin/:path*',
+    '/:root([dD][oO][cC][tT][oO][rR])', '/:root([dD][oO][cC][tT][oO][rR])/:path*',
+    '/:root([pP][aA][tT][iI][eE][nN][tT])', '/:root([pP][aA][tT][iI][eE][nN][tT])/:path*',
+  ]);
+});
+
+// The doctor portal holds the video call's keys, so it gets a nonce-based CSP
+// on every response (lib/csp.ts); next.config.ts sends none there.
+describe('the doctor portal’s CSP', () => {
+  const csp = (path: string, cookie?: string) => visit(path, cookie).headers.get('content-security-policy');
+  const nonceOf = (policy: string | null) => policy?.match(/'nonce-([^']+)'/)?.[1];
+  afterEach(() => vi.unstubAllEnvs());
+
+  test('every portal page gets one, with a fresh nonce each time, signed in or not', () => {
+    const first = csp('/doctor', 'dq_doctor=x');
+    expect(first).toBe(doctorCsp({ nonce: nonceOf(first)!, livekitOrigin: null, dev: false }));
+    expect(nonceOf(csp('/doctor', 'dq_doctor=x'))).not.toBe(nonceOf(first));
+    for (const path of ['/doctor/login', '/doctor/pulse', '/doctor/earnings']) expect(nonceOf(csp(path, 'dq_doctor=x')), path).toBeTruthy();
+    // Next reads the policy from the request to nonce its own scripts.
+    const response = visit('/doctor/login');
+    expect(response.headers.get('x-middleware-request-content-security-policy')).toBe(response.headers.get('content-security-policy'));
+    expect(response.headers.get('content-security-policy-report-only')).toBe("require-trusted-types-for 'script'");
+  });
+
+  // Next matches routes case-insensitively, so the static policy's exclusion does too.
+  test('however the path is cased', () => {
+    expect(nonceOf(csp('/DOCTOR/login'))).toBeTruthy();
+  });
+
+  test('names the media server from LIVEKIT_URL, and ignores a setting that is not one', () => {
+    vi.stubEnv('LIVEKIT_URL', 'wss://media.drquick.example');
+    expect(csp('/doctor/login')).toContain("connect-src 'self' wss://media.drquick.example https://media.drquick.example;");
+    vi.stubEnv('LIVEKIT_URL', "wss://a.example; script-src 'unsafe-inline'");
+    expect(csp('/doctor/login')).toContain("connect-src 'self';");
+  });
+
+  test('the admin, and the patient prototype in production, are left to next.config.ts', () => {
+    expect(csp('/admin', 'dq_admin=x')).toBeNull();
+    expect(csp('/patient/book/call')).toBeNull();
+  });
+
+  test('in development the patient prototype gets it too, for its call', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const policy = csp('/patient/book/call');
+    expect(policy).toBe(doctorCsp({ nonce: nonceOf(policy)!, livekitOrigin: null, dev: true }));
+  });
 });
 
 describe('which nav item a path lights', () => {
