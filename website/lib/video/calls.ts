@@ -136,6 +136,11 @@ export async function gpPass(db: DB, gpId: string, now = new Date()): Promise<Pa
   return issuePass(db, config, secret, held.id, 'gp', now);
 }
 
+/** Whether the patient prototype's call is real: a developer's machine with video calls set up. */
+export function devVideoCalls(): boolean {
+  return process.env.NODE_ENV === 'development' && videoConfig() !== null && sealingSecret() !== null;
+}
+
 /**
  * The patient's pass to the live consultation's call, for the patient prototype
  * on a developer's machine. There is no patient sign-in yet, so this never

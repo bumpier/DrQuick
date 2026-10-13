@@ -1,10 +1,31 @@
+import dynamic from 'next/dynamic';
 import { Badge } from '@/components/ui/badge';
 import { formatClock } from '@/lib/booking';
 
-// A labelled placeholder that says what it is, never a fake stream. Capped
-// in height on a phone so the control that ends the call is always on screen:
-// a patient must never have to scroll to get out of a consultation.
-export function VideoFrame({ gpRef }: { gpRef: string }) {
+// The call. A labelled placeholder that says what it is, never a fake stream;
+// or, on a developer's machine with video calls set up (devVideoCalls in
+// lib/video/calls.ts), the real encrypted call, joined as the patient of the
+// consultation a GP is in. Capped in height on a phone so the control that
+// ends the call is always on screen: a patient must never have to scroll to get
+// out of a consultation.
+const requestDevPass = () => fetch('/dev/call', { method: 'POST', cache: 'no-store', credentials: 'same-origin' });
+// Loaded only when the call is real, so a production build's patient pages
+// never ship the media library.
+const CallView = dynamic(() => import('@/components/call/CallView').then((m) => m.CallView), { ssr: false });
+
+export function VideoFrame({ gpRef, videoCalls = false }: { gpRef: string; videoCalls?: boolean }) {
+  if (videoCalls) {
+    return (
+      <div data-slot="video-frame" className="grid w-full max-w-[48rem] gap-3">
+        <CallView
+          who="patient"
+          active
+          requestPass={requestDevPass}
+          className="[&>div:first-child]:h-[55svh] md:[&>div:first-child]:h-[calc(100svh-var(--header-h)-10rem)]"
+        />
+      </div>
+    );
+  }
   return (
     <div
       data-slot="video-frame"

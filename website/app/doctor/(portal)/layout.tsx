@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { DoctorSidebar } from '@/components/doctor/DoctorSidebar';
+import { CallPanel } from '@/components/doctor/CallPanel';
 import { ConnectionNotice, OfferNotice, ShiftProvider } from '@/components/doctor/ShiftProvider';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -11,7 +12,8 @@ import { shiftState, type ShiftState } from '@/lib/doctor/shift';
 
 // Every signed-in portal page: the session is checked here, and again in every
 // page and server action, since a layout does not re-render on every action.
-// The shift lives here too, so an offer reaches the doctor on any page.
+// The shift lives here too, so an offer reaches the doctor on any page, and so
+// does the video call, so it survives the doctor opening another page.
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const doctor = await requireDoctor();
   const db = await getDb();
@@ -30,6 +32,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
               <ConnectionNotice />
               <OfferNotice />
               {children}
+              <CallPanel />
             </ShiftProvider>
           </div>
         </SidebarInset>

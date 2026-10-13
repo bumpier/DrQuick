@@ -20,7 +20,7 @@ import { NoGpAvailable } from './states/NoGpAvailable';
 import { PaymentFailed } from './states/PaymentFailed';
 import { RedFlag } from './states/RedFlag';
 
-const SCREENS: Record<BookingScreen, ComponentType> = {
+const SCREENS: Record<BookingScreen, ComponentType<{ videoCalls: boolean }>> = {
   symptoms: Symptoms,
   'safety-check': SafetyCheck,
   identity: Identity,
@@ -41,9 +41,10 @@ const SCREENS: Record<BookingScreen, ComponentType> = {
 
 // The route renders whatever the booking is on, never what the URL said:
 // the URL follows the reducer. Keyed by screen so each one mounts fresh and
-// takes focus on arrival.
-export function BookingFlow() {
+// takes focus on arrival. Whether the call is real is for the call screen
+// alone; the rest ignore it.
+export function BookingFlow({ videoCalls = false }: { videoCalls?: boolean }) {
   const { state } = useBooking();
   const Screen = SCREENS[state.screen];
-  return <Screen key={state.screen} />;
+  return <Screen key={state.screen} videoCalls={videoCalls} />;
 }
