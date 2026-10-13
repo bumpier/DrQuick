@@ -342,6 +342,16 @@ describe('webhooks', () => {
     expect((await callOf(call.consultationId)).roomDeletedAt).toEqual(at(9));
   });
 
+  // A notice that failed part-way was not applied, so it must not count as seen.
+  test('a notice that fails part-way is applied when the media server sends it again', async () => {
+    const call = await liveCall();
+    const stranger = hook({ id: 'EV_retry', room: call.room, identity: 'ID_stranger' });
+    vi.mocked(removeParticipant).mockRejectedValueOnce(new Error('network'));
+    await expect(applyWebhook(db, stranger, at(2))).rejects.toThrow();
+    expect(await db.select().from(livekitEvents)).toEqual([]);
+    expect(await applyWebhook(db, stranger, at(3))).toBe('removed');
+  });
+
   test('old notice ids are pruned after a day', async () => {
     const call = await liveCall();
     await applyWebhook(db, hook({ id: 'EV_old', room: call.room, identity: call.gpIdentity }), NOW);

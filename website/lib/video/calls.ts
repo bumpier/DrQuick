@@ -212,6 +212,16 @@ export async function applyWebhook(db: DB, event: CallWebhook, now = new Date())
     insert into livekit_events (id, received_at) values (${event.id}, ${iso(now)}::timestamptz)
     on conflict (id) do nothing returning id`));
   if (fresh.length === 0) return 'duplicate';
+  try {
+    return await applyOnce(db, event, now);
+  } catch (err) {
+    // Not applied, so not seen: the media server's retry gets another go.
+    await db.execute(sql`delete from livekit_events where id = ${event.id}`).catch(() => {});
+    throw err;
+  }
+}
+
+async function applyOnce(db: DB, event: CallWebhook, now: Date): Promise<WebhookOutcome> {
   if (!event.room) return 'ignored';
 
   const [call] = rowsOf<{ consultation_id: string; gp_identity: string; patient_identity: string }>(await db.execute(sql`

@@ -13,9 +13,10 @@ const AREAS: readonly Area[] = [
   {
     root: '/doctor', cookie: 'dq_doctor', signIn: '/doctor/login',
     // The three pages a doctor needs before they have a session, and the
-    // portal's poll: a redirected fetch would hand it the sign-in page with a
-    // 200, so app/doctor/pulse answers 401 itself.
-    open: ['/doctor/login', '/doctor/register', '/doctor/set-password', '/doctor/pulse'],
+    // portal's poll and call pass: a redirected fetch would hand either the
+    // sign-in page with a 200, so app/doctor/pulse and app/doctor/call answer
+    // 401 themselves.
+    open: ['/doctor/login', '/doctor/register', '/doctor/set-password', '/doctor/pulse', '/doctor/call'],
   },
 ];
 

@@ -47,7 +47,7 @@ const PRICES = [3200, 3600, 4000, 4400, 4800];
 
 type Tx = Parameters<Parameters<DB['transaction']>[0]>[0];
 
-function assertLocal() {
+export function assertLocal() {
   if (process.env.NODE_ENV === 'production') throw new Error('Refusing to write demo data in production.');
   const url = process.env.DATABASE_URL;
   if (!url) return; // PGlite, in this process
