@@ -235,14 +235,28 @@ export async function declineOffer(db: DB, gpId: string, offerId: string, now = 
 
 /* ---------------------------------------------------- the consultation */
 
+// The consultation ended, and the room of its video call, if it had one, to
+// retire (lib/video/calls.ts retireRoom): the people in it hold its keys, so
+// deleting the room is what disconnects them.
+export type EndResult = { ok: true; room: string | null } | { ok: false; reason: ShiftReason };
+
 // A doctor holds at most one consultation, so no id comes from the browser:
-// each ends their own, whichever it is.
-async function end(db: DB, gpId: string, to: 'completed' | 'no_show', now: Date): Promise<ShiftResult> {
-  const ended = rowsOf(await db.execute(sql`
-    update consultations set status = ${to}, ended_at = ${iso(now)}::timestamptz
-    where gp_id = ${gpId} and status = 'in_progress'
-    returning id`));
-  return ended.length > 0 ? OK : no('nothing_in_progress');
+// each ends their own, whichever it is. One statement ends it and closes its
+// call, clearing both keys, so no key outlives the consultation.
+async function end(db: DB, gpId: string, to: 'completed' | 'no_show', now: Date): Promise<EndResult> {
+  const [ended] = rowsOf<{ id: string; room: string | null }>(await db.execute(sql`
+    with ended as (
+      update consultations set status = ${to}, ended_at = ${iso(now)}::timestamptz
+      where gp_id = ${gpId} and status = 'in_progress'
+      returning id
+    ), closed as (
+      update consultation_calls
+      set closed_at = ${iso(now)}::timestamptz, sealed_gp_key = null, sealed_patient_key = null
+      where consultation_id in (select id from ended) and closed_at is null
+      returning room
+    )
+    select ended.id, closed.room from ended left join closed on true`));
+  return ended ? { ok: true, room: ended.room ?? null } : { ok: false, reason: 'nothing_in_progress' };
 }
 
 export const completeConsultation = (db: DB, gpId: string, now = new Date()) => end(db, gpId, 'completed', now);

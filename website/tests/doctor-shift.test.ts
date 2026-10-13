@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { asc, eq } from 'drizzle-orm';
 import { resetDb, useTestDb } from './helpers/db';
 import { setDb, type DB } from '@/lib/db';
-import { consultationOffers, consultations, gps } from '@/lib/db/schema';
+import { consultationCalls, consultationOffers, consultations, gps } from '@/lib/db/schema';
 
 const jar = new Map<string, { value: string; opts?: Record<string, unknown> }>();
 vi.mock('next/headers', () => ({
@@ -18,6 +18,14 @@ vi.mock('next/navigation', () => ({
   redirect: (to: string) => { throw Object.assign(new Error(`NEXT_REDIRECT ${to}`), { digest: `NEXT_REDIRECT;${to}` }); },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+// after() runs its callback once the response has gone. Here the callbacks are
+// collected, so a test can run what the reply did not wait for.
+const deferred = vi.hoisted(() => [] as Array<() => unknown>);
+vi.mock('next/server', async (original) => ({
+  ...(await original<typeof import('next/server')>()),
+  after: (work: () => unknown) => { deferred.push(work); },
+}));
+const afterResponse = async () => { for (const work of deferred.splice(0)) await work(); };
 
 import { hashPassword } from '@/lib/admin-auth';
 import { DOCTOR_COOKIE, signDoctorSession } from '@/lib/doctor-auth';
@@ -234,7 +242,7 @@ describe('a consultation', () => {
 
   test('completing it ends it and rests the doctor until they are ready for the next', async () => {
     const { d, c } = await inConsultation();
-    expect(await completeConsultation(db, d.id, at(610))).toEqual({ ok: true });
+    expect(await completeConsultation(db, d.id, at(610))).toEqual({ ok: true, room: null });
     expect(await consultation(c.id)).toMatchObject({ status: 'completed' });
     expect((await consultation(c.id)).endedAt?.getTime()).toBe(at(610).getTime());
     expect(await shiftState(db, d.id, at(611))).toEqual({ kind: 'resting', reason: 'finished' });
@@ -246,7 +254,7 @@ describe('a consultation', () => {
 
   test('a patient who never arrives is a no-show', async () => {
     const { d, c } = await inConsultation();
-    expect(await markNoShow(db, d.id, at(300))).toEqual({ ok: true });
+    expect(await markNoShow(db, d.id, at(300))).toEqual({ ok: true, room: null });
     expect(await consultation(c.id)).toMatchObject({ status: 'no_show' });
   });
 
@@ -368,5 +376,53 @@ describe('the poll', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(await response.json()).toMatchObject({ state: { kind: 'idle' } });
     expect((await gp(d.id)).lastSeenAt!.getTime()).toBeGreaterThan(at(-10).getTime());
+  });
+});
+
+// The video call ends with the consultation (lib/video/calls.ts): its keys go in
+// the same statement, and its room, which is what disconnects the two people,
+// is deleted once the reply has gone, retried on every poll until confirmed.
+describe('the video call', () => {
+  const callFor = (consultationId: string) => db.insert(consultationCalls).values({
+    consultationId, room: `ROOM_${consultationId.slice(0, 8)}`, gpIdentity: `GP_${consultationId}`, patientIdentity: `PT_${consultationId}`,
+    sealedGpKey: 'v1.a', sealedPatientKey: 'v1.b', openedAt: NOW,
+  });
+  const call = async (consultationId: string) =>
+    (await db.select().from(consultationCalls).where(eq(consultationCalls.consultationId, consultationId)))[0];
+
+  test('Complete closes the call at once and retires its room after the reply', async () => {
+    deferred.length = 0;
+    const d = await doctor({ availableSince: null });
+    const c = await request({ status: 'in_progress', gpId: d.id, startedAt: at(-60) });
+    await callFor(c.id);
+    signInAs(d);
+    expect(await completeAction()).toMatchObject({ ok: true });
+    expect(await call(c.id)).toMatchObject({ sealedGpKey: null, sealedPatientKey: null });
+    expect(deferred).toHaveLength(1);
+    await afterResponse(); // video is not configured here, so the delete counts as a failed attempt
+    expect((await call(c.id)).closeAttempts).toBe(1);
+  });
+
+  test('Complete with no call has no room to retire', async () => {
+    deferred.length = 0;
+    const d = await doctor({ availableSince: null });
+    await request({ status: 'in_progress', gpId: d.id, startedAt: at(-60) });
+    signInAs(d);
+    expect(await completeAction()).toMatchObject({ ok: true });
+    expect(deferred).toHaveLength(0);
+  });
+
+  test('the poll sweeps a call whose consultation ended some other way, after the reply', async () => {
+    deferred.length = 0;
+    const d = await doctor();
+    const c = await request({ status: 'cancelled' });
+    await callFor(c.id);
+    signInAs(d);
+    const response = await pulseRoute(new Request('http://localhost/doctor/pulse', { method: 'POST' }));
+    expect(response.status).toBe(200);
+    expect((await call(c.id)).sealedGpKey).toBe('v1.a');
+    await afterResponse();
+    expect(await call(c.id)).toMatchObject({ sealedGpKey: null, sealedPatientKey: null });
+    expect((await call(c.id)).closedAt).not.toBeNull();
   });
 });
