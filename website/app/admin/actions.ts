@@ -1,9 +1,9 @@
 'use server';
 // Sign-in and sign-out. Server actions are POSTs Next checks for same origin;
 // each one is still treated as an untrusted entry point.
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { endSession, loginAllowed, startSession, verifyCredentials } from '@/lib/admin-auth';
+import { clientIp } from '@/lib/client-ip';
 
 export type SignInState = { error: string | null; email: string };
 
@@ -16,8 +16,7 @@ export async function signIn(_prev: SignInState, form: FormData): Promise<SignIn
   const password = String(form.get('password') ?? '').slice(0, 256);
   if (!email || !password) return { error: 'Enter your email and password.', email };
 
-  const h = await headers();
-  const ip = (h.get('x-forwarded-for') ?? '').split(',')[0].trim() || h.get('x-real-ip') || 'unknown';
+  const ip = await clientIp();
   try {
     if (!(await loginAllowed(ip, email))) return { error: 'Too many attempts. Try again in ten minutes.', email };
   } catch (err) {

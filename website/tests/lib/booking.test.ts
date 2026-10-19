@@ -2,7 +2,7 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import {
   waitEstimate, isEligibleGp, matchGp, outcomeFor, endedEarly,
-  consultationRecord, formatClock, nextConsultationId, COMPLAINTS,
+  consultationRecord, formatClock, nextConsultationId, COMPLAINTS, callLength, recordLength, todayLabel,
 } from '@/lib/booking';
 
 test('the wait is divided by the GPs actually online, not counted head by head', () => {
@@ -141,4 +141,27 @@ test('a consultation shorter than a minute still records a minute, never zero', 
     complaint: 'skin', nhsGpConsent: true, gp: { ref: 'GP-001' }, seconds: 20,
   }, { id: 'C-0032', date: '28 August 2026', fee: 39 });
   assert.equal(record.minutes, 1, 'a completed consultation must not look cancelled');
+});
+
+test('a call length reads the same wherever it is shown, and never rounds a short call up', () => {
+  assert.equal(callLength(14), 'Under a minute');
+  assert.equal(callLength(59), 'Under a minute');
+  assert.equal(callLength(60), '1 minute');
+  assert.equal(callLength(119), '1 minute');
+  assert.equal(callLength(545), '9 minutes');
+  assert.equal(callLength(600), '10 minutes');
+});
+
+test('a new record keeps its seconds, so the home row agrees with the receipt', () => {
+  const record = consultationRecord({
+    complaint: 'skin', nhsGpConsent: true, gp: { ref: 'GP-001' }, seconds: 14,
+  }, { id: 'C-0032', date: 'd', fee: 39 });
+  assert.equal(record.seconds, 14);
+  assert.equal(recordLength(record), 'Under a minute');
+  assert.equal(recordLength({ minutes: 9 }), '9 minutes', 'a fixture row has minutes only');
+});
+
+test('a consultation is dated on the day it happens, in the long British form', () => {
+  assert.equal(todayLabel(new Date(2026, 9, 19, 14, 5)), '19 October 2026');
+  assert.equal(todayLabel(new Date(2027, 0, 3)), '3 January 2027');
 });

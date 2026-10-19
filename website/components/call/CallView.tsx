@@ -43,12 +43,42 @@ function statusLine(state: CallState, who: Who): string | null {
   }
 }
 
+// Before the call, the frame says what happens next rather than standing blank.
+function idleLine(who: Who, autoStart: boolean): string {
+  if (who === 'gp') return 'Start the video when you’re ready.';
+  return autoStart ? 'Connecting you to your GP…' : 'Join the video when you’re ready.';
+}
+
+// Over a picture whose camera is off: the frozen last frame is covered, and the
+// icon says why. Text for a screen reader, since the icon is only a picture.
+function CameraOff({ label, small = false }: { label: string; small?: boolean }) {
+  return (
+    <div className="absolute inset-0 grid place-items-center bg-band text-band-muted">
+      <VideoOffIcon strokeWidth={2} className={small ? 'size-6' : 'size-12'} aria-hidden="true" />
+      <span className="sr-only">{label}</span>
+    </div>
+  );
+}
+
+function MutedBadge({ label, className }: { label: string; className: string }) {
+  return (
+    <span className={cn('absolute grid size-7 place-items-center rounded-full bg-ink/70 text-white', className)}>
+      <MicOffIcon strokeWidth={2} className="size-4" aria-hidden="true" />
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+}
+
 const IN_CALL = new Set(['connecting', 'waiting', 'connected', 'reconnecting', 'peer_left']);
 
-export function CallView({ who, active, requestPass, className }: {
+export function CallView({ who, active, requestPass, className, autoStart = false, demoPatient = false }: {
   who: Who; active: boolean; requestPass: () => Promise<Response>; className?: string;
+  // Joins as the screen opens, with no button to press: the patient's side.
+  autoStart?: boolean;
+  // The investor demo's patient: a generated picture and no microphone (useEncryptedCall).
+  demoPatient?: boolean;
 }) {
-  const call = useEncryptedCall({ requestPass });
+  const call = useEncryptedCall({ requestPass, demoPatient });
   const frame = useRef<HTMLDivElement>(null);
   const { state } = call;
   const inCall = IN_CALL.has(state.status);
@@ -57,17 +87,45 @@ export function CallView({ who, active, requestPass, className }: {
   const { leave } = call;
   useEffect(() => { if (!active && inCall) void leave(); }, [active, inCall, leave]);
 
+  // Started on the tick after mounting, once. In development React runs every
+  // effect twice, and in between the call's own unmount cleanup would mark a
+  // call already under way as finished, stranding it half joined. So the start
+  // waits on a timer that this effect's cleanup cancels, and only the mount
+  // that stays fires it. The ref keeps it to one start for the life of the screen.
+  const { start } = call;
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!autoStart || autoStarted.current) return;
+    const timer = setTimeout(() => { autoStarted.current = true; void start(); }, 0);
+    return () => clearTimeout(timer);
+  }, [autoStart, start]);
+
   const line = statusLine(state, who);
-  const canStart = state.status === 'idle' || state.status === 'ended' || state.status === 'failed';
+  const canStart = (state.status === 'idle' && !autoStart) || state.status === 'ended' || state.status === 'failed';
   return (
     <div data-slot="call-view" className={cn('grid gap-3', className)}>
       <div ref={frame} className="relative h-full min-h-48 overflow-hidden rounded-xl bg-band text-white">
         <video ref={call.remoteVideoRef} autoPlay playsInline hidden={!inCall} className="size-full object-cover" />
         <audio ref={call.remoteAudioRef} autoPlay hidden />
-        <video
-          ref={call.localVideoRef} autoPlay playsInline muted hidden={!inCall} aria-label="Your camera"
-          className="absolute right-3 bottom-3 w-28 -scale-x-100 rounded-md shadow-pop max-phone:w-20"
-        />
+        {state.status === 'idle' && (
+          <div data-slot="call-idle" className="absolute inset-0 grid place-content-center justify-items-center gap-3 px-6 text-center">
+            <VideoIcon strokeWidth={2} className="size-12 text-band-muted" aria-hidden="true" />
+            <p className="text-body">{idleLine(who, autoStart)}</p>
+          </div>
+        )}
+        {inCall && state.peerCameraOff && <CameraOff label={who === 'gp' ? 'The patient’s camera is off' : 'Your GP’s camera is off'} />}
+        {inCall && state.peerMicMuted && (
+          <MutedBadge label={who === 'gp' ? 'The patient is muted' : 'Your GP is muted'} className="bottom-3 left-3" />
+        )}
+        <div hidden={!inCall} className="absolute right-3 bottom-3 aspect-[4/3] w-28 overflow-hidden rounded-md bg-band shadow-pop max-phone:w-20">
+          {/* A camera shows you as a mirror would; the demo's drawn picture, with its label, is not a reflection. */}
+          <video
+            ref={call.localVideoRef} autoPlay playsInline muted aria-label="Your camera"
+            className={cn('size-full object-cover', !demoPatient && '-scale-x-100')}
+          />
+          {!state.cameraOn && <CameraOff small label="Your camera is off" />}
+          {!state.micOn && <MutedBadge label="You are muted" className="top-1 left-1" />}
+        </div>
         <div className="absolute top-3 left-3 grid justify-items-start gap-2">
           {state.badge === 'verified' && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-fine font-semibold">
@@ -80,17 +138,19 @@ export function CallView({ who, active, requestPass, className }: {
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {canStart && (
-          <Button type="button" size="sm" onClick={() => void call.start()}>
+          <Button type="button" size="lg" onClick={() => void call.start()}>
             <VideoIcon strokeWidth={2} aria-hidden="true" />
             {state.status === 'idle' ? (who === 'gp' ? 'Start video' : 'Join video') : 'Rejoin video'}
           </Button>
         )}
         {inCall && (
           <>
-            <Button type="button" size="sm" variant="secondary" onClick={() => void call.toggleMic()}>
-              {state.micOn ? <MicIcon strokeWidth={2} aria-hidden="true" /> : <MicOffIcon strokeWidth={2} aria-hidden="true" />}
-              {state.micOn ? 'Mute' : 'Unmute'}
-            </Button>
+            {!demoPatient && (
+              <Button type="button" size="sm" variant="secondary" onClick={() => void call.toggleMic()}>
+                {state.micOn ? <MicIcon strokeWidth={2} aria-hidden="true" /> : <MicOffIcon strokeWidth={2} aria-hidden="true" />}
+                {state.micOn ? 'Mute' : 'Unmute'}
+              </Button>
+            )}
             <Button type="button" size="sm" variant="secondary" onClick={() => void call.toggleCamera()}>
               {state.cameraOn ? <VideoIcon strokeWidth={2} aria-hidden="true" /> : <VideoOffIcon strokeWidth={2} aria-hidden="true" />}
               {state.cameraOn ? 'Camera off' : 'Camera on'}

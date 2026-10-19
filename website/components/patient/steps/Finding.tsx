@@ -4,7 +4,7 @@ import { StatTile } from '@/components/app/StatTile';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { NO_GP_ONLINE } from '@/lib/booking-flow';
-import { TODAY_LABEL } from '@/lib/fixtures';
+import { todayLabel } from '@/lib/booking';
 import { money, ordinal } from '@/lib/format';
 import { formatEta } from '@/lib/live';
 import { Announce } from '../Announce';
@@ -26,7 +26,10 @@ export function Finding() {
   const amount = money(state.quote ?? 0);
   const total = state.queue?.totalSeconds ?? 0;
   const progress = total > 0 ? Math.round((1 - state.etaSeconds / total) * 100) : 0;
-  const wait = formatEta(state.etaSeconds);
+  // At the front with the estimate spent, the queue waits for the GP to accept
+  // (the investor demo's real doctor), so there is no number left to show.
+  const atFront = state.etaSeconds === 0;
+  const wait = atFront ? 'Any moment now' : formatEta(state.etaSeconds);
 
   return (
     <FlowStep
@@ -42,7 +45,7 @@ export function Finding() {
           description={`Your place goes to the next patient. The ${amount} hold on your card is released in full, so nothing is charged.`}
           cancelLabel="Keep waiting"
           confirmLabel="Cancel request"
-          onConfirm={() => act({ type: 'cancel', id: nextId, date: TODAY_LABEL })}
+          onConfirm={() => act({ type: 'cancel', id: nextId, date: todayLabel() })}
         />
       }
     >
@@ -53,10 +56,10 @@ export function Finding() {
       <Progress
         value={progress}
         aria-label="Progress to the front of the queue"
-        getValueLabel={() => `${wait} left`}
+        getValueLabel={() => (atFront ? wait : `${wait} left`)}
       />
       <p className="text-body">{`${amount} held on your card. Taken only when a GP accepts.`}</p>
-      <Announce text={`${ordinal(state.position)} in the queue, ${wait}.`} />
+      <Announce text={`${ordinal(state.position)} in the queue, ${atFront ? 'any moment now' : wait}.`} />
       <ProtoNote>
         <ProtoAction onClick={() => act({ type: 'skipWait', now: Date.now() })}>Prototype: skip the wait</ProtoAction>
         <ProtoAction onClick={() => act({ type: 'skipWait', now: Date.now(), gps: NO_GP_ONLINE })}>Prototype: no GP available</ProtoAction>

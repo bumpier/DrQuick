@@ -108,7 +108,8 @@ export function PasswordForm({ minLength }: { minLength: number }) {
       <Field id="confirm-password" label="Type it again">
         <Input id="confirm-password" type="password" autoComplete="new-password" value={values.confirm} onChange={set('confirm')} />
       </Field>
-      <p role="alert" aria-live="polite" className="min-h-[1.5em] text-body font-semibold text-error">{error}</p>
+      {/* Always present for screen readers (a live region must exist before it speaks), but takes no height until there is an error. */}
+      <p role="alert" aria-live="polite" className="text-body font-semibold text-error empty:sr-only">{error}</p>
       <div>
         <Button type="submit" variant="secondary" disabled={pending || !filled} aria-busy={pending || undefined}>Change password</Button>
       </div>

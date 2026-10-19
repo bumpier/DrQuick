@@ -24,6 +24,9 @@ const notInPrototype = (description: string) => toast('Not in the prototype', { 
 export function Account() {
   const { account, identityVerified, saved, consent, setConsent, card } = usePatient();
   const { shown } = useFigures();
+  // A summary goes to a practice. With none on file there is nothing to share
+  // with, so the switch is off and cannot be turned on until one is saved.
+  const sharing = saved !== null && consent;
 
   return (
     <div data-screen="account" className={NARROW_PAGE}>
@@ -31,14 +34,18 @@ export function Account() {
       <div className="grid gap-10">
         <section aria-labelledby="you-title" className="grid gap-3">
           <h2 id="you-title" className={SECTION}>You</h2>
-          <Facts
-            items={[
-              ['Reference', account.ref],
-              ['Email', account.email],
-              ['Member since', shown(account.memberSince)],
-              ['Available in', 'England only'],
-            ]}
-          />
+          <Card size="sm">
+            <CardContent className="[&_[data-slot=facts]>div:last-child]:border-b-0">
+              <Facts
+                items={[
+                  ['Reference', account.ref],
+                  ['Email', account.email],
+                  ['Member since', shown(account.memberSince)],
+                  ['Available in', 'England only'],
+                ]}
+              />
+            </CardContent>
+          </Card>
         </section>
 
         <section aria-labelledby="identity-title" className="grid gap-3">
@@ -66,10 +73,10 @@ export function Account() {
                 <div className="min-w-0">
                   <Label htmlFor="share-summaries">Share summaries</Label>
                   <p aria-live="polite" className="mt-1 text-fine text-ink-2">
-                    {consent ? 'Each consultation summary is sent here.' : 'Nothing is sent. A GP may be unable to prescribe some treatments without your records.'}
+                    {sharing ? 'Each consultation summary is sent here.' : !saved ? 'Nothing is sent until you save a practice.' : 'Nothing is sent. A GP may be unable to prescribe some treatments without your records.'}
                   </p>
                 </div>
-                <Switch id="share-summaries" checked={consent} onCheckedChange={setConsent} />
+                <Switch id="share-summaries" checked={sharing} disabled={!saved} onCheckedChange={setConsent} />
               </div>
             </CardContent>
           </Card>

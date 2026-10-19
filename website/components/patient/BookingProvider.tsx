@@ -24,11 +24,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useLiveInterval } from '@/hooks/use-live-interval';
 import { useDataMode } from '@/lib/data-mode';
+import { demoMode } from '@/lib/demo';
 import {
   BOOKING_ROOT, bookingHref, bookingReducer, bookingScreenFromPath, initialBooking, isLive,
   type BookingAction, type BookingState,
 } from '@/lib/booking-flow';
 import { usePatient } from './PatientProvider';
+import { useDemoBooking } from './useDemoBooking';
 
 export const READY_TOAST_ID = 'gp-ready';
 export const READY_TITLE = 'Your GP is ready — Dr Quick';
@@ -71,8 +73,10 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { dispatch({ type: 'setMode', seeded, now: Date.now() }); }, [seeded]);
 
+  // In the investor demo a real doctor decides the match (useDemoBooking), so
+  // a queue that has run its course waits at the front for them.
   useLiveInterval(
-    (now) => dispatch({ type: 'tickQueue', now }),
+    (now) => dispatch({ type: 'tickQueue', now, waitForDoctor: demoMode() }),
     1000,
     state.screen === 'finding' && state.queue !== null,
   );
@@ -89,11 +93,14 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (queueEnd === null) return;
     const id = window.setTimeout(
-      () => dispatch({ type: 'tickQueue', now: Math.max(Date.now(), queueEnd) }),
+      () => dispatch({ type: 'tickQueue', now: Math.max(Date.now(), queueEnd), waitForDoctor: demoMode() }),
       Math.max(0, queueEnd - Date.now()),
     );
     return () => window.clearTimeout(id);
   }, [queueEnd]);
+
+  // The demo's request to the doctor portal. Outside demo mode it does nothing.
+  useDemoBooking(state, dispatch);
 
   const [clock, setClock] = useState<number | null>(null);
   useLiveInterval(setClock, 1000, state.screen === 'call' && state.callStartedAt !== null);
@@ -122,6 +129,18 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   });
   useEffect(() => { if (state.matchedAt !== null) announce(); }, [state.matchedAt]);
   useEffect(() => { if (state.screen !== 'ready') toast.dismiss(READY_TOAST_ID); }, [state.screen]);
+  // Back in front of the ready screen (the tab shown again, or the booking
+  // opened from another patient page), the screen is the interrupt, and the
+  // toast would only cover its heading on a phone. Anywhere else it stays.
+  const backOnReady = useEffectEvent(() => {
+    if (onBookingRoute && state.screen === 'ready' && !document.hidden) toast.dismiss(READY_TOAST_ID);
+  });
+  useEffect(() => {
+    const onVisibility = () => backOnReady();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+  useEffect(() => { backOnReady(); }, [onBookingRoute]);
 
   // The tab title is the only part of the interrupt a patient sees once they
   // have looked away, so it holds for as long as the GP is waiting. It is a
@@ -134,6 +153,11 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     const title = document.createElement('title');
     title.dataset.slot = 'ready-title';
     title.textContent = READY_TITLE;
+    // React 19 adopts the first <title> without an itemprop when it hydrates
+    // Next's metadata boundary, takes ownership of it, and then throws when
+    // our cleanup detaches it. An itemprop makes it unadoptable; browsers
+    // still show the first <title> in <head>.
+    title.setAttribute('itemprop', 'name');
     const keepFirst = () => { if (document.head.firstElementChild !== title) document.head.prepend(title); };
     keepFirst();
     const observer = new MutationObserver(keepFirst);

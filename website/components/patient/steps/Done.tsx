@@ -4,14 +4,13 @@ import Link from 'next/link';
 import { Facts } from '@/components/app/Facts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { callLength, recordLength } from '@/lib/booking';
 import { money } from '@/lib/format';
 import { useBooking } from '../BookingProvider';
 import { FlowStep } from '../FlowStep';
 import { NothingYet } from '../NothingYet';
 import { usePatient } from '../PatientProvider';
 import { RateConsultation } from '../RateConsultation';
-
-const minutesLabel = (n: number) => `${n} minute${n === 1 ? '' : 's'}`;
 
 // The receipt, and the end. A seeded landing on this URL previews the receipt
 // the worked example would leave, but a URL never writes history, so only a
@@ -23,9 +22,9 @@ export function Done() {
 
   const record = state.record;
   const preview = !record && state.seeded && state.gp
-    ? { id: nextId, gp: state.gp.ref, minutes: Math.max(1, Math.round(state.seconds / 60)), cost: state.quote ?? 0 }
+    ? { id: nextId, gp: state.gp.ref, length: callLength(state.seconds), cost: state.quote ?? 0 }
     : null;
-  const receipt = record ? { id: record.id, gp: record.gp ?? '', minutes: record.minutes, cost: record.cost } : preview;
+  const receipt = record ? { id: record.id, gp: record.gp ?? '', length: recordLength(record), cost: record.cost } : preview;
   if (!receipt) return <NothingYet screen="done" title="Nothing to show yet" />;
 
   return (
@@ -46,7 +45,7 @@ export function Done() {
             items={[
               ['Reference', receipt.id],
               ['GP', receipt.gp],
-              ['Length', minutesLabel(receipt.minutes)],
+              ['Length', receipt.length],
               ['Paid', money(receipt.cost)],
               ['Recording', 'Not recorded'],
             ]}

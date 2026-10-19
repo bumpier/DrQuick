@@ -7,6 +7,8 @@ import { ROLE_SCRIPT } from '@/lib/role-script';
 // injected there could read the keys, so no inline script runs unless Next has
 // nonced it for this response, or it is the role script, allowed by its hash.
 // proxy.ts sets it per request; next.config.ts sends no other policy there.
+// The demo deployment's patient prototype is prerendered, so it cannot be
+// nonced: it gets prerenderedCallCsp below instead.
 //
 // Inline styles stay allowed: Radix and sonner set style attributes, and a
 // style cannot read a key. Trusted Types is reported, not yet enforced
@@ -41,6 +43,23 @@ export function livekitOrigin(url: string | undefined): string | null {
 export function doctorCsp({ nonce, livekitOrigin: media, dev }: { nonce: string; livekitOrigin: string | null; dev: boolean }): string {
   const script = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'", ROLE_SCRIPT_HASH, ...(dev ? ["'unsafe-eval'"] : [])];
   const connect = ["'self'", ...(media ? [media, media.replace(/^wss:/, 'https:')] : []), ...(dev ? ['ws:'] : [])];
+  return policy(script, connect);
+}
+
+/**
+ * The policy of a call screen whose page is prerendered at build: the patient
+ * prototype in the demo deployment (proxy.ts). Next nonces scripts only when it
+ * renders a page for a request, so a nonce policy there would block every
+ * script the page has. Its scripts run as on every other prerendered page of
+ * the site ('self' and inline, next.config.ts); everything else is the
+ * portal's: the media server and nothing more to connect to, same-origin
+ * workers, no plugins, never framed.
+ */
+export function prerenderedCallCsp({ livekitOrigin: media }: { livekitOrigin: string | null }): string {
+  return policy(["'self'", "'unsafe-inline'"], ["'self'", ...(media ? [media, media.replace(/^wss:/, 'https:')] : [])]);
+}
+
+function policy(script: readonly string[], connect: readonly string[]): string {
   return [
     "default-src 'self'",
     `script-src ${script.join(' ')}`,

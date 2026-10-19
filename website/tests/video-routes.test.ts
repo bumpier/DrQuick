@@ -16,6 +16,7 @@ import { NextRequest } from 'next/server';
 import { setDb, type DB } from '@/lib/db';
 import { consultationCalls, consultations, gps, rateLimits } from '@/lib/db/schema';
 import { DOCTOR_COOKIE, signDoctorSession } from '@/lib/doctor-auth';
+import { DEMO_COOKIE, signDemoSession } from '@/lib/demo/session';
 import { splitPrice } from '@/lib/finance/commission';
 import { hashKey } from '@/lib/rate-limit';
 import { ensureRoom } from '@/lib/video/livekit';
@@ -144,6 +145,61 @@ describe('POST /dev/call', () => {
     vi.stubEnv('DATABASE_URL', 'postgres://user:pass@db.example.com:5432/drquick');
     const remote = await devCall();
     expect([remote.status, await remote.text()]).toEqual([403, JSON.stringify({ error: 'not_local' })]);
+  });
+
+  // The real site, and a production server with only one of the two flags.
+  test('is a 404 in production unless it is the demo deployment', async () => {
+    await signedInDoctor();
+    vi.stubEnv('NODE_ENV', 'production');
+    for (const [demo, deployment] of [['', ''], ['1', ''], ['', '1']]) {
+      vi.stubEnv('NEXT_PUBLIC_DEMO', demo);
+      vi.stubEnv('DEMO_DEPLOYMENT', deployment);
+      expect((await devCall('demo.drquick.co.uk')).status, `${demo}|${deployment}`).toBe(404);
+      expect((await devCall()).status, `${demo}|${deployment}`).toBe(404);
+    }
+    expect(await db.select().from(consultationCalls)).toHaveLength(0);
+  });
+
+  // demo.drquick.co.uk: the passcode session from this site, then a database
+  // named for the demo on this machine; never a loopback Host.
+  describe('in the demo deployment', () => {
+    const at = (headers: Record<string, string> = {}) =>
+      devCallRoute(post('https://demo.drquick.co.uk/dev/call', { headers: { host: 'demo.drquick.co.uk', ...headers } }));
+    const session = () => `${DEMO_COOKIE}=${signDemoSession()}`;
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('NEXT_PUBLIC_DEMO', '1');
+      vi.stubEnv('DEMO_DEPLOYMENT', '1');
+      vi.stubEnv('DEMO_PASSCODE', 'river-otter-harbour-42');
+      vi.stubEnv('DEMO_SESSION_SECRET', 'k'.repeat(40));
+      vi.stubEnv('DATABASE_URL', 'postgres://u:p@127.0.0.1:5432/drquick_demo');
+    });
+
+    test('gives the patient’s pass with the passcode session', async () => {
+      await signedInDoctor();
+      const response = await at({ cookie: session(), 'sec-fetch-site': 'same-origin' });
+      expect(response.status).toBe(200);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      const [row] = await db.select().from(consultationCalls);
+      expect((await response.json()).identity).toBe(row.patientIdentity);
+    });
+
+    test('refuses without the session, from another site, and against the real database, before any call opens', async () => {
+      await signedInDoctor();
+      for (const response of [await at(), await at({ cookie: `${DEMO_COOKIE}=forged` }), await at({ cookie: session(), 'sec-fetch-site': 'cross-site' })]) {
+        expect([response.status, await response.json()]).toEqual([403, { error: 'demo_locked' }]);
+      }
+      const signedBefore = session();
+      vi.stubEnv('DATABASE_URL', 'postgres://u:p@127.0.0.1:5432/drquick');
+      const real = await at({ cookie: signedBefore });
+      expect([real.status, await real.json()]).toEqual([403, { error: 'demo_locked' }]);
+      expect(await db.select().from(consultationCalls)).toHaveLength(0);
+    });
+
+    test('a loopback Host is no way around the session', async () => {
+      await signedInDoctor();
+      expect((await devCall('localhost:3002')).status).toBe(403);
+    });
   });
 });
 

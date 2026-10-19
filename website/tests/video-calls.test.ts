@@ -20,7 +20,7 @@ import { completeConsultation, markNoShow } from '@/lib/doctor/shift';
 import { splitPrice } from '@/lib/finance/commission';
 import { closeRoom, ensureRoom, removeParticipant } from '@/lib/video/livekit';
 import {
-  CALL_KEY_LABEL, applyWebhook, devPatientPass, gpPass, openCall, retryRoomDeletes, sweepCalls,
+  CALL_KEY_LABEL, applyWebhook, devPatientPass, devVideoCalls, gpPass, openCall, retryRoomDeletes, sweepCalls,
 } from '@/lib/video/calls';
 import { resetDb, useTestDb } from './helpers/db';
 
@@ -282,6 +282,46 @@ describe('the development patient pass', () => {
     const d = await doctor();
     await consultation(d.id);
     expect(await devPatientPass(db, NOW)).toEqual({ ok: false, reason: 'video_off' });
+    // Nor with only one of the demo deployment's two flags.
+    for (const [demo, deployment] of [['1', ''], ['', '1']]) {
+      vi.stubEnv('NEXT_PUBLIC_DEMO', demo);
+      vi.stubEnv('DEMO_DEPLOYMENT', deployment);
+      expect(await devPatientPass(db, NOW)).toEqual({ ok: false, reason: 'video_off' });
+    }
+    expect(await db.select().from(consultationCalls)).toHaveLength(0);
+  });
+
+  // demo.drquick.co.uk, a production build with both flags; app/dev/call adds
+  // the passcode session and the demo database check in front of it.
+  test('exists in the demo deployment', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_DEMO', '1');
+    vi.stubEnv('DEMO_DEPLOYMENT', '1');
+    const d = await doctor();
+    const c = await consultation(d.id);
+    const result = await devPatientPass(db, NOW);
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.pass.identity).toBe((await callOf(c.id)).patientIdentity);
+  });
+});
+
+describe('whether the patient prototype’s call is real', () => {
+  test('in development, or in the demo deployment, when video calls are set up', () => {
+    const cases: Array<[string, string, string, boolean]> = [
+      ['development', '', '', true],
+      ['production', '', '', false],
+      ['production', '1', '', false],
+      ['production', '', '1', false],
+      ['production', '1', '1', true],
+    ];
+    for (const [nodeEnv, demo, deployment, real] of cases) {
+      vi.stubEnv('NODE_ENV', nodeEnv);
+      vi.stubEnv('NEXT_PUBLIC_DEMO', demo);
+      vi.stubEnv('DEMO_DEPLOYMENT', deployment);
+      expect(devVideoCalls(), `${nodeEnv}|${demo}|${deployment}`).toBe(real);
+    }
+    vi.stubEnv('CALL_KEY_SECRET', '');
+    expect(devVideoCalls()).toBe(false);
   });
 });
 

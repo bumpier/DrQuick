@@ -14,13 +14,13 @@ const STACK = {
   cols: [
     "max-cols:flex max-cols:flex-col max-cols:[&_caption]:order-last max-cols:[&_caption]:block max-cols:[&_thead]:sr-only max-cols:[&_tbody]:block max-cols:[&_tr]:block max-cols:[&_tr]:py-2",
     "max-cols:[&_th[scope=row]]:block max-cols:[&_th[scope=row]]:px-3 max-cols:[&_th[scope=row]]:pt-3 max-cols:[&_th[scope=row]]:pb-1 max-cols:[&_th[scope=row]]:text-left",
-    "max-cols:[&_td]:grid max-cols:[&_td]:grid-cols-[minmax(0,12ch)_1fr] max-cols:[&_td]:gap-3 max-cols:[&_td]:py-1.5 max-cols:[&_td]:whitespace-normal",
+    "max-cols:[&_td]:grid max-cols:[&_td]:grid-cols-[minmax(0,12ch)_1fr] max-cols:[&_td]:gap-3 max-cols:[&_td]:py-1.5 max-cols:[&_td]:whitespace-normal max-cols:[&_td]:text-left",
     "max-cols:[&_td]:before:content-[attr(data-label)] max-cols:[&_td]:before:font-display max-cols:[&_td]:before:text-[11px] max-cols:[&_td]:before:font-semibold max-cols:[&_td]:before:tracking-[.05em] max-cols:[&_td]:before:uppercase max-cols:[&_td]:before:text-ink-2",
   ],
   phone: [
     "max-phone:flex max-phone:flex-col max-phone:[&_caption]:order-last max-phone:[&_caption]:block max-phone:[&_thead]:sr-only max-phone:[&_tbody]:block max-phone:[&_tr]:block max-phone:[&_tr]:py-2",
     "max-phone:[&_th[scope=row]]:block max-phone:[&_th[scope=row]]:px-3 max-phone:[&_th[scope=row]]:pt-3 max-phone:[&_th[scope=row]]:pb-1 max-phone:[&_th[scope=row]]:text-left",
-    "max-phone:[&_td]:grid max-phone:[&_td]:grid-cols-[minmax(0,12ch)_1fr] max-phone:[&_td]:gap-3 max-phone:[&_td]:py-1.5 max-phone:[&_td]:whitespace-normal",
+    "max-phone:[&_td]:grid max-phone:[&_td]:grid-cols-[minmax(0,12ch)_1fr] max-phone:[&_td]:gap-3 max-phone:[&_td]:py-1.5 max-phone:[&_td]:whitespace-normal max-phone:[&_td]:text-left",
     "max-phone:[&_td]:before:content-[attr(data-label)] max-phone:[&_td]:before:font-display max-phone:[&_td]:before:text-[11px] max-phone:[&_td]:before:font-semibold max-phone:[&_td]:before:tracking-[.05em] max-phone:[&_td]:before:uppercase max-phone:[&_td]:before:text-ink-2",
   ],
 } as const

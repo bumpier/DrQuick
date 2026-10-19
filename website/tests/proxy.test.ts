@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { doctorCsp } from '@/lib/csp';
+import * as pageStaticInfo from 'next/dist/build/analysis/get-page-static-info';
+import { getMiddlewareRouteMatcher } from 'next/dist/shared/lib/router/utils/middleware-route-matcher';
+// The real livekitOrigin, watched: the proxy runs on every request, and only a
+// call page needs the media server's origin.
+vi.mock('@/lib/csp', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/lib/csp')>();
+  return { ...real, livekitOrigin: vi.fn(real.livekitOrigin) };
+});
+
+import { doctorCsp, livekitOrigin } from '@/lib/csp';
 import { config, proxy } from '@/proxy';
 import { DOCTOR_NAV, activeNavHref } from '@/components/app/nav';
 
@@ -53,15 +62,33 @@ describe('the doctor portal', () => {
   });
 });
 
-// The patient prototype is matched only for its development-only policy below.
-// Both are matched in any case: next.config.ts leaves them out of its static
-// CSP without regard to case, so a page at /DOCTOR must still get this one.
-test('the proxy runs on the two signed-in areas and the patient prototype, in any case, and nothing else', () => {
-  expect(config.matcher).toEqual([
-    '/admin', '/admin/:path*',
-    '/:root([dD][oO][cC][tT][oO][rR])', '/:root([dD][oO][cC][tT][oO][rR])/:path*',
-    '/:root([pP][aA][tT][iI][eE][nN][tT])', '/:root([pP][aA][tT][iI][eE][nN][tT])/:path*',
-  ]);
+// Every page and route, because the demo deployment's passcode gate stands in
+// front of all of them (lib/demo/session.ts); only the build's static files
+// and the public assets are left out, which the passcode page needs to load.
+// Outside the demo deployment the proxy passes everything else straight
+// through, as it did when it ran only on the two signed-in areas and /patient.
+// Matched the way Next matches it, with its own compiler for the list.
+test('the proxy runs on every path but the build’s static files and the public assets', () => {
+  // Exported by Next at runtime (it compiles the proxy's matcher at build), but
+  // left out of its type declarations.
+  const { getMiddlewareMatchers } = pageStaticInfo as unknown as {
+    getMiddlewareMatchers: (matcher: unknown, nextConfig: unknown) => Parameters<typeof getMiddlewareRouteMatcher>[0];
+  };
+  const matches = getMiddlewareRouteMatcher(getMiddlewareMatchers(config.matcher, {}));
+  const runsOn = (path: string) => matches(path, new NextRequest(`http://localhost${path}`) as never, {});
+  for (const path of [
+    '/', '/about', '/blog/a-post', '/demo-access', '/dev/demo', '/dev/call', '/dev/demo/reset', '/api/waitlist',
+    '/admin', '/admin/login', '/doctor', '/doctor/pulse', '/DOCTOR/login', '/patient', '/patient/book/call', '/PATIENT',
+    '/sitemap.xml', '/brand', '/ASSETS/og.png', '/_next/data/build/index.json',
+  ]) {
+    expect(runsOn(path), path).toBe(true);
+  }
+  for (const path of [
+    '/_next/static/chunks/main.js', '/_next/static/media/demoClock.worker.js', '/_next/image',
+    '/favicon.ico', '/favicon.svg', '/assets/og.png', '/assets/site.webmanifest',
+  ]) {
+    expect(runsOn(path), path).toBe(false);
+  }
 });
 
 // The doctor portal holds the video call's keys, so it gets a nonce-based CSP
@@ -92,6 +119,16 @@ describe('the doctor portal’s CSP', () => {
     expect(csp('/doctor/login')).toContain("connect-src 'self' wss://media.drquick.example https://media.drquick.example;");
     vi.stubEnv('LIVEKIT_URL', "wss://a.example; script-src 'unsafe-inline'");
     expect(csp('/doctor/login')).toContain("connect-src 'self';");
+  });
+
+  test('LIVEKIT_URL is read only for a page that gets a call policy, never for the rest of the site', () => {
+    vi.stubEnv('LIVEKIT_URL', 'wss://media.drquick.example');
+    const parse = vi.mocked(livekitOrigin);
+    parse.mockClear();
+    for (const path of ['/', '/about', '/admin/login', '/patient/book/call', '/api/waitlist', '/dev/demo']) visit(path, 'dq_admin=x');
+    expect(parse).not.toHaveBeenCalled();
+    csp('/doctor/login');
+    expect(parse).toHaveBeenCalledTimes(1);
   });
 
   test('the admin, and the patient prototype in production, are left to next.config.ts', () => {

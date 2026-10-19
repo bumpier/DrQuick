@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { usePersistedQuery } from '@/lib/data-mode';
+import { showPrototypeChrome } from '@/lib/demo';
 
 // Prototype chrome inside a screen, deliberately not the product: the state
 // jumper's monospace on the band fill, shown under the jumper's own rule
@@ -10,7 +11,7 @@ import { usePersistedQuery } from '@/lib/data-mode';
 // nobody online.
 export function ProtoNote({ children }: { children: ReactNode }) {
   const [jumper] = usePersistedQuery('jumper');
-  if (process.env.NODE_ENV === 'production' && jumper !== '1') return null;
+  if (!showPrototypeChrome(jumper)) return null;
   return (
     <p data-slot="proto-note" className="flex flex-wrap items-center justify-center gap-2">
       {children}

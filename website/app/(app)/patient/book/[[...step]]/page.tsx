@@ -20,7 +20,9 @@ export function generateStaticParams(): Array<{ step: string[] }> {
 // client. The URL follows the reducer, never the reverse.
 //
 // The call is real only on a developer's machine with video calls set up,
-// where every page renders on request; a production build bakes in none.
+// where every page renders on request, and in the demo deployment
+// (lib/demo.ts), whose build bakes it in: this page is prerendered, so
+// devVideoCalls() is read at build there. The real site's build bakes in none.
 export default function Page(_props: { params: Promise<{ step?: string[] }> }) {
   return <BookingFlow videoCalls={devVideoCalls()} />;
 }

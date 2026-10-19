@@ -5,13 +5,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV_LINKS } from '@/lib/site';
+import { demoMode } from '@/lib/demo';
 import { cn } from '@/lib/utils';
 
 export function NavLinks({ className, stacked = false }: { className?: string; stacked?: boolean }) {
   const pathname = usePathname() ?? '/';
   return (
     <ul className={cn('flex list-none', stacked ? 'flex-col gap-1' : 'items-center gap-1', className)}>
-      {NAV_LINKS.map(({ href, label }) => {
+      {NAV_LINKS.filter(({ href }) => !(demoMode() && href === '/blog')).map(({ href, label }) => {
         const current = pathname === href || pathname.startsWith(`${href}/`);
         return (
           <li key={href}>

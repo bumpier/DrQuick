@@ -245,7 +245,10 @@ describe('a consultation', () => {
     expect(await completeConsultation(db, d.id, at(610))).toEqual({ ok: true, room: null });
     expect(await consultation(c.id)).toMatchObject({ status: 'completed' });
     expect((await consultation(c.id)).endedAt?.getTime()).toBe(at(610).getTime());
-    expect(await shiftState(db, d.id, at(611))).toEqual({ kind: 'resting', reason: 'finished' });
+    // What the finished card shows: the fee earned and how long it ran (at(10) to at(610)).
+    const rested = await shiftState(db, d.id, at(611));
+    expect(rested).toEqual({ kind: 'resting', reason: 'finished', last: { feePence: expect.any(Number), durationMs: 600_000 } });
+    expect(rested.kind === 'resting' && rested.last?.feePence).toBeGreaterThan(0);
 
     await beat(at(612));
     expect(await backOnline(db, d.id, at(612))).toEqual({ ok: true });
@@ -256,6 +259,33 @@ describe('a consultation', () => {
     const { d, c } = await inConsultation();
     expect(await markNoShow(db, d.id, at(300))).toEqual({ ok: true, room: null });
     expect(await consultation(c.id)).toMatchObject({ status: 'no_show' });
+  });
+
+  test('the finished card carries no earnings after a no-show', async () => {
+    const { d } = await inConsultation();
+    await markNoShow(db, d.id, at(300));
+    expect(await shiftState(db, d.id, at(301))).toEqual({ kind: 'resting', reason: 'finished' });
+  });
+
+  test('an older completed consultation is not reported after a later offer that was not taken', async () => {
+    const { d } = await inConsultation();
+    await completeConsultation(db, d.id, at(610));
+    // A later offer that was withdrawn from them, with the doctor resting.
+    const later = await request({ requestedAt: at(620) });
+    await db.insert(consultationOffers).values({
+      consultationId: later.id, gpId: d.id, status: 'withdrawn', gpFeePence: 1000, offeredAt: at(630), expiresAt: at(678),
+    });
+    expect(await shiftState(db, d.id, at(700))).toEqual({ kind: 'resting', reason: 'finished' });
+  });
+
+  test('a missed offer after an older completed consultation is a missed offer, with no earnings', async () => {
+    const { d } = await inConsultation();
+    await completeConsultation(db, d.id, at(610));
+    const later = await request({ requestedAt: at(620) });
+    await db.insert(consultationOffers).values({
+      consultationId: later.id, gpId: d.id, status: 'expired', gpFeePence: 1000, offeredAt: at(630), expiresAt: at(678),
+    });
+    expect(await shiftState(db, d.id, at(700))).toEqual({ kind: 'resting', reason: 'missed' });
   });
 
   test('only the first of Complete and No-show counts', async () => {

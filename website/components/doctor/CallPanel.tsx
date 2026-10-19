@@ -18,8 +18,8 @@ export function CallPanel() {
   const consultationId = state.kind === 'consultation' && 'consultationId' in state ? String(state.consultationId) : null;
   const active = state.kind === 'consultation';
   return (
-    <Card hidden={!active} className="mt-4" data-slot="call-panel" aria-labelledby="call-panel-title">
-      <CardHeader>
+    <Card hidden={!active} size="sm" className="mb-4" data-slot="call-panel" aria-labelledby="call-panel-title">
+      <CardHeader className="sr-only">
         <CardTitle><h2 id="call-panel-title" className="text-headline-sm">Video call</h2></CardTitle>
       </CardHeader>
       <CardContent>
@@ -28,7 +28,7 @@ export function CallPanel() {
           who="gp"
           active={active}
           requestPass={requestPass}
-          className="[&>div:first-child]:h-[max(420px,calc(100svh-16rem))] max-phone:[&>div:first-child]:h-[60svh]"
+          className="[&>div:first-child]:h-[max(18rem,min(calc(100svh-24rem),40rem))] max-phone:[&>div:first-child]:h-[60svh]"
         />
       </CardContent>
     </Card>

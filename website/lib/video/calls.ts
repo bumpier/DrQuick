@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import type { DB } from '@/lib/db';
 import { appErrors, type CallEventKind, type CallRole } from '@/lib/db/schema';
+import { demoDeployment } from '@/lib/demo';
 import { SealError, open, seal, sealingSecret } from '@/lib/crypto/sealed';
 import { rowsOf } from '@/lib/rate-limit';
 import {
@@ -136,18 +137,23 @@ export async function gpPass(db: DB, gpId: string, now = new Date()): Promise<Pa
   return issuePass(db, config, secret, held.id, 'gp', now);
 }
 
-/** Whether the patient prototype's call is real: a developer's machine with video calls set up. */
+/**
+ * Whether the patient prototype's call is real: a developer's machine, or the
+ * demo deployment (lib/demo.ts), with video calls set up. The patient pages
+ * are prerendered in a production build, so there this is read at build time.
+ */
 export function devVideoCalls(): boolean {
-  return process.env.NODE_ENV === 'development' && videoConfig() !== null && sealingSecret() !== null;
+  return (process.env.NODE_ENV === 'development' || demoDeployment()) && videoConfig() !== null && sealingSecret() !== null;
 }
 
 /**
  * The patient's pass to the live consultation's call, for the patient prototype
- * on a developer's machine. There is no patient sign-in yet, so this never
- * exists in production; app/dev/call adds its own guards.
+ * on a developer's machine and in the demo deployment. There is no patient
+ * sign-in yet, so this never exists on the real site; app/dev/call adds its own
+ * guards (the passcode session, in the demo deployment).
  */
 export async function devPatientPass(db: DB, now = new Date()): Promise<PassResult> {
-  if (process.env.NODE_ENV === 'production') return no('video_off');
+  if (process.env.NODE_ENV === 'production' && !demoDeployment()) return no('video_off');
   const config = videoConfig();
   const secret = sealingSecret();
   if (!config || !secret) return no('video_off');

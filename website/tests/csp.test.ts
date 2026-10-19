@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { ROLE_SCRIPT } from '@/lib/role-script';
-import { ROLE_SCRIPT_HASH, doctorCsp, livekitOrigin, newNonce } from '@/lib/csp';
+import { ROLE_SCRIPT_HASH, doctorCsp, livekitOrigin, newNonce, prerenderedCallCsp } from '@/lib/csp';
 
 // The doctor portal's policy, and in development the patient prototype's: the
 // video call's keys live in these pages, so a script injected there would read
@@ -72,6 +72,18 @@ describe('the policy', () => {
   test('the hash is that of the role script the root layout renders', () => {
     expect(ROLE_SCRIPT_HASH).toBe(`'sha256-${createHash('sha256').update(ROLE_SCRIPT).digest('base64')}'`);
     expect(readFileSync(join(__dirname, '../app/layout.tsx'), 'utf8')).toMatch(/from '@\/lib\/role-script'/);
+  });
+
+  // The demo deployment's patient call screen (proxy.ts): its pages are
+  // prerendered at build, so Next can nonce none of their scripts, and a
+  // nonce policy would block every one. Their scripts run as on every other
+  // prerendered page; everything else is the portal's.
+  test('for a prerendered call screen: inline scripts as on every static page, the portal’s policy otherwise', () => {
+    const d = directives(prerenderedCallCsp({ livekitOrigin: MEDIA }));
+    expect(d['script-src']).toEqual(["'self'", "'unsafe-inline'"]);
+    const portal = directives(doctorCsp({ nonce: NONCE, livekitOrigin: MEDIA, dev: false }));
+    expect({ ...d, 'script-src': null }).toEqual({ ...portal, 'script-src': null });
+    expect(directives(prerenderedCallCsp({ livekitOrigin: null }))['connect-src']).toEqual(["'self'"]);
   });
 
   test('a nonce is 128 random bits, fresh every time', () => {

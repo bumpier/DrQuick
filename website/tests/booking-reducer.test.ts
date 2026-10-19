@@ -268,6 +268,60 @@ describe('the forks', () => {
   });
 });
 
+/* The investor demo (lib/demo.ts): a real doctor in the portal takes the
+   request, so the queue waits for them instead of resolving on its own, and
+   the doctor's Complete ends the call. */
+describe('the demo: the doctor decides the match and the end', () => {
+  const queued = () => run(seeded(), ...ANSWERS, { type: 'authorise', now: T0 });
+
+  test('waitForDoctor holds at the front of the queue, on finding, instead of resolving', () => {
+    const state = queued();
+    expect(run(state, { type: 'tickQueue', now: T0 + 45_000, waitForDoctor: true })).toMatchObject({ position: 2, etaSeconds: 90 });
+    const held = run(state, { type: 'tickQueue', now: T0 + 135_000, waitForDoctor: true });
+    expect(held).toMatchObject({
+      screen: 'finding', nav: state.nav, position: 1, etaSeconds: 0, gp: null, matchedAt: null,
+      hold: { status: 'authorised', amount: 40 }, queue: state.queue,
+    });
+    expect(bookingReducer(held, { type: 'tickQueue', now: T0 + 600_000, waitForDoctor: true })).toBe(held);
+  });
+
+  test('matchDoctor moves finding to ready with a GP and a captured hold, exactly as the queue would', () => {
+    const held = run(queued(), { type: 'tickQueue', now: T0 + 135_000, waitForDoctor: true });
+    const matched = run(held, { type: 'matchDoctor', now: T0 + 140_000 });
+    expect(matched).toMatchObject({
+      screen: 'ready', nav: held.nav + 1, gp: { ref: 'GP-002' }, hold: { status: 'captured', amount: 40 },
+      queue: null, position: 1, etaSeconds: 0, matchedAt: T0 + 140_000,
+    });
+    expect(run(queued(), { type: 'matchDoctor', now: T0 + 140_000 })).toEqual(run(queued(), { type: 'tickQueue', now: T0 + 140_000 }));
+    // Before the estimate runs out too: the doctor accepted, so the wait is over.
+    expect(run(queued(), { type: 'matchDoctor', now: T0 + 10_000 })).toMatchObject({ screen: 'ready', matchedAt: T0 + 10_000 });
+  });
+
+  test('matchDoctor is ignored on any other screen', () => {
+    for (const screen of ['quote', 'ready', 'call', 'outcome', 'cancelled', 'no-gp-available'] as const) {
+      const state = seeded(screen);
+      expect(bookingReducer(state, { type: 'matchDoctor', now: T0 })).toBe(state);
+    }
+  });
+
+  test('doctorCompleted after 14 seconds lands on the outcome, not ended-early, with the length fixed', () => {
+    const inCall = run(queued(), { type: 'matchDoctor', now: T0 + 10_000 }, { type: 'join', now: T0 + 20_000 });
+    const done = run(inCall, { type: 'doctorCompleted', now: T0 + 34_000 });
+    expect(done).toMatchObject({ screen: 'outcome', nav: inCall.nav + 1, seconds: 14, callStartedAt: null });
+    expect(run(done, { type: 'complete', id: 'C-0032', date: 'd' }).record).toMatchObject({ status: 'completed', cost: 40 });
+  });
+
+  test('a plain endCall after 14 seconds still ends early', () => {
+    const inCall = run(queued(), { type: 'matchDoctor', now: T0 + 10_000 }, { type: 'join', now: T0 + 20_000 });
+    expect(run(inCall, { type: 'endCall', now: T0 + 34_000 })).toMatchObject({ screen: 'ended-early', seconds: 14 });
+  });
+
+  test('doctorCompleted on a call landing that never started changes nothing', () => {
+    const landing = blank('call');
+    expect(bookingReducer(landing, { type: 'doctorCompleted', now: T0 })).toBe(landing);
+  });
+});
+
 describe('the lock: money moves only by an explicit action', () => {
   test('a URL cannot move a live consultation', () => {
     const live = [
@@ -352,9 +406,11 @@ describe('an action from the wrong screen returns the same object', () => {
     [{ type: 'retryCard' }, 'payment-failed'],
     [{ type: 'tickQueue', now: T0 + 1_000 }, 'finding'],
     [{ type: 'skipWait', now: T0 }, 'finding'],
+    [{ type: 'matchDoctor', now: T0 }, 'finding'],
     [{ type: 'cancel', id: 'C-0032', date: 'd' }, 'finding'],
     [{ type: 'join', now: T0 }, 'ready'],
     [{ type: 'endCall', now: T0 + 300_000 }, 'call'],
+    [{ type: 'doctorCompleted', now: T0 + 300_000 }, 'call'],
     [{ type: 'continueToOutcome' }, 'ended-early'],
     [{ type: 'complete', id: 'C-0032', date: 'd' }, 'outcome'],
     [{ type: 'retry' }, 'no-gp-available'],

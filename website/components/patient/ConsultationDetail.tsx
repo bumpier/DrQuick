@@ -6,6 +6,7 @@
    from the provider; an id nobody holds, or any id after a reload, shows the
    honest placeholder rather than a 404, because the router cannot tell a
    record the patient just made from one that never existed. */
+import type { ComponentProps } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowLeftIcon } from 'lucide-react';
@@ -14,14 +15,26 @@ import { Facts } from '@/components/app/Facts';
 import { PageHeader } from '@/components/app/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { recordLength } from '@/lib/booking';
 import { money } from '@/lib/format';
 import { consultationIdFromPath, type ConsultationRow } from '@/lib/patient';
 import { DASH } from '@/lib/placeholder';
 import { NARROW_PAGE } from './page';
 import { usePatient } from './PatientProvider';
 
-const minutesLabel = (n: number) => `${n} minute${n === 1 ? '' : 's'}`;
 const SECTION = 'mb-3 text-xl leading-[1.3] font-semibold tracking-[-.02em]';
+
+// The facts sit in a white tile like every other block on the page, not bare
+// on the grey ground; the last hairline would only double the tile's edge.
+function FactsTile({ items }: ComponentProps<typeof Facts>) {
+  return (
+    <Card size="sm">
+      <CardContent className="[&_[data-slot=facts]>div:last-child]:border-b-0">
+        <Facts items={items} />
+      </CardContent>
+    </Card>
+  );
+}
 
 function Detail({ record }: { record: ConsultationRow }) {
   const cancelled = record.status === 'cancelled';
@@ -30,21 +43,21 @@ function Detail({ record }: { record: ConsultationRow }) {
     <>
       <PageHeader
         title={record.reason}
-        lead={cancelled ? `${record.date} · cancelled before a GP accepted it` : `${record.date} · ${minutesLabel(record.minutes)} with ${record.gp}`}
+        lead={cancelled ? `${record.date} · cancelled before a GP accepted it` : `${record.date} · ${recordLength(record)} with ${record.gp}`}
       />
-      <Facts
+      <FactsTile
         items={[
           ['Reference', record.id],
           ['Date', record.date],
           ['GP', record.gp ?? 'None — no GP accepted'],
-          ['Length', cancelled ? DASH : minutesLabel(record.minutes)],
+          ['Length', cancelled ? DASH : recordLength(record)],
           ['Recording', cancelled ? 'No call took place' : 'The call was not recorded'],
         ]}
       />
       <section aria-labelledby="outcome-title" className="mt-10">
         <h2 id="outcome-title" className={SECTION}>Outcome</h2>
         {outcome ? (
-          <Facts
+          <FactsTile
             items={[
               ['Prescription', outcome.prescription ? 'Sent to your pharmacy' : 'None issued'],
               ['Referral', outcome.referral ? 'Referred on to your NHS GP' : 'None needed'],
@@ -78,7 +91,7 @@ function Placeholder() {
   return (
     <>
       <PageHeader title="No consultation selected" lead="Pick one from your consultations to see what came out of it." />
-      <Facts
+      <FactsTile
         items={[
           ['Reference', DASH],
           ['Date', DASH],

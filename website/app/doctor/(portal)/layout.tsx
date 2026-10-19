@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { DoctorSidebar } from '@/components/doctor/DoctorSidebar';
 import { CallPanel } from '@/components/doctor/CallPanel';
-import { ConnectionNotice, OfferNotice, ShiftProvider } from '@/components/doctor/ShiftProvider';
+import { ConnectionNotice, ConsultationBar, OfferNotice, ShiftProvider } from '@/components/doctor/ShiftProvider';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Wordmark } from '@/components/Wordmark';
@@ -29,10 +29,14 @@ export default async function PortalLayout({ children }: { children: ReactNode }
           </header>
           <div className="mx-auto w-full max-w-[1080px] px-8 py-10 max-cols:px-4 max-cols:py-6">
             <ShiftProvider initial={initial}>
+              <ConsultationBar />
               <ConnectionNotice />
               <OfferNotice />
-              {children}
+              {/* Above the page, so the video is the first thing in a consultation
+                  and Earnings or Profile open under the bar that leads back to it.
+                  Mounted once here: moving it per page would end the call. */}
               <CallPanel />
+              {children}
             </ShiftProvider>
           </div>
         </SidebarInset>

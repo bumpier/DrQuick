@@ -45,9 +45,11 @@ afterEach(() => {
 
 /* ------------------------------------------------------------ pure helpers */
 
-test('the admin, the prototypes, /dev, unsubscribe links and the API are never tracked', () => {
+// The demo deployment's passcode page is a door, not a page anyone reads: no
+// pageview, and no cookie question before the demo has even opened.
+test('the admin, the prototypes, /dev, the demo’s passcode page, unsubscribe links and the API are never tracked', () => {
   for (const p of ['/', '/pricing', '/blog/some-post', '/administer']) expect(isTrackedPath(p), p).toBe(true);
-  for (const p of ['/admin', '/admin/analytics', '/patient', '/patient/book/x', '/doctor', '/dev/ui', '/unsubscribe/abc', '/api/collect']) {
+  for (const p of ['/admin', '/admin/analytics', '/patient', '/patient/book/x', '/doctor', '/dev/ui', '/demo-access', '/unsubscribe/abc', '/api/collect']) {
     expect(isTrackedPath(p), p).toBe(false);
   }
 });

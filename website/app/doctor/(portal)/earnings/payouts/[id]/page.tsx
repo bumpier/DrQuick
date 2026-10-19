@@ -31,7 +31,7 @@ export default async function PayoutPage({ params }: { params: Promise<{ id: str
   return (
     <>
       <AdminPageHeader title={periodLabel(payout)} description="The consultations this payout covers." back={back} />
-      <KpiRow>
+      <KpiRow className="max-[560px]:grid-cols-1">
         <Kpi label="Amount" value={gbp(payout.amountPence)} />
         <Kpi label="Status" value={payout.paidAt ? `Paid ${fmtDate(payout.paidAt)}` : 'Not yet paid'}>
           <PayoutBadge status={payout.status} />

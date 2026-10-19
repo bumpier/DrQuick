@@ -133,11 +133,17 @@ export type BookingAction =
   | { type: 'setCard'; card: 'ok' | 'declined' }
   | { type: 'authorise'; now: number }
   | { type: 'retryCard' }
-  | { type: 'tickQueue'; now: number; gps?: MatchableGp[] }
+  // waitForDoctor (the investor demo): a real doctor decides the match, so a
+  // queue that has run its course holds at the front instead of resolving.
+  | { type: 'tickQueue'; now: number; gps?: MatchableGp[]; waitForDoctor?: boolean }
   | { type: 'skipWait'; now: number; gps?: MatchableGp[] }
+  // The demo doctor accepted in the portal (components/patient/useDemoBooking.ts).
+  | { type: 'matchDoctor'; now: number }
   | { type: 'cancel'; id: string; date: string }
   | { type: 'join'; now: number }
   | { type: 'endCall'; now: number }
+  // The demo doctor completed the consultation in the portal.
+  | { type: 'doctorCompleted'; now: number }
   | { type: 'continueToOutcome' }
   | { type: 'complete'; id: string; date: string }
   | { type: 'retry' };
@@ -429,13 +435,16 @@ export function bookingReducer(state: BookingState, action: BookingAction): Book
       if (state.screen !== 'finding' || state.queue === null) return state;
       const elapsed = Math.floor((action.now - state.queue.startedAt) / 1000);
       const remaining = Math.max(0, state.queue.totalSeconds - elapsed);
-      if (remaining === 0) return resolve(state, action.now, action.gps);
+      if (remaining === 0 && !action.waitForDoctor) return resolve(state, action.now, action.gps);
       const position = Math.max(1, Math.ceil(remaining / SECONDS_PER_PLACE));
       return position === state.position && remaining === state.etaSeconds ? state : { ...state, position, etaSeconds: remaining };
     }
     case 'skipWait':
       if (state.screen !== 'finding' || state.queue === null) return state;
       return resolve(state, action.now, action.gps);
+    case 'matchDoctor':
+      if (state.screen !== 'finding' || state.queue === null) return state;
+      return resolve(state, action.now);
     case 'cancel': {
       if (state.screen !== 'finding') return state;
       const record = consultationRecord(
@@ -455,6 +464,12 @@ export function bookingReducer(state: BookingState, action: BookingAction): Book
       if (state.screen !== 'call' || state.callStartedAt === null) return state;
       const seconds = Math.max(0, Math.floor((action.now - state.callStartedAt) / 1000));
       return move({ screen: endedEarly(seconds) ? 'ended-early' : 'outcome', seconds, callStartedAt: null });
+    }
+    case 'doctorCompleted': {
+      // The doctor ended it, so it was not cut short, however long it ran.
+      if (state.screen !== 'call' || state.callStartedAt === null) return state;
+      const seconds = Math.max(0, Math.floor((action.now - state.callStartedAt) / 1000));
+      return move({ screen: 'outcome', seconds, callStartedAt: null });
     }
     case 'continueToOutcome':
       if (state.screen !== 'ended-early') return state;

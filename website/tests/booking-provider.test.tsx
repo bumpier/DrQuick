@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { test, expect, vi, beforeEach, describe } from 'vitest';
+import { test, expect, vi, afterEach, beforeEach, describe } from 'vitest';
 import { StrictMode, type MouseEvent, type ReactNode } from 'react';
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
@@ -149,6 +149,15 @@ test('a finished booking is not reopened by a URL: after a cancel, a typed URL s
   expect(account().history[0]).toMatchObject({ id: 'C-0032', status: 'cancelled', cost: 0 });
 });
 
+test('a cancelled request is dated the day it was cancelled, not the fixtures’ day', () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(2026, 9, 19, 14, 5));
+  land('finding', SEEDED);
+  press('Cancel request');
+  fireEvent.click(within(screen.getByRole('dialog', { name: 'Cancel your request?' })).getByRole('button', { name: 'Cancel request' }));
+  expect(account().history[0]).toMatchObject({ status: 'cancelled', date: '19 October 2026' });
+});
+
 describe('the queue runs on the wall clock', () => {
   test('blank: 1st in the queue, still finding at 44s, matched to GP-002 at 45s', () => {
     startClock();
@@ -275,6 +284,47 @@ describe('the toast fires only when the patient is away', () => {
   });
 });
 
+/* Back in front of the ready screen, the screen is the interrupt: the toast
+   would only cover its heading on a phone. Anywhere else it stays, since it
+   is the only way they would know. */
+describe('the toast goes once the patient is back on the ready screen', () => {
+  test('hidden at the match, the toast waits; coming back to the tab showing ready dismisses it', () => {
+    land('finding');
+    act(() => setDocumentHidden(true));
+    press('Prototype: skip the wait');
+    expect(toast).toHaveBeenCalledTimes(1);
+    vi.mocked(toast.dismiss).mockClear();
+    act(() => setDocumentHidden(false));
+    expect(shownScreen()).toBe('ready');
+    expect(toast.dismiss).toHaveBeenCalledWith('gp-ready');
+  });
+
+  test('coming back to the tab on another patient page keeps it', () => {
+    startClock();
+    const { setPath } = land('finding');
+    setPath('/patient');
+    act(() => setDocumentHidden(true));
+    tick(45_000);
+    expect(booking().screen).toBe('ready');
+    expect(toast).toHaveBeenCalledTimes(1);
+    vi.mocked(toast.dismiss).mockClear();
+    act(() => setDocumentHidden(false));
+    expect(toast.dismiss).not.toHaveBeenCalled();
+  });
+
+  test('going from another patient page to the booking, which shows ready, dismisses it', () => {
+    startClock();
+    const { setPath } = land('finding');
+    setPath('/patient');
+    tick(45_000);
+    expect(toast).toHaveBeenCalledTimes(1);
+    vi.mocked(toast.dismiss).mockClear();
+    setPath('/patient/book/ready');
+    expect(shownScreen()).toBe('ready');
+    expect(toast.dismiss).toHaveBeenCalledWith('gp-ready');
+  });
+});
+
 test('the tab title: while the GP waits a ready <title> is kept first in <head>, even over a route title; joining removes it', async () => {
   land('finding');
   expect(readyTitle()).toBeNull();
@@ -293,6 +343,12 @@ test('the tab title: while the GP waits a ready <title> is kept first in <head>,
   expect(shownScreen()).toBe('call');
   expect(readyTitle()).toBeNull();
   expect(document.title).toBe('See a GP — Dr Quick');
+});
+
+test('the ready title is never one React can adopt', () => {
+  land('finding');
+  press('Prototype: skip the wait');
+  expect(readyTitle()?.getAttribute('itemprop')).toBe('name');
 });
 
 // A link opened in a background tab: the page mounts with the document already
@@ -456,5 +512,66 @@ describe('the data mode arrives after mount', () => {
     press('Yes, share with my NHS GP');
     expect(shownScreen()).toBe('quote');
     expect(quoteAmount()).toBe('£40');
+  });
+});
+
+/* The investor demo (lib/demo.ts, components/patient/useDemoBooking.ts): the
+   request goes to the doctor portal, and a real doctor's accept is the match. */
+describe('the investor demo: the doctor in the portal decides the match', () => {
+  const ID = '11111111-1111-4111-8111-111111111111';
+  let status = 'waiting';
+  let fetchMock: ReturnType<typeof vi.fn>;
+  const waitTile = () => root().querySelectorAll('[data-slot="stat-value"]')[1]?.textContent;
+  const flushAsync = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
+
+  beforeEach(() => {
+    status = 'waiting';
+    fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') return Response.json({ consultationId: ID });
+      if (init?.method === 'DELETE') return new Response(null, { status: 204 });
+      return Response.json({ status });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('NEXT_PUBLIC_DEMO', '1');
+  });
+  afterEach(() => { vi.unstubAllEnvs(); });
+
+  test('the queue waits at the front, any moment now, until the doctor accepts', async () => {
+    startClock();
+    land('finding', SEEDED);
+    tick(135_000 + 30_000);
+    expect(shownScreen()).toBe('finding');
+    expect(place()).toBe('1st');
+    expect(waitTile()).toBe('Any moment now');
+    expect(screen.getByRole('progressbar', { name: 'Progress to the front of the queue' })).toBeInTheDocument();
+    await flushAsync(2_000);
+    expect(shownScreen()).toBe('finding');
+    status = 'matched';
+    await flushAsync(2_000);
+    expect(shownScreen()).toBe('ready');
+    expect(booking()).toMatchObject({ gp: { ref: 'GP-002' }, hold: { status: 'captured', amount: 40 } });
+  });
+
+  test('the request ending while the patient waits (a Reset, or the doctor declined) shows no GP available, never an endless wait', async () => {
+    startClock();
+    land('finding', SEEDED);
+    tick(135_000 + 5_000);
+    expect(waitTile()).toBe('Any moment now');
+    status = 'ended';
+    await flushAsync(2_000);
+    expect(shownScreen()).toBe('no-gp-available');
+    expect(booking()).toMatchObject({ hold: { status: 'released', amount: 40, reason: 'no-gp' } });
+    expect(screen.getByRole('link', { name: 'Call 111' })).toHaveAttribute('href', 'tel:111');
+  });
+
+  test('outside demo mode the queue resolves on its own and nothing is sent', async () => {
+    vi.stubEnv('NEXT_PUBLIC_DEMO', '');
+    startClock();
+    land('finding', SEEDED);
+    tick(135_000);
+    expect(shownScreen()).toBe('ready');
+    await flushAsync(10_000);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

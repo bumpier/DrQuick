@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { ChevronRightIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { recordLength } from '@/lib/booking';
 import { money } from '@/lib/format';
 import type { ConsultationRow } from '@/lib/patient';
-
-const minutes = (n: number) => `${n} minute${n === 1 ? '' : 's'}`;
 
 // One consultation wherever consultations are listed: what it was for, when
 // and with whom, and what it cost. Reasons are the patient's own words from
@@ -23,7 +22,7 @@ export function ConsultRow({ consultation: c }: { consultation: ConsultationRow 
           {c.isNew && <Badge>New</Badge>}
         </span>
         <span className="block text-fine text-ink-2">
-          {cancelled ? `${c.date} · Cancelled before it started` : `${c.date} · ${c.gp} · ${minutes(c.minutes)}`}
+          {cancelled ? `${c.date} · Cancelled before it started` : `${c.date} · ${c.gp} · ${recordLength(c)}`}
         </span>
       </span>
       <span className="shrink-0 font-semibold tabular-nums">{c.cost === 0 ? 'No charge' : money(c.cost)}</span>

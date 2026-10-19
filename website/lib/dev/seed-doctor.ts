@@ -1,4 +1,5 @@
-// Demo data for the doctor portal, for a development machine only: one doctor
+// Demo data for the doctor portal, for a development machine (and the demo
+// deployment's own database, through the presenter's Reset): one doctor
 // who can sign in, with a history of consultations, payouts and ratings, a GP
 // sign-up that has not claimed its account yet, and requests waiting to be
 // offered. Reached through the dev-only route app/dev/doctor (`npm run
@@ -10,12 +11,16 @@
 //   the applicant   demo.applicant@example.com
 //   patients        demo-patient-N@example.com, and every consultation of theirs
 //
-// It refuses in production and against a database on another machine. Nothing
-// here is real: the figures are synthetic and the reasons are stock phrases.
+// It refuses in production and against a database on another machine
+// (assertLocal), except in the demo deployment, against the demo's own
+// database. Nothing here is real: the figures are synthetic and the reasons are
+// stock phrases.
 import { randomUUID } from 'node:crypto';
 import { eq, inArray, like, or } from 'drizzle-orm';
 import { hashPassword } from '@/lib/admin-auth';
 import type { DB } from '@/lib/db';
+import { demoDeployment } from '@/lib/demo';
+import { LOOPBACK_HOSTS, databaseHost, demoDatabaseProblem } from '@/lib/demo/database';
 import {
   consultationOffers, consultationRatings, consultations, doctorTokens, gps, patients, payments, payoutItems, payouts,
   waitlistSignups,
@@ -40,21 +45,35 @@ const REASONS = [
   'Cough that will not clear, two weeks', 'Earache since yesterday', 'Headaches most mornings',
   'Itchy eyes and sneezing', 'Stomach cramps after meals',
 ];
-const AGE_BANDS = ['18 to 29', '30 to 39', '40 to 49', '50 to 59', '60 to 69'];
+export const AGE_BANDS = ['18 to 29', '30 to 39', '40 to 49', '50 to 59', '60 to 69'] as const;
 // Mostly fives: what a well-liked doctor's ratings look like.
 const STARS = [5, 5, 5, 5, 5, 5, 4, 4, 4, 3];
 const PRICES = [3200, 3600, 4000, 4400, 4800];
 
 type Tx = Parameters<Parameters<DB['transaction']>[0]>[0];
 
+// Whether demo data may be written here. On a developer's machine: a database
+// on this machine, or PGlite in this process. In production only the demo
+// deployment (lib/demo.ts) may, and only to a database on this machine whose
+// name contains "demo" (docs/superpowers/plans/2026-10-19-live-demo-
+// deployment.md): the real site's database is never one of those, so a demo
+// deployment pointed at it by mistake refuses rather than writes.
 export function assertLocal() {
-  if (process.env.NODE_ENV === 'production') throw new Error('Refusing to write demo data in production.');
+  const deployment = demoDeployment();
+  if (process.env.NODE_ENV === 'production' && !deployment) throw new Error('Refusing to write demo data in production.');
   const url = process.env.DATABASE_URL;
-  if (!url) return; // PGlite, in this process
-  let host = '';
-  try { host = new URL(url).hostname; } catch { /* reported below */ }
-  if (!['localhost', '127.0.0.1', '::1', '[::1]'].includes(host)) {
+  if (!url) {
+    if (deployment) throw new Error('Refusing to write demo data: the demo deployment has no database of its own.');
+    return; // PGlite, in this process
+  }
+  const host = databaseHost(url);
+  if (!LOOPBACK_HOSTS.includes(host)) {
     throw new Error(`Refusing to write demo data to ${host || 'an unknown host'}: only a local database.`);
+  }
+  // The demo deployment's whole rule (lib/demo/database.ts): the same one that
+  // leaves the deployment answering 503 when it fails.
+  if (deployment && demoDatabaseProblem(url) !== null) {
+    throw new Error('Refusing to write demo data to anything but a database whose name, in the path alone, contains "demo".');
   }
 }
 

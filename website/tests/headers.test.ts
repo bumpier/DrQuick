@@ -113,6 +113,35 @@ test('in production the patient prototype keeps the camera off; in development i
   }
 });
 
+// The demo deployment's build (docs/superpowers/plans/2026-10-19-live-demo-
+// deployment.md) is made with NEXT_PUBLIC_DEMO=1. Every response it sends is
+// noindex, static files included, which the proxy does not see; and its
+// patient prototype takes its policy from proxy.ts, which names the media
+// server for the call. The real site's build has neither.
+test('a demo build is noindex everywhere and leaves the patient prototype’s policy to the proxy; the real site is unchanged', async () => {
+  const rules = await nextConfig.headers!();
+  expect(rules.find((r) => r.source === '/(.*)')!.headers.some((h) => h.key === 'X-Robots-Tag')).toBe(false);
+  expect(rules.some((r) => r.source === '/(.*)' && r.headers.some((h) => h.key === 'X-Robots-Tag'))).toBe(false);
+  expect(matches(CSP_SOURCE, '/patient/book/call')).toBe(true);
+
+  vi.stubEnv('NEXT_PUBLIC_DEMO', '1');
+  vi.resetModules();
+  try {
+    const demo = await import('@/next.config');
+    const demoRules = await demo.default.headers!();
+    expect(demoRules.find((r) => r.source === '/(.*)')!.headers).toContainEqual({ key: 'X-Robots-Tag', value: 'noindex, nofollow' });
+    const csp = demoRules.find((r) => r.source === demo.CSP_SOURCE)!;
+    expect(csp.headers).toEqual([{ key: 'Content-Security-Policy', value: PROD_CSP }]);
+    for (const path of ['/patient', '/patient/book/call', '/doctor/login']) expect(matches(demo.CSP_SOURCE, path), path).toBe(false);
+    for (const path of ['/', '/about', '/demo-access', '/dev/demo', '/patients']) expect(matches(demo.CSP_SOURCE, path), path).toBe(true);
+    // The demo patient sends a generated picture and no sound: no camera here either.
+    expect(demoRules.find((r) => r.source === '/patient/:path*')!.headers).toEqual([{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]);
+  } finally {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  }
+});
+
 test('unsubscribe links are noindex', async () => {
   const rules = await nextConfig.headers!();
   for (const path of ['/unsubscribe', '/unsubscribe/:path*']) {

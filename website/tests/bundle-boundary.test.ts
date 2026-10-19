@@ -1,4 +1,4 @@
-import { test, expect, describe } from 'vitest';
+import { test, expect, describe, vi } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 
@@ -179,7 +179,71 @@ describe('no browser code reaches the video call’s server half', () => {
     const { files, unresolved } = walkImports(entries, { serverActionsAsReferences: true });
     expect(unresolved).toEqual([]);
     expect(files.filter((file) => file.startsWith('lib/video/') || file.startsWith('lib/crypto/'))).toEqual([]);
+    // Nor the demo deployment's passcode session and guards (lib/demo.ts, the
+    // switch the screens read, is not under lib/demo/).
+    expect(files.filter((file) => file.startsWith('lib/demo/') || file === 'lib/signed-token.ts')).toEqual([]);
+    expect(files).toContain('lib/demo.ts');
     // The walk reaches the call screen itself, so the check is not vacuous.
     expect(files).toContain('components/call/useEncryptedCall.ts');
+  });
+});
+
+// The demo patient's camera and its worker are for the investor demo only.
+// The hook loads them with a dynamic import behind the build's NEXT_PUBLIC_DEMO
+// flag, so the real site's build drops them; a static import anywhere would put
+// them back in the doctor portal's bundle.
+describe('the demo camera is never imported statically', () => {
+  const sourceFiles = (dir: string): string[] => readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((entry) => {
+    const path = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : sourceFiles(path);
+    return /\.tsx?$/.test(entry.name) ? [path] : [];
+  });
+
+  test('no file statically imports components/call/demoCamera', () => {
+    const files = ['app', 'components', 'lib', 'hooks'].flatMap(sourceFiles);
+    expect(files.length).toBeGreaterThan(100);
+    const offenders = files.filter((file) => {
+      const source = readFileSync(join(ROOT, file), 'utf8');
+      const statics = [...source.matchAll(SPECIFIER_PATTERNS[0]), ...source.matchAll(SPECIFIER_PATTERNS[1])]
+        .filter((m) => !/^\s*import\s+type\b/.test(m[0]) && !/^\s*export\s+type\b/.test(m[0]));
+      return statics.some((m) => /(^|\/)demoCamera$/.test(m[1]));
+    });
+    expect(offenders).toEqual([]);
+  });
+
+  test('the hook loads it on demand', () => {
+    expect(readFileSync(join(ROOT, 'components/call/useEncryptedCall.ts'), 'utf8')).toContain("import('./demoCamera')");
+  });
+
+  // The demo deployment is a production build made with NEXT_PUBLIC_DEMO=1, so
+  // the gate is that flag, which Next inlines at build: a build without it (the
+  // real site) drops the branch, the camera and its worker; a NODE_ENV gate
+  // would drop them from the demo deployment's build as well.
+  // Next inlines a NEXT_PUBLIC_ variable only when it is set: unset, the gate
+  // stays a runtime comparison and the bundler keeps the import, the camera and
+  // its worker. next.config.ts therefore defines it in every build, as '' when
+  // it is not set, so the real site's gate folds to false and the branch goes.
+  test('every build defines the demo flag, so the gate is a constant the bundler can fold', async () => {
+    vi.stubEnv('NEXT_PUBLIC_DEMO', undefined as unknown as string);
+    delete process.env.NEXT_PUBLIC_DEMO;
+    vi.resetModules();
+    try {
+      const real = (await import('@/next.config')).default;
+      expect(real.env).toHaveProperty('NEXT_PUBLIC_DEMO', '');
+      vi.stubEnv('NEXT_PUBLIC_DEMO', '1');
+      vi.resetModules();
+      const demo = (await import('@/next.config')).default;
+      expect(demo.env).toHaveProperty('NEXT_PUBLIC_DEMO', '1');
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  });
+
+  test('the import sits behind the build’s demo flag, and nothing else decides the build', () => {
+    const source = readFileSync(join(ROOT, 'components/call/useEncryptedCall.ts'), 'utf8');
+    const gate = source.match(/if \(([^)]*)\) \{\s*const \{ createDemoCamera \} = await import\('\.\/demoCamera'\)/);
+    expect(gate?.[1]).toBe("process.env.NEXT_PUBLIC_DEMO === '1' && demoPatient");
+    expect(source.match(/import\('\.\/demoCamera'\)/g)).toHaveLength(1);
   });
 });

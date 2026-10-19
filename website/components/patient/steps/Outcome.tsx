@@ -3,9 +3,8 @@
 import { Facts } from '@/components/app/Facts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatClock, outcomeFor } from '@/lib/booking';
+import { formatClock, outcomeFor, todayLabel } from '@/lib/booking';
 import { complaintLabel } from '@/lib/booking-flow';
-import { TODAY_LABEL } from '@/lib/fixtures';
 import { useBooking } from '../BookingProvider';
 import { FlowStep } from '../FlowStep';
 import { NothingYet } from '../NothingYet';
@@ -39,7 +38,7 @@ export function Outcome() {
       status={<RequestSummary />}
       statusOnPhone={false}
       dock={
-        <Button size="lg" className="min-h-13 w-full" onClick={() => act({ type: 'complete', id: nextId, date: TODAY_LABEL })}>
+        <Button size="lg" className="min-h-13 w-full" onClick={() => act({ type: 'complete', id: nextId, date: todayLabel() })}>
           Continue
         </Button>
       }

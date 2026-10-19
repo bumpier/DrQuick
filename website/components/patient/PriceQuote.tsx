@@ -11,14 +11,14 @@ export function PriceQuote({ amount, wait }: { amount: number; wait: string }) {
   return (
     <Card data-slot="price-quote">
       <CardContent className="grid gap-5">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-5">
           <div className="grid min-w-0 content-start gap-1">
             <span data-slot="quote-amount" className="font-display text-4xl leading-none font-bold tracking-[-.03em] tabular-nums">
               {money(amount)}
             </span>
             <span className="text-fine text-ink-2">Consultation and any prescription you need</span>
           </div>
-          <StatTile size="sm" value={wait} label="Estimated wait" />
+          <StatTile size="sm" value={wait} label="Estimated wait" className="border-t border-rule pt-5 [&_[data-slot=stat-value]]:whitespace-nowrap" />
         </div>
         <p className="text-body text-ink-2">{PRICE.note}</p>
       </CardContent>

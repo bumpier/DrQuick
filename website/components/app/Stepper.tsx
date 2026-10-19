@@ -35,7 +35,11 @@ export function Stepper({ steps, label = 'Onboarding steps', className, labels =
               // share the rail and a long one must clip. Below it only the
               // current label renders, and its own sixth of 358px would clip it
               // to "Regi…" — so there it overflows its cell, which is empty.
-              'mt-2 block whitespace-nowrap text-fine sm:truncate',
+              'mt-2 block whitespace-nowrap text-fine',
+              // With every label showing, a long one must clip. With only the
+              // current one showing, its neighbours' cells are empty, so it
+              // overflows into them and is never cut ("Sympto…" at 1440).
+              labels === 'all' && 'sm:truncate',
               step.status === 'current' ? 'font-semibold text-ink' : cn('text-ink-2 max-phone:sr-only', labels === 'current' && 'sr-only'),
             )}
           >
