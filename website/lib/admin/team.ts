@@ -154,8 +154,21 @@ async function issueLink(db: DB, actor: Admin, member: AccountRow, now: Date): P
     return { ok: true, id: member.id, delivery: 'sent' };
   }
   if (member.status === 'invited') {
-    await db.delete(adminTokens).where(others);
-    return { ok: true, id: member.id, delivery: 'shown', url };
+    // The status was read before the email attempt, which can take seconds. If
+    // the person spent a link meanwhile they are active now, and a link shown
+    // on screen would be a way into their account: withdraw it instead. The row
+    // lock orders this against setPasswordWithLink, which locks it first too.
+    const stillInvited = await db.transaction(async (tx) => {
+      const [current] = await tx.select({ status: adminUsers.status }).from(adminUsers)
+        .where(eq(adminUsers.id, member.id)).for('update');
+      if (current?.status !== 'invited') {
+        await tx.delete(adminTokens).where(eq(adminTokens.tokenHash, tokenHash));
+        return false;
+      }
+      await tx.delete(adminTokens).where(others);
+      return true;
+    });
+    return stillInvited ? { ok: true, id: member.id, delivery: 'shown', url } : { ok: false, error: 'not_sent' };
   }
   // An unsent reset is withdrawn and the earlier link keeps working, so a mail
   // outage cannot cost a person the only link they have.
@@ -188,17 +201,24 @@ export async function setPasswordWithLink(db: DB, token: string, password: strin
   if (!token) return { ok: false, error: 'invalid_link' };
   const passwordHash = hashPassword(password);
 
+  // Lock order matches removeMember: the person's row first, then their links.
+  const [found] = await db.select({ id: adminTokens.adminUserId }).from(adminTokens).where(live(digest(token), now));
+  if (!found) return { ok: false, error: 'invalid_link' };
+
   return db.transaction(async (tx) => {
+    const [row] = await tx.select().from(adminUsers).where(eq(adminUsers.id, found.id)).for('update');
+    if (!row || row.status === 'removed') return { ok: false, error: 'invalid_link' } as const;
+
     const [spent] = await tx.update(adminTokens).set({ usedAt: now }).where(live(digest(token), now))
       .returning({ id: adminTokens.adminUserId });
     if (!spent) return { ok: false, error: 'invalid_link' } as const;
 
-    const [row] = await tx.select().from(adminUsers).where(eq(adminUsers.id, spent.id));
-    if (!row || row.status === 'removed') return { ok: false, error: 'invalid_link' } as const;
-
     const [updated] = await tx.update(adminUsers)
       .set({ passwordHash, status: 'active', sessionEpoch: sql`${adminUsers.sessionEpoch} + 1` })
       .where(eq(adminUsers.id, row.id)).returning();
+    // Once a link is spent no other may be: one still unused (a reset sent
+    // meanwhile, or a link shown to an Admin) would be a second way in.
+    await tx.delete(adminTokens).where(and(eq(adminTokens.adminUserId, row.id), isNull(adminTokens.usedAt)));
     return { ok: true, member: toMember(updated), accepted: row.status === 'invited' } as const;
   });
 }

@@ -182,6 +182,23 @@ describe('team accounts', () => {
     expect(await verifyCredentials('editor@example.com', 'another password here')).toBeNull();
   });
 
+  test('a backstop address costs the same database lookup as any other, so timing does not tell them apart', async () => {
+    const select = vi.spyOn(db, 'select');
+    await verifyCredentials('editor@example.com', 'correct horse battery');
+    const backstop = select.mock.calls.length;
+    select.mockClear();
+    await verifyCredentials('nobody@example.com', 'correct horse battery');
+    expect(backstop).toBeGreaterThan(0);
+    expect(backstop).toBe(select.mock.calls.length);
+    select.mockRestore();
+  });
+
+  test('a row whose role is not one of the four is no session', async () => {
+    const m = await addTestMember(db, 'finance');
+    await db.update(adminUsers).set({ role: 'owner' }).where(eq(adminUsers.id, m.id));
+    expect(await readSession(m.token)).toBeNull();
+  });
+
   test('removal and a password change end a session on the next request; a role change applies without signing in again', async () => {
     const m = await addTestMember(db, 'operations');
     await db.update(adminUsers).set({ role: 'finance' }).where(eq(adminUsers.id, m.id));

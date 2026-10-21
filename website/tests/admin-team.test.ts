@@ -91,6 +91,31 @@ test('a new link for an invited person replaces the earlier one', async () => {
   expect(await linkIsLive(db, second, NOW)).toBe(true);
 });
 
+test('spending a link kills every other unused link of that person', async () => {
+  const o = await add();
+  const first = tokenOf(o);
+  await db.insert(adminTokens).values({ tokenHash: 'f'.repeat(64), adminUserId: o.ok ? o.id : '', expiresAt: new Date(NOW.getTime() + 3600_000), createdAt: NOW });
+  expect(await setPasswordWithLink(db, first, 'a long enough password', NOW)).toMatchObject({ ok: true });
+  expect(await db.select().from(adminTokens).where(isNull(adminTokens.usedAt))).toEqual([]);
+});
+
+test('a link shown while the person activated by another link is withdrawn, not shown', async () => {
+  const o = await add();
+  const id = o.ok ? o.id : '';
+  const old = tokenOf(o);
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.stubEnv('RESEND_API_KEY', 're_test');
+  vi.stubEnv('EMAIL_FROM', 'Dr Quick <hello@example.com>');
+  // The person spends their emailed link while the send for the new one fails.
+  vi.stubGlobal('fetch', vi.fn(async () => {
+    await setPasswordWithLink(db, old, 'a long enough password', NOW);
+    return new Response('{}', { status: 500 });
+  }));
+  expect(await sendLink(db, LEAD, id, NOW)).toEqual({ ok: false, error: 'not_sent' });
+  expect((await member(id)).status).toBe('active');
+  expect(await db.select().from(adminTokens).where(isNull(adminTokens.usedAt))).toEqual([]);
+});
+
 test('a reset for an active person goes by email only: unsent, it is withdrawn and the earlier link keeps working', async () => {
   const o = await add();
   const id = o.ok ? o.id : '';

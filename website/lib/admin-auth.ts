@@ -25,7 +25,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { adminAccounts } from '@/lib/admin/backstop';
-import { can, type Admin, type Area } from '@/lib/admin/roles';
+import { can, isRole, type Admin, type Area } from '@/lib/admin/roles';
 import { accountByEmail, accountById } from '@/lib/admin/team';
 import { getDb } from '@/lib/db';
 import { hashPassword, verifyPassword } from '@/lib/password';
@@ -43,25 +43,24 @@ export const NO_ACCESS_PATH = '/admin/no-access';
 export { hashPassword, verifyPassword } from '@/lib/password';
 export { adminAccounts } from '@/lib/admin/backstop';
 
-/* ------------------------------------------------------------ passwords */
-
 // An unknown email still costs one scrypt, so the response time never says
 // which addresses are admins.
 const DECOY = hashPassword('decoy', Buffer.alloc(16));
 
-// Exactly one scrypt whatever the outcome, so the time never says whether an
-// address is an admin, a member or nobody. A backstop entry is checked against
-// its own hash only, even if a team row shares the address.
+// Exactly one scrypt and one database lookup whatever the outcome, so the time
+// never says whether an address is an admin, a member or nobody. A backstop
+// entry is checked against its own hash only, even if a team row shares the
+// address; the lookup still runs and its answer is ignored.
 export async function verifyCredentials(email: string, password: string): Promise<Admin | null> {
   const key = email.trim().toLowerCase();
   const backstop = adminAccounts().get(key);
+  const db = await getDb();
+  const row = db ? await accountByEmail(db, key) : null;
   if (backstop) {
     return verifyPassword(password, backstop.hash)
       ? { id: null, email: backstop.email, name: backstop.name, role: 'admin' }
       : null;
   }
-  const db = await getDb();
-  const row = db ? await accountByEmail(db, key) : null;
   const ok = verifyPassword(password, row?.passwordHash ?? DECOY);
   return ok && row?.passwordHash ? { id: row.id, email: row.email, name: row.name, role: row.role } : null;
 }
@@ -104,6 +103,7 @@ export async function readSession(token: string | undefined, now = Date.now()): 
   if (!db) return null;
   const row = await accountById(db, data.uid);
   if (!row || row.status !== 'active' || row.sessionEpoch !== data.epoch) return null;
+  if (!isRole(row.role)) return null; // a role edited by hand to something unknown signs nobody in
   return backstopAdmin(row.email) ?? { id: row.id, email: row.email, name: row.name, role: row.role };
 }
 
