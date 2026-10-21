@@ -19,13 +19,14 @@ export type PortalNavGroup = { label: string | null; items: PortalNavItem[] };
 // the top bar's trigger, and choosing a section closes it. The nav holds icon
 // components, which cannot cross from a server component, so each area wraps
 // this in a client component of its own that supplies them.
-export function PortalSidebar({ home, homeLabel, navLabel, groups, name, email, signOut }: {
+export function PortalSidebar({ home, homeLabel, navLabel, groups, name, email, detail, signOut }: {
   home: string;
   homeLabel: string;
   navLabel: string;
   groups: PortalNavGroup[];
   name: string;
   email: string;
+  detail?: string;
   signOut: () => Promise<void>;
 }) {
   const current = activeNavHref(usePathname(), groups.flatMap((g) => g.items.map((item) => item.href)), home);
@@ -73,6 +74,7 @@ export function PortalSidebar({ home, homeLabel, navLabel, groups, name, email, 
         <div className="min-w-0">
           <p className="truncate text-fine font-semibold text-ink">{name}</p>
           <p className="truncate text-fine text-ink-2">{email}</p>
+          {detail && <p className="truncate text-fine text-ink-2">{detail}</p>}
         </div>
         <form action={signOut} className="max-w-none">
           <Button type="submit" size="sm" variant="secondary" className="w-full">

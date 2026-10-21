@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { AdminPageHeader, NoDatabase } from '@/components/admin/AdminPageHeader';
 import { SignupDetail } from '@/components/admin/SignupDetail';
 import { requireAdmin } from '@/lib/admin-auth';
+import { can } from '@/lib/admin/roles';
 import { hostOf } from '@/lib/admin/format';
 import { visitorJourney } from '@/lib/admin/queries/journey';
 import { emailHistory, getSignup } from '@/lib/admin/queries/waitlist';
@@ -13,7 +14,7 @@ import { siteUrl } from '@/lib/site-url';
 export const metadata: Metadata = { title: 'GP application' };
 
 export default async function GpPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin('waitlist');
+  const admin = await requireAdmin('waitlist');
   const { id } = await params;
   const back = { href: '/admin/waitlist/gps', label: 'All GP applications' };
   const db = await getDb();
@@ -32,7 +33,7 @@ export default async function GpPage({ params }: { params: Promise<{ id: string 
         description="A GP who applied to join. Check their GMC registration, then move them along the pipeline."
         back={back}
       />
-      <SignupDetail signup={signup} emails={emails} journey={journey} ownHost={hostOf(siteUrl().toString())} portal={portal} />
+      <SignupDetail canErase={can(admin.role, 'erase')} canOpenVisitor={can(admin.role, 'analytics')} signup={signup} emails={emails} journey={journey} ownHost={hostOf(siteUrl().toString())} portal={portal} />
     </>
   );
 }

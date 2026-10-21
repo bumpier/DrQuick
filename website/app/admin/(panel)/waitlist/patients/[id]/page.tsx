@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { AdminPageHeader, NoDatabase } from '@/components/admin/AdminPageHeader';
 import { SignupDetail } from '@/components/admin/SignupDetail';
 import { requireAdmin } from '@/lib/admin-auth';
+import { can } from '@/lib/admin/roles';
 import { hostOf } from '@/lib/admin/format';
 import { visitorJourney } from '@/lib/admin/queries/journey';
 import { emailHistory, getSignup } from '@/lib/admin/queries/waitlist';
@@ -12,7 +13,7 @@ import { siteUrl } from '@/lib/site-url';
 export const metadata: Metadata = { title: 'Patient' };
 
 export default async function PatientPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin('waitlist');
+  const admin = await requireAdmin('waitlist');
   const { id } = await params;
   const back = { href: '/admin/waitlist/patients', label: 'All patients' };
   const db = await getDb();
@@ -25,7 +26,7 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
   return (
     <>
       <AdminPageHeader title={signup.email} description="A patient on the waitlist." back={back} />
-      <SignupDetail signup={signup} emails={emails} journey={journey} ownHost={hostOf(siteUrl().toString())} />
+      <SignupDetail canErase={can(admin.role, 'erase')} canOpenVisitor={can(admin.role, 'analytics')} signup={signup} emails={emails} journey={journey} ownHost={hostOf(siteUrl().toString())} />
     </>
   );
 }

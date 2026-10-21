@@ -9,49 +9,57 @@ import {
 } from 'lucide-react';
 
 import { activeNavHref } from '@/components/app/nav';
+import { can, type Area, type Role } from '@/lib/admin/roles';
 
-export type AdminNavItem = { href: string; label: string; icon: LucideIcon };
+export type AdminNavItem = { href: string; label: string; icon: LucideIcon; area: Area };
 export type AdminNavGroup = { label: string; items: AdminNavItem[] };
 
 export const ADMIN_NAV: AdminNavGroup[] = [
-  { label: 'Home', items: [{ href: '/admin', label: 'Overview', icon: LayoutDashboardIcon }] },
+  { label: 'Home', items: [{ href: '/admin', label: 'Overview', icon: LayoutDashboardIcon, area: 'overview' }] },
   {
     label: 'Waitlist',
     items: [
-      { href: '/admin/waitlist/patients', label: 'Patients', icon: UsersIcon },
-      { href: '/admin/waitlist/gps', label: 'GPs', icon: StethoscopeIcon },
+      { href: '/admin/waitlist/patients', label: 'Patients', icon: UsersIcon, area: 'waitlist' },
+      { href: '/admin/waitlist/gps', label: 'GPs', icon: StethoscopeIcon, area: 'waitlist' },
     ],
   },
   {
     label: 'Analytics',
     items: [
-      { href: '/admin/analytics/traffic', label: 'Traffic', icon: ChartLineIcon },
-      { href: '/admin/analytics/engagement', label: 'Engagement', icon: TimerIcon },
-      { href: '/admin/analytics/funnels', label: 'Funnels', icon: FilterIcon },
-      { href: '/admin/analytics/heatmaps', label: 'Heatmaps', icon: MousePointerClickIcon },
-      { href: '/admin/analytics/visitors', label: 'Visitors', icon: UserSearchIcon },
-      { href: '/admin/analytics/live', label: 'Live', icon: RadioIcon },
+      { href: '/admin/analytics/traffic', label: 'Traffic', icon: ChartLineIcon, area: 'analytics' },
+      { href: '/admin/analytics/engagement', label: 'Engagement', icon: TimerIcon, area: 'analytics' },
+      { href: '/admin/analytics/funnels', label: 'Funnels', icon: FilterIcon, area: 'analytics' },
+      { href: '/admin/analytics/heatmaps', label: 'Heatmaps', icon: MousePointerClickIcon, area: 'analytics' },
+      { href: '/admin/analytics/visitors', label: 'Visitors', icon: UserSearchIcon, area: 'analytics' },
+      { href: '/admin/analytics/live', label: 'Live', icon: RadioIcon, area: 'analytics' },
     ],
   },
   {
     label: 'Finance',
     items: [
-      { href: '/admin/finance/revenue', label: 'Revenue', icon: BanknoteIcon },
-      { href: '/admin/finance/consultations', label: 'Consultations', icon: ClipboardListIcon },
-      { href: '/admin/finance/payouts', label: 'Payouts', icon: HandCoinsIcon },
+      { href: '/admin/finance/revenue', label: 'Revenue', icon: BanknoteIcon, area: 'finance' },
+      { href: '/admin/finance/consultations', label: 'Consultations', icon: ClipboardListIcon, area: 'finance' },
+      { href: '/admin/finance/payouts', label: 'Payouts', icon: HandCoinsIcon, area: 'finance' },
     ],
   },
-  { label: 'Content', items: [{ href: '/admin/blog', label: 'Blog', icon: FileTextIcon }] },
+  { label: 'Content', items: [{ href: '/admin/blog', label: 'Blog', icon: FileTextIcon, area: 'blog' }] },
   {
     label: 'System',
     items: [
-      { href: '/admin/system/technical', label: 'Technical', icon: CpuIcon },
-      { href: '/admin/system/emails', label: 'Emails', icon: MailIcon },
-      { href: '/admin/system/audit', label: 'Audit log', icon: ScrollTextIcon },
-      { href: '/admin/system/settings', label: 'Settings', icon: SettingsIcon },
+      { href: '/admin/system/technical', label: 'Technical', icon: CpuIcon, area: 'technical' },
+      { href: '/admin/system/emails', label: 'Emails', icon: MailIcon, area: 'emails' },
+      { href: '/admin/system/audit', label: 'Audit log', icon: ScrollTextIcon, area: 'audit' },
+      { href: '/admin/system/settings', label: 'Settings', icon: SettingsIcon, area: 'settings' },
     ],
   },
 ];
+
+// The groups a role can reach, without the ones left empty.
+export function navFor(role: Role): AdminNavGroup[] {
+  return ADMIN_NAV
+    .map((g) => ({ ...g, items: g.items.filter((item) => can(role, item.area)) }))
+    .filter((g) => g.items.length > 0);
+}
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = ADMIN_NAV.flatMap((g) => g.items);
 

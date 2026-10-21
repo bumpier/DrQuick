@@ -9,6 +9,7 @@ import { PatientsTable } from '@/components/admin/PatientsTable';
 import { Card } from '@/components/ui/card';
 import { TableHead } from '@/components/ui/table';
 import { requireAdmin } from '@/lib/admin-auth';
+import { can } from '@/lib/admin/roles';
 import { firstTouchChannel, hostOf, sourceLabel, statusLabel } from '@/lib/admin/format';
 import { listSignups, parseListQuery, sourcesFor, statusesFor } from '@/lib/admin/queries/waitlist';
 import { flatParams, withQuery } from '@/lib/admin/url';
@@ -21,7 +22,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 const BASE = '/admin/waitlist/patients';
 
 export default async function PatientsPage({ searchParams }: Props) {
-  await requireAdmin('waitlist');
+  const admin = await requireAdmin('waitlist');
   const params = await searchParams;
   const query = flatParams(params);
   const list = parseListQuery('patient', params);
@@ -31,7 +32,7 @@ export default async function PatientsPage({ searchParams }: Props) {
     <AdminPageHeader
       title="Patients"
       description="Everyone on the patient waitlist. Open a row for their details, emails and visit history."
-      actions={db && (
+      actions={db && can(admin.role, 'waitlist_export') && (
         <a href={withQuery('/admin/waitlist/export', { ...query, role: 'patient', page: undefined, notice: undefined })} download
           className="inline-flex h-12 items-center gap-2 rounded-pill bg-white px-5 font-semibold text-ink no-underline ring-2 ring-ink ring-inset hover:bg-surface-mid">
           <DownloadIcon strokeWidth={2} className="size-5" aria-hidden="true" />

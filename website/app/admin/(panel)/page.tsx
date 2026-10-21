@@ -11,9 +11,11 @@ import { TrendChart } from '@/components/admin/TrendChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { requireAdmin } from '@/lib/admin-auth';
 import { ago, delta, fmtCount, fmtDate, fmtPct } from '@/lib/admin/format';
+import { overviewTilesFor } from '@/lib/admin/roles';
 import { isDemo } from '@/lib/admin/queries/finance';
 import { overview } from '@/lib/admin/queries/overview';
 import { bucketLabel, parseRange } from '@/lib/admin/range';
+import { cn } from '@/lib/utils';
 import { getDb } from '@/lib/db';
 import { demoSource } from '@/lib/finance/demo';
 import { gbp } from '@/lib/money';
@@ -22,8 +24,18 @@ export const metadata: Metadata = { title: 'Overview' };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
+// KpiRow is three across; with fewer or four tiles that leaves an empty cell,
+// so the row takes as many columns as it has tiles.
+function columnsFor(count: number): string | undefined {
+  if (count === 1) return 'grid-cols-1 max-cols:grid-cols-1';
+  if (count === 2) return 'grid-cols-2';
+  if (count === 4) return 'grid-cols-4 max-cols:grid-cols-2';
+  return undefined;
+}
+
 export default async function OverviewPage({ searchParams }: Props) {
-  await requireAdmin('overview');
+  const admin = await requireAdmin('overview');
+  const tiles = overviewTilesFor(admin.role);
   const now = new Date();
   const params = await searchParams;
   const range = parseRange(params, now);
@@ -40,6 +52,8 @@ export default async function OverviewPage({ searchParams }: Props) {
   const anySignups = o.signups.patients + o.signups.gps > 0;
   const anyVisitors = o.visitors > 0;
   const paymentsLive = o.revenue !== 0 || o.prevRevenue !== 0;
+  const kpiCount = (tiles.analytics ? 2 : 0) + (tiles.signups ? 2 : 0) + (tiles.finance ? 2 : 0);
+  const cardCount = (tiles.latestGps ? 1 : 0) + (tiles.analytics ? 2 : 0);
   const badge = demo ? <DemoBadge /> : undefined;
 
   return (
@@ -47,29 +61,33 @@ export default async function OverviewPage({ searchParams }: Props) {
       {header}
       <DateRangePicker range={range} basePath="/admin" keep={{ demo: demo ? '1' : undefined }} now={now} />
 
-      <KpiRow>
-        <Kpi label="Visitors" value={fmtCount(o.visitors)} change={delta(o.visitors, o.prevVisitors)}
+      <KpiRow className={columnsFor(kpiCount)}>
+        {tiles.analytics && <Kpi label="Visitors" value={fmtCount(o.visitors)} change={delta(o.visitors, o.prevVisitors)}
           note="Consented visitors plus cookieless page views">
           <Sparkline values={o.visitorSeries.values.visitors} />
-        </Kpi>
+        </Kpi>}
+        {tiles.signups && <>
         <Kpi label="Patient sign-ups" value={fmtCount(o.signups.patients)} change={delta(o.signups.patients, o.prevSignups.patients)}>
           <Sparkline values={o.signupSeries.values.patients} />
         </Kpi>
         <Kpi label="GP sign-ups" value={fmtCount(o.signups.gps)} change={delta(o.signups.gps, o.prevSignups.gps)}>
           <Sparkline values={o.signupSeries.values.gps} />
         </Kpi>
-        <Kpi label="Visitors who signed up" value={fmtPct(o.conversion)}
+        </>}
+        {tiles.analytics && <Kpi label="Visitors who signed up" value={fmtPct(o.conversion)}
           change={o.conversion === null || o.prevConversion === null ? null : delta(o.conversion, o.prevConversion)}
-          note="Sign-ups divided by visitors" />
+          note="Sign-ups divided by visitors" />}
+        {tiles.finance && <>
         <Kpi label="Revenue this month" value={gbp(o.revenue)}
           change={paymentsLive ? delta(o.revenue, o.prevRevenue) : undefined}
           note={paymentsLive ? 'Payments taken, less refunds. Compared with last month.' : 'Payments are not live yet.'}>{badge}</Kpi>
         <Kpi label="GP payouts pending" value={gbp(o.payouts.pence)} goodWhen="down"
           note={o.payouts.count === 0 ? 'Nothing owed to GPs.' : `${fmtCount(o.payouts.count)} ${o.payouts.count === 1 ? 'payout' : 'payouts'} to send`}>{badge}</Kpi>
+        </>}
       </KpiRow>
 
-      <div className="mt-4 grid grid-cols-[3fr_2fr] gap-4 max-forms:grid-cols-1">
-        <Card className="block min-w-0 px-6 py-6 max-phone:px-4">
+      {(tiles.signups || tiles.analytics) && <div className={cn('mt-4 grid gap-4 max-forms:grid-cols-1', tiles.signups && tiles.analytics ? 'grid-cols-[3fr_2fr]' : 'grid-cols-1')}>
+        {tiles.signups && <Card className="block min-w-0 px-6 py-6 max-phone:px-4">
           <CardTitle>Sign-ups per {per}</CardTitle>
           <p className="mt-1 mb-4 text-fine text-ink-2">Patients and GPs who joined the waitlist.</p>
           {anySignups
@@ -78,19 +96,19 @@ export default async function OverviewPage({ searchParams }: Props) {
                 { key: 'gps', label: 'GPs', values: o.signupSeries.values.gps },
               ]} />
             : <EmptyState>No sign-ups in this range.</EmptyState>}
-        </Card>
-        <Card className="block min-w-0 px-6 py-6 max-phone:px-4">
+        </Card>}
+        {tiles.analytics && <Card className="block min-w-0 px-6 py-6 max-phone:px-4">
           <CardTitle>Visitors per {per}</CardTitle>
           <p className="mt-1 mb-4 text-fine text-ink-2">Counted the same way as the Visitors figure.</p>
           {anyVisitors
             ? <TrendChart ariaLabel={`Visitors per ${per}`} labels={o.visitorSeries.keys.map(bucketLabel)}
                 series={[{ key: 'visitors', label: 'Visitors', values: o.visitorSeries.values.visitors }]} />
             : <EmptyState>No visits recorded in this range.</EmptyState>}
-        </Card>
-      </div>
+        </Card>}
+      </div>}
 
-      <div className="mt-4 grid grid-cols-3 gap-4 max-forms:grid-cols-2 max-cols:grid-cols-1">
-        <Card size="sm" className="min-w-0">
+      {cardCount > 0 && <div className={cn('mt-4 grid gap-4 max-cols:grid-cols-1', cardCount === 3 ? 'grid-cols-3 max-forms:grid-cols-2' : cardCount === 2 ? 'grid-cols-2' : 'grid-cols-1')}>
+        {tiles.latestGps && <Card size="sm" className="min-w-0">
           <CardHeader>
             <CardTitle>Latest GP applications</CardTitle>
           </CardHeader>
@@ -112,9 +130,9 @@ export default async function OverviewPage({ searchParams }: Props) {
             )}
             <Link href="/admin/waitlist/gps" className="mt-3 inline-block text-fine font-semibold text-primary-ink">All GP applications</Link>
           </CardContent>
-        </Card>
+        </Card>}
 
-        <Card size="sm" className="min-w-0">
+        {tiles.analytics && <><Card size="sm" className="min-w-0">
           <CardHeader>
             <CardTitle>Top referrers</CardTitle>
           </CardHeader>
@@ -152,8 +170,8 @@ export default async function OverviewPage({ searchParams }: Props) {
               </ul>
             )}
           </CardContent>
-        </Card>
-      </div>
+        </Card></>}
+      </div>}
     </>
   );
 }

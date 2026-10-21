@@ -8,9 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { requireAdmin } from '@/lib/admin-auth';
+import { can } from '@/lib/admin/roles';
 import { fmtDuration } from '@/lib/admin/analytics-labels';
 import { ago, firstTouchChannel, fmtCount, fmtDate, hostOf } from '@/lib/admin/format';
-import { listVisitors, parseVisitorQuery, type VisitorSort } from '@/lib/admin/queries/visitors';
+import { listVisitors, visitorQueryFor, type VisitorSort } from '@/lib/admin/queries/visitors';
 import { flatParams, withQuery, type Query } from '@/lib/admin/url';
 import { getDb } from '@/lib/db';
 import { siteUrl } from '@/lib/site-url';
@@ -40,10 +41,12 @@ function Sort({ label, column, query, className }: { label: string; column: Visi
 }
 
 export default async function VisitorsPage({ searchParams }: Props) {
-  await requireAdmin('analytics');
+  const admin = await requireAdmin('analytics');
+  // Marketing sees visitors, not the addresses of those who signed up.
+  const canSeeEmails = can(admin.role, 'waitlist');
   const params = await searchParams;
   const query = flatParams(params);
-  const q = parseVisitorQuery(params);
+  const q = visitorQueryFor(params, canSeeEmails);
   const header = <AdminPageHeader title="Visitors" description="Everyone who accepted analytics, with their visits. Open one to see their whole journey." />;
   const db = await getDb();
   if (!db) return <>{header}<NoDatabase /></>;
@@ -60,6 +63,7 @@ export default async function VisitorsPage({ searchParams }: Props) {
         basePath={BASE}
         query={query}
         placeholder="Search by sign-up email"
+        search={canSeeEmails}
         filters={[{ name: 'signed', label: 'Signed up', options: [{ value: 'yes', label: 'Signed up' }, { value: 'no', label: 'Not signed up' }] }]}
       />
       <Card className="block px-4 py-3 max-phone:px-2">
@@ -86,7 +90,7 @@ export default async function VisitorsPage({ searchParams }: Props) {
                 <TableRow key={v.id}>
                   <TableCell data-label="Visitor" className="max-w-[18rem]">
                     <Link href={`${BASE}/${v.id}`} className="block truncate font-semibold text-primary-ink">
-                      {v.signup ? v.signup.email : <span className="font-mono">{v.id.slice(0, 8)}</span>}
+                      {v.signup && canSeeEmails ? v.signup.email : <span className="font-mono">{v.id.slice(0, 8)}</span>}
                     </Link>
                     {v.signup && <Badge variant="success" className="mt-1">{v.signup.role === 'gp' ? 'GP sign-up' : 'Patient sign-up'}</Badge>}
                   </TableCell>

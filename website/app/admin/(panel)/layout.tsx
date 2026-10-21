@@ -14,7 +14,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <AdminSidebar name={admin.name} email={admin.email} />
+        <AdminSidebar name={admin.name} email={admin.email} role={admin.role} />
         <SidebarInset className="min-w-0">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-rule bg-white px-4 md:hidden">
             <SidebarTrigger aria-label="Open the admin menu" />

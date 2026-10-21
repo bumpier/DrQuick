@@ -7,6 +7,7 @@ import { Kpi, KpiRow } from '@/components/admin/Kpi';
 import { VisitorTimeline } from '@/components/admin/VisitorTimeline';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { requireAdmin } from '@/lib/admin-auth';
+import { can } from '@/lib/admin/roles';
 import { fmtDuration } from '@/lib/admin/analytics-labels';
 import { firstTouchChannel, fmtCount, fmtDateTime, hostOf } from '@/lib/admin/format';
 import { visitorJourney } from '@/lib/admin/queries/journey';
@@ -26,7 +27,8 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export default async function VisitorPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin('analytics');
+  const admin = await requireAdmin('analytics');
+  const canSeeEmails = can(admin.role, 'waitlist');
   const { id } = await params;
   const back = { href: '/admin/analytics/visitors', label: 'All visitors' };
   const db = await getDb();
@@ -42,7 +44,7 @@ export default async function VisitorPage({ params }: { params: Promise<{ id: st
   return (
     <>
       <AdminPageHeader
-        title={signups[0]?.email ?? `Visitor ${v.id.slice(0, 8)}`}
+        title={(canSeeEmails && signups[0]?.email) || `Visitor ${v.id.slice(0, 8)}`}
         description="One person who accepted analytics: where they came from, and every visit, page and action since."
         back={back}
       />
@@ -71,8 +73,14 @@ export default async function VisitorPage({ params }: { params: Promise<{ id: st
                   <ul className="grid gap-1">
                     {signups.map((s) => (
                       <li key={s.id}>
-                        <Link href={`/admin/waitlist/${s.role === 'gp' ? 'gps' : 'patients'}/${s.id}`} className="font-semibold break-all text-primary-ink">{s.email}</Link>
-                        <span className="text-fine text-ink-2"> · {s.role === 'gp' ? 'GP' : 'patient'} · {fmtDateTime(s.createdAt)}</span>
+                        {canSeeEmails ? (
+                          <>
+                            <Link href={`/admin/waitlist/${s.role === 'gp' ? 'gps' : 'patients'}/${s.id}`} className="font-semibold break-all text-primary-ink">{s.email}</Link>
+                            <span className="text-fine text-ink-2"> · {s.role === 'gp' ? 'GP' : 'patient'} · {fmtDateTime(s.createdAt)}</span>
+                          </>
+                        ) : (
+                          <span className="text-fine text-ink-2">{s.role === 'gp' ? 'GP' : 'patient'} · {fmtDateTime(s.createdAt)}</span>
+                        )}
                       </li>
                     ))}
                   </ul>

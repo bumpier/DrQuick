@@ -54,6 +54,18 @@ export function isRole(value: unknown): value is Role {
   return typeof value === 'string' && (ROLES as readonly string[]).includes(value);
 }
 
+// Which blocks of the Overview a role gets. The sign-up counts are counts
+// only, so Marketing sees them with Analytics; the list of GP applications
+// names people, so it follows the waitlist.
+export function overviewTilesFor(role: Role): { analytics: boolean; signups: boolean; latestGps: boolean; finance: boolean } {
+  return {
+    analytics: can(role, 'analytics'),
+    signups: can(role, 'waitlist') || can(role, 'analytics'),
+    latestGps: can(role, 'waitlist'),
+    finance: can(role, 'finance'),
+  };
+}
+
 // An admin as the panel knows them. `id` is null for an ADMIN_USERS backstop
 // entry, which is not a row in admin_users and so has no id to audit against.
 export type Admin = { id: string | null; email: string; name: string; role: Role };

@@ -46,7 +46,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-export function SignupDetail({ signup, emails, journey, ownHost, portal }: {
+export function SignupDetail({ signup, emails, journey, ownHost, portal, canErase, canOpenVisitor }: {
   signup: Signup;
   emails: EmailRow[];
   journey: Journey | null;
@@ -54,6 +54,10 @@ export function SignupDetail({ signup, emails, journey, ownHost, portal }: {
   // A GP's doctor-portal account: null when they have not claimed one, and
   // left out altogether for a patient.
   portal?: PortalAccount | null;
+  // Erasing is the Admin's alone, and the visitor page is Analytics': a role
+  // without either is not shown the control or the link.
+  canErase: boolean;
+  canOpenVisitor: boolean;
 }) {
   const gp = signup.role === 'gp';
   const statuses = gp ? GP_STATUSES : PATIENT_STATUSES;
@@ -170,7 +174,7 @@ export function SignupDetail({ signup, emails, journey, ownHost, portal }: {
           </CardContent>
         </Card>
 
-        <JourneyCard journey={journey} visitorId={signup.visitorId} ownHost={ownHost} />
+        <JourneyCard journey={journey} visitorId={signup.visitorId} ownHost={ownHost} canOpenVisitor={canOpenVisitor} />
       </div>
 
       <div className="grid min-w-0 gap-4">
@@ -189,7 +193,7 @@ export function SignupDetail({ signup, emails, journey, ownHost, portal }: {
           <CardHeader><CardTitle>Actions</CardTitle></CardHeader>
           <CardContent className="grid justify-items-start gap-3">
             <ResendButton id={signup.id} role={signup.role} />
-            <EraseButton id={signup.id} email={signup.email} />
+            {canErase && <EraseButton id={signup.id} email={signup.email} />}
           </CardContent>
         </Card>
       </div>
@@ -197,12 +201,12 @@ export function SignupDetail({ signup, emails, journey, ownHost, portal }: {
   );
 }
 
-function JourneyCard({ journey, visitorId, ownHost }: { journey: Journey | null; visitorId: string | null; ownHost: string | null }) {
+function JourneyCard({ journey, visitorId, ownHost, canOpenVisitor }: { journey: Journey | null; visitorId: string | null; ownHost: string | null; canOpenVisitor: boolean }) {
   return (
     <Card size="sm">
       <CardHeader>
         <CardTitle>Visit history</CardTitle>
-        {visitorId && journey?.visitor && (
+        {canOpenVisitor && visitorId && journey?.visitor && (
           <Link href={`/admin/analytics/visitors/${visitorId}`} className="text-fine font-semibold text-primary-ink">Open this visitor</Link>
         )}
       </CardHeader>

@@ -15,7 +15,7 @@ export type VisitorSort = (typeof VISITOR_SORTS)[number];
 export const VISITOR_PAGE_SIZE = 25;
 
 export type VisitorQuery = {
-  q: string;
+  q: string | undefined;
   signed: 'yes' | 'no' | null;
   sort: VisitorSort;
   dir: 'asc' | 'desc';
@@ -35,6 +35,13 @@ export function parseVisitorQuery(params: Params): VisitorQuery {
     page: Number.isFinite(page) && page > 0 ? Math.min(page, 10_000) : 1,
     pageSize: VISITOR_PAGE_SIZE,
   };
+}
+
+// The query for a role: searching by email is searching by a person's
+// address, so a role that cannot see emails gets no search at all.
+export function visitorQueryFor(params: Params, canSeeEmails: boolean): VisitorQuery {
+  const query = parseVisitorQuery(params);
+  return canSeeEmails ? query : { ...query, q: undefined };
 }
 
 const SORT_SQL: Record<VisitorSort, string> = {
