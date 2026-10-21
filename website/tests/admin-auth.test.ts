@@ -195,7 +195,7 @@ describe('team accounts', () => {
 
   test('a row whose role is not one of the four is no session', async () => {
     const m = await addTestMember(db, 'finance');
-    await db.update(adminUsers).set({ role: 'owner' }).where(eq(adminUsers.id, m.id));
+    await db.update(adminUsers).set({ role: 'owner' as 'admin' }).where(eq(adminUsers.id, m.id));
     expect(await readSession(m.token)).toBeNull();
   });
 
