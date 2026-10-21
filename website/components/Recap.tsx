@@ -12,7 +12,7 @@ export function Recap({ headingId, section, title, sub, form }: {
   return (
     <section className="recap pt-section pb-section" aria-labelledby={headingId} data-section={section}>
       <div className="wrap">
-        <div className="rounded-2xl bg-stone px-tile-lead-pad py-field-section grid grid-cols-2 gap-x-recap-gap items-start max-forms:grid-cols-1 max-forms:gap-0 max-phone:px-6">
+        <div className="rounded-2xl bg-stone px-tile-lead-pad py-field-section grid grid-cols-2 gap-x-recap-gap gap-y-8 items-start max-forms:grid-cols-1 max-forms:gap-y-0 max-forms:[&>:last-child]:mt-8 max-phone:px-6">
           <h2 id={headingId} data-reveal className="max-w-[14ch]">{title}</h2>
           <p className="sub text-lead leading-[1.55] text-ink-2 max-w-[34ch] mt-5" data-reveal>{sub}</p>
           {form}

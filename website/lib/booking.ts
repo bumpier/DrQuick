@@ -19,6 +19,8 @@ export type ConsultationRow = {
   gp: string | null;
   reason: string;
   minutes: number;
+  // What the call really ran for. A fixture row has minutes only.
+  seconds?: number;
   status: 'completed' | 'cancelled';
   cost: number;
   outcome: ConsultationOutcome | null;
@@ -188,6 +190,27 @@ export function formatClock(seconds: number): string {
   return `${mm}:${ss}`;
 }
 
+/* How long a call ran, in the words the outcome, the receipt and the home row
+   all use. Whole minutes are floored, so 119 seconds is "1 minute", never two,
+   and a call under a minute says so rather than rounding itself up. */
+export function callLength(seconds: number): string {
+  const minutes = Math.floor(Math.max(0, seconds) / 60);
+  if (minutes < 1) return 'Under a minute';
+  return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+}
+
+/* A record's length: its seconds when it kept them, else its whole minutes. */
+export function recordLength(row: { minutes: number; seconds?: number }): string {
+  return callLength(row.seconds ?? row.minutes * 60);
+}
+
+/* The date a consultation made now is filed under. The fixtures' own history
+   keeps its fixed dates; only what this session creates is dated by the clock. */
+const LONG_DATE = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+export function todayLabel(now: Date = new Date()): string {
+  return LONG_DATE.format(now);
+}
+
 type ConsultationInput = {
   status?: 'cancelled';
   gp?: { ref: string } | null;
@@ -207,6 +230,7 @@ export function consultationRecord(booking: ConsultationInput, { id, date, fee }
     gp: cancelled ? null : booking.gp?.ref ?? null,
     reason: COMPLAINTS[booking.complaint]?.label ?? 'Something else',
     minutes: cancelled ? 0 : Math.max(1, Math.round(booking.seconds / 60)),
+    seconds: cancelled ? 0 : Math.max(0, Math.floor(booking.seconds)),
     status: cancelled ? 'cancelled' : 'completed',
     cost: cancelled ? 0 : fee,
     outcome: cancelled ? null : outcomeFor(booking),

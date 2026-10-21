@@ -36,10 +36,11 @@ const CONSENT: Record<string, string> = {
 };
 
 function Panel({ title, description, children, tone }: {
-  title: string; description?: ReactNode; children?: ReactNode; tone?: 'wash' | 'default';
+  title: string; description?: ReactNode; children?: ReactNode; tone?: 'wash' | 'lime' | 'default';
 }) {
   return (
-    <Card variant={tone ?? 'default'} data-slot="shift-panel">
+    // On lime, the grey of secondary text falls under 4.5:1: it takes the ink.
+    <Card variant={tone ?? 'default'} data-slot="shift-panel" className={tone === 'lime' ? '[&_dt]:text-ink [&_[data-slot=card-description]]:text-ink' : undefined}>
       <CardHeader>
         {/* The class sets the size: a bare h2 takes the landing page's scale. */}
         <CardTitle><h2 className="text-headline-sm">{title}</h2></CardTitle>
@@ -124,11 +125,14 @@ export function ShiftPanel() {
     case 'resting':
       return (
         <Panel
-          title={state.reason === 'missed' ? 'You missed an offer' : 'Consultation finished'}
+          title={state.reason === 'missed' ? 'You missed an offer' : state.last ? 'Consultation finished' : 'Ready when you are'}
           description={state.reason === 'missed'
             ? 'It has gone to another GP. You will not be offered another until you are back online.'
             : 'Take the time you need. You will not be offered another until you are back online.'}
         >
+          {state.last && (
+            <Facts items={[['Fee earned', gbp(state.last.feePence)], ['Length', span(state.last.durationMs)]]} />
+          )}
           <div className="flex flex-wrap gap-3">
             <Button size="lg" disabled={pending} aria-busy={busy} onClick={() => run(backOnlineAction)}>Back online</Button>
             {offline}
@@ -140,29 +144,37 @@ export function ShiftPanel() {
       return <Offer offer={state} elapsed={elapsed} pending={pending} run={run} />;
 
     case 'consultation':
+      // One short band, so the video above it and the way to end the call fit
+      // one screen: what the patient came for, the clock, and the two ends.
       return (
-        <Panel title="Consultation in progress" description={`You are paid ${gbp(state.feePence)} for this consultation.`}>
-          <p aria-label="Time in consultation" className="font-display text-4xl font-bold leading-none tracking-[-.03em] tabular-nums">
-            {clock(state.elapsedMs + elapsed)}
-          </p>
-          <Facts items={[['Reason', state.reason ?? 'Not stated'], ['Age', state.ageBand ?? 'Not stated']]} />
-          <div className="flex flex-wrap gap-3">
-            <ConfirmAction
-              trigger={<Button size="lg">Complete consultation</Button>}
-              title="Complete this consultation?"
-              description="It will be recorded as completed and added to your earnings."
-              confirmLabel="Complete"
-              run={end(completeAction)}
-            />
-            <ConfirmAction
-              trigger={<Button variant="secondary" size="lg">Patient did not arrive</Button>}
-              title="Record a no-show?"
-              description="The consultation will end as a no-show. A no-show is not paid."
-              confirmLabel="Record no-show"
-              run={end(noShowAction)}
-            />
-          </div>
-        </Panel>
+        <Card data-slot="shift-panel">
+          <CardContent className="grid items-center gap-x-8 gap-y-4 cols:grid-cols-[1fr_auto]">
+            <div className="min-w-0">
+              <h2 className="text-headline-sm">Consultation in progress</h2>
+              <p className="mt-1 text-body text-ink-2">You are paid {gbp(state.feePence)} for this consultation.</p>
+              <p className="mt-1 text-body font-semibold">{state.reason ?? 'Reason not stated'} · {state.ageBand ?? 'Age not stated'}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <p aria-label="Time in consultation" className="font-display text-4xl font-bold leading-none tracking-[-.03em] tabular-nums">
+                {clock(state.elapsedMs + elapsed)}
+              </p>
+              <ConfirmAction
+                trigger={<Button size="lg">Complete consultation</Button>}
+                title="Complete this consultation?"
+                description="It will be recorded as completed and added to your earnings."
+                confirmLabel="Complete"
+                run={end(completeAction)}
+              />
+              <ConfirmAction
+                trigger={<Button variant="secondary" size="lg">Patient did not arrive</Button>}
+                title="Record a no-show?"
+                description="The consultation will end as a no-show. A no-show is not paid."
+                confirmLabel="Record no-show"
+                run={end(noShowAction)}
+              />
+            </div>
+          </CardContent>
+        </Card>
       );
   }
 }
@@ -173,7 +185,7 @@ function Offer({ offer, elapsed, pending, run }: {
   const seconds = Math.ceil(Math.max(0, offer.remainingMs - elapsed) / 1000);
   const over = seconds <= 0;
   return (
-    <Panel title="A patient is waiting" description={`You are paid ${gbp(offer.feePence)} for this consultation.`}>
+    <Panel tone="lime" title="A patient is waiting" description={`You are paid ${gbp(offer.feePence)} for this consultation.`}>
       <Countdown remaining={Math.min(offer.windowSeconds, seconds)} total={offer.windowSeconds} />
       <Facts
         items={[
@@ -183,7 +195,8 @@ function Offer({ offer, elapsed, pending, run }: {
         ]}
       />
       <div className="flex flex-wrap gap-3">
-        <Button size="lg" disabled={pending || over} aria-busy={pending || undefined} onClick={() => run(() => acceptAction(offer.offerId))}>
+        {/* Dark, not the default lime: this card is lime itself. */}
+        <Button variant="dark" size="lg" disabled={pending || over} aria-busy={pending || undefined} onClick={() => run(() => acceptAction(offer.offerId))}>
           Accept
         </Button>
         <Button variant="secondary" size="lg" disabled={pending || over} onClick={() => run(() => declineAction(offer.offerId))}>

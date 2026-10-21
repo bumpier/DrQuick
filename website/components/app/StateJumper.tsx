@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { showPrototypeChrome } from '@/lib/demo';
 import { useDataMode, usePersistedQuery } from '@/lib/data-mode';
 import { ADMIN_JUMPS, DOCTOR_JUMPS, PATIENT_JUMPS, isCurrentJump, jumpHref, type JumpLocation } from './jumps';
 
@@ -14,7 +15,7 @@ export function StateJumper({ surface }: { surface: 'doctor' | 'admin' | 'patien
   const pathname = usePathname();
   const { mode } = useDataMode();
   const [jumper] = usePersistedQuery('jumper');
-  const show = process.env.NODE_ENV !== 'production' || jumper === '1';
+  const show = showPrototypeChrome(jumper);
   const ref = useRef<HTMLElement>(null);
 
   // The URL is read after the commit's effects, not during them: the providers

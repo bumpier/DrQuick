@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { test, expect, describe, beforeEach, afterAll, vi } from 'vitest';
-import { screen, fireEvent, cleanup, within } from '@testing-library/react';
+import { screen, fireEvent, cleanup, within, render } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 vi.mock('next/navigation', () => import('./helpers/next-navigation'));
 vi.mock('next/link', () => import('./helpers/next-link'));
@@ -17,6 +17,7 @@ import { Consultations } from '@/components/patient/Consultations';
 import { ConsultationDetail } from '@/components/patient/ConsultationDetail';
 import { Prescriptions } from '@/components/patient/Prescriptions';
 import { Account } from '@/components/patient/Account';
+import { ConsultRow } from '@/components/patient/ConsultRow';
 import { BookingFlow } from '@/components/patient/BookingFlow';
 import { useBooking } from '@/components/patient/BookingProvider';
 import { BOOKING_SCREENS, initialBooking, type BookingState } from '@/lib/booking-flow';
@@ -334,8 +335,16 @@ describe('account', () => {
     expect(screen.getByRole('button', { name: 'Add a card' })).toBeInTheDocument();
   });
 
-  test('the sharing switch is on by default, and the sentence beside it says what each position does', () => {
+  test('blank: with no practice saved the sharing switch is off and disabled, and says why', () => {
     renderPatient(<Account />, { pathname: '/patient/account' });
+    const share = screen.getByRole('switch', { name: 'Share summaries' });
+    expect(share).not.toBeChecked();
+    expect(share).toBeDisabled();
+    expect(screen.getByText('Nothing is sent until you save a practice.')).toBeInTheDocument();
+  });
+
+  test('the sharing switch is on by default for a returning patient, and the sentence beside it says what each position does', () => {
+    renderPatient(<Account />, { pathname: '/patient/account', ...SEEDED });
     const share = screen.getByRole('switch', { name: 'Share summaries' });
     expect(share).toBeChecked();
     const consequence = screen.getByText('Each consultation summary is sent here.');
@@ -450,5 +459,20 @@ describe('navigation and the shell', () => {
     expect(skip).toHaveAttribute('href', '#main');
     expect(shellOf(container).firstElementChild).toBe(skip);
     expect(container.querySelector('#main')).toBe(container.querySelector('main'));
+  });
+});
+
+describe('a consultation row', () => {
+  const base = {
+    id: 'C-0032', date: '19 October 2026', at: null, gp: 'GP-002', reason: 'Skin or rash',
+    status: 'completed' as const, cost: 32, outcome: null,
+  };
+  test('a call of 14 seconds says "Under a minute", the same words as the receipt', () => {
+    render(<ConsultRow consultation={{ ...base, minutes: 1, seconds: 14 }} />);
+    expect(screen.getByText('19 October 2026 · GP-002 · Under a minute')).toBeInTheDocument();
+  });
+  test('a fixture row with minutes only still reads in minutes', () => {
+    render(<ConsultRow consultation={{ ...base, minutes: 9 }} />);
+    expect(screen.getByText('19 October 2026 · GP-002 · 9 minutes')).toBeInTheDocument();
   });
 });

@@ -2,9 +2,9 @@
 // The portal's sign-in, sign-out and set-password actions. Server actions are
 // POSTs Next checks for same origin; each one is still treated as an untrusted
 // entry point.
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { after } from 'next/server';
+import { clientIp } from '@/lib/client-ip';
 import { getDb } from '@/lib/db';
 import {
   currentDoctor, doctorLoginAllowed, endDoctorSession, startDoctorSession, verifyDoctorCredentials,
@@ -18,11 +18,6 @@ const UNAVAILABLE = 'This is unavailable right now. Try again shortly.';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const emailFrom = (form: FormData) => String(form.get('email') ?? '').trim().toLowerCase().slice(0, 254);
-
-async function clientIp(): Promise<string> {
-  const h = await headers();
-  return (h.get('x-forwarded-for') ?? '').split(',')[0].trim() || h.get('x-real-ip') || 'unknown';
-}
 
 /* --------------------------------------------------------------- sign in */
 

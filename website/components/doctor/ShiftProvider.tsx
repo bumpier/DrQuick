@@ -147,3 +147,28 @@ export function OfferNotice() {
     </div>
   );
 }
+
+// On every portal page but the dashboard, during a consultation: what it is, how
+// long it has run, and the way back to the video. First in the page, with the
+// call directly under it.
+export function ConsultationBar() {
+  const { state, at } = useShift();
+  const pathname = usePathname();
+  const consultation = state.kind === 'consultation' ? state : null;
+  const elapsed = useElapsed(at, consultation !== null);
+  if (!consultation || pathname === '/doctor') return null;
+  const total = consultation.elapsedMs + elapsed;
+  const clock = `${String(Math.floor(total / 60_000)).padStart(2, '0')}:${String(Math.floor(total / 1000) % 60).padStart(2, '0')}`;
+  return (
+    <div
+      data-slot="consultation-bar"
+      className="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl bg-primary px-5 py-4 text-ink"
+    >
+      <p className="min-w-0 font-semibold">
+        Consultation in progress: {consultation.reason ?? 'Reason not stated'}
+        <span aria-label="Time in consultation" className="ml-3 font-bold tabular-nums">{clock}</span>
+      </p>
+      <Link href="/doctor" className="font-bold text-ink underline underline-offset-4">Back to the consultation</Link>
+    </div>
+  );
+}

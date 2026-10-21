@@ -6,7 +6,7 @@
 // stored anywhere: rate limits key on a salted hash, analytics on a random id.
 import { sql } from 'drizzle-orm';
 import {
-  bigserial, boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
+  bigserial, boolean, check, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
 
 // Relative, not '@/': drizzle-kit reads this file outside the app's bundler.
@@ -329,6 +329,60 @@ export const consultationRatings = pgTable('consultation_ratings', {
   stars: integer('stars').notNull(),
   createdAt: created(),
 }, (t) => [index('ratings_gp').on(t.gpId)]);
+
+// The encrypted video call of a consultation, one row once either side first
+// asks to join (lib/video/calls.ts; docs/superpowers/specs/2026-10-13-
+// encrypted-video-calls-design.md). The room and both identities are random,
+// so the media server learns nothing about who is calling. Each participant's
+// key is sealed (lib/crypto/sealed.ts), bound to this consultation and role,
+// and cleared in the statement that ends the consultation: the CHECK holds
+// that a closed call keeps no key. Times are the application's clock.
+export const consultationCalls = pgTable('consultation_calls', {
+  consultationId: uuid('consultation_id').primaryKey(),
+  room: text('room').notNull(),
+  gpIdentity: text('gp_identity').notNull(),
+  patientIdentity: text('patient_identity').notNull(),
+  sealedGpKey: text('sealed_gp_key'),
+  sealedPatientKey: text('sealed_patient_key'),
+  openedAt: timestamp('opened_at', { withTimezone: true }).notNull(),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  // Set once the media server has confirmed the room is gone: deleting it is
+  // what disconnects both people, so it is retried until then.
+  roomDeletedAt: timestamp('room_deleted_at', { withTimezone: true }),
+  closeAttempts: integer('close_attempts').notNull().default(0),
+}, (t) => [
+  uniqueIndex('consultation_calls_room').on(t.room),
+  uniqueIndex('consultation_calls_gp_identity').on(t.gpIdentity),
+  uniqueIndex('consultation_calls_patient_identity').on(t.patientIdentity),
+  check('consultation_calls_closed_keeps_no_key',
+    sql`${t.closedAt} is null or (${t.sealedGpKey} is null and ${t.sealedPatientKey} is null)`),
+  index('consultation_calls_undeleted').on(t.closedAt).where(sql`${t.closedAt} is not null and ${t.roomDeletedAt} is null`),
+]);
+
+// The audit trail of every call: a pass issued, a join or a leave reported by
+// the media server, a room closed, and the alerts. Role and time only, never
+// content, an identity or anything about the patient.
+export const CALL_ROLES = ['gp', 'patient', 'none'] as const;
+export type CallRole = (typeof CALL_ROLES)[number];
+export const CALL_EVENT_KINDS = [
+  'pass_issued', 'joined', 'left', 'room_closed', 'close_failed', 'unknown_participant', 'unencrypted_track',
+] as const;
+export type CallEventKind = (typeof CALL_EVENT_KINDS)[number];
+
+export const callEvents = pgTable('call_events', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  consultationId: uuid('consultation_id').notNull(),
+  role: text('role', { enum: CALL_ROLES }).notNull(),
+  kind: text('kind', { enum: CALL_EVENT_KINDS }).notNull(),
+  at: timestamp('at', { withTimezone: true }).notNull(),
+}, (t) => [index('call_events_consultation').on(t.consultationId, t.at)]);
+
+// Each media server webhook once (its event id), so a replayed notice changes
+// nothing. Pruned after a day; the signature is only valid for minutes.
+export const livekitEvents = pgTable('livekit_events', {
+  id: text('id').primaryKey(),
+  receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
+});
 
 export const payments = pgTable('payments', {
   id: uuid('id').primaryKey().defaultRandom(),

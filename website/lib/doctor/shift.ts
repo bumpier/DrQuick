@@ -23,7 +23,8 @@ export type ShiftState =
   | { kind: 'idle'; onlineMs: number }
   // Online but out of the rotation until they tap Back online: an offer went
   // unanswered, or a consultation has just ended.
-  | { kind: 'resting'; reason: 'missed' | 'finished' }
+  // After a completed consultation, `last` is what it paid and how long it ran.
+  | { kind: 'resting'; reason: 'missed' | 'finished'; last?: { feePence: number; durationMs: number } }
   | {
       kind: 'offer'; offerId: string; feePence: number;
       // The three things a doctor may know before accepting, and nothing more.
@@ -93,11 +94,30 @@ export async function shiftState(db: DB, gpId: string, now = new Date()): Promis
 
   if (g.available) return { kind: 'idle', onlineMs: Math.max(0, ms(g.online_ms)) };
 
-  // Out of the rotation. The last offer says why: one that ran out was missed;
-  // otherwise the last thing that happened was a consultation ending.
-  const [last] = rowsOf<{ status: string }>(await db.execute(
-    sql`select status from consultation_offers where gp_id = ${gpId} order by offered_at desc limit 1`));
-  return { kind: 'resting', reason: last?.status === 'expired' ? 'missed' : 'finished' };
+  // Out of the rotation. The latest offer says why: one that ran out was missed;
+  // otherwise the last thing that happened was a consultation ending. Its fee and
+  // length are reported only if it ended after that latest offer was made, so an
+  // older consultation is never shown as the one just finished. One statement.
+  const [r] = rowsOf<{
+    offer_status: string | null; status: string | null; gp_fee_pence: number | null; length_ms: number | null; after_offer: boolean | null;
+  }>(await db.execute(sql`
+    select o.status as offer_status, c.status, c.gp_fee_pence,
+      extract(epoch from (c.ended_at - c.started_at)) * 1000 as length_ms,
+      (o.offered_at is null or c.ended_at > o.offered_at) as after_offer
+    from (select 1) one
+    left join lateral (
+      select status, offered_at from consultation_offers where gp_id = ${gpId} order by offered_at desc limit 1
+    ) o on true
+    left join lateral (
+      select status, gp_fee_pence, started_at, ended_at from consultations
+      where gp_id = ${gpId} and ended_at is not null and started_at is not null order by ended_at desc limit 1
+    ) c on true`));
+  if (r?.offer_status === 'expired') return { kind: 'resting', reason: 'missed' };
+  // A no-show is not paid, so it carries no earnings.
+  if (r?.status === 'completed' && r.after_offer) {
+    return { kind: 'resting', reason: 'finished', last: { feePence: Number(r.gp_fee_pence), durationMs: Math.max(0, ms(r.length_ms)) } };
+  }
+  return { kind: 'resting', reason: 'finished' };
 }
 
 /* ------------------------------------------------- online and offline */
@@ -235,14 +255,28 @@ export async function declineOffer(db: DB, gpId: string, offerId: string, now = 
 
 /* ---------------------------------------------------- the consultation */
 
+// The consultation ended, and the room of its video call, if it had one, to
+// retire (lib/video/calls.ts retireRoom): the people in it hold its keys, so
+// deleting the room is what disconnects them.
+export type EndResult = { ok: true; room: string | null } | { ok: false; reason: ShiftReason };
+
 // A doctor holds at most one consultation, so no id comes from the browser:
-// each ends their own, whichever it is.
-async function end(db: DB, gpId: string, to: 'completed' | 'no_show', now: Date): Promise<ShiftResult> {
-  const ended = rowsOf(await db.execute(sql`
-    update consultations set status = ${to}, ended_at = ${iso(now)}::timestamptz
-    where gp_id = ${gpId} and status = 'in_progress'
-    returning id`));
-  return ended.length > 0 ? OK : no('nothing_in_progress');
+// each ends their own, whichever it is. One statement ends it and closes its
+// call, clearing both keys, so no key outlives the consultation.
+async function end(db: DB, gpId: string, to: 'completed' | 'no_show', now: Date): Promise<EndResult> {
+  const [ended] = rowsOf<{ id: string; room: string | null }>(await db.execute(sql`
+    with ended as (
+      update consultations set status = ${to}, ended_at = ${iso(now)}::timestamptz
+      where gp_id = ${gpId} and status = 'in_progress'
+      returning id
+    ), closed as (
+      update consultation_calls
+      set closed_at = ${iso(now)}::timestamptz, sealed_gp_key = null, sealed_patient_key = null
+      where consultation_id in (select id from ended) and closed_at is null
+      returning room
+    )
+    select ended.id, closed.room from ended left join closed on true`));
+  return ended ? { ok: true, room: ended.room ?? null } : { ok: false, reason: 'nothing_in_progress' };
 }
 
 export const completeConsultation = (db: DB, gpId: string, now = new Date()) => end(db, gpId, 'completed', now);

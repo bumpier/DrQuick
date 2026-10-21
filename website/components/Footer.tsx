@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import { Wordmark } from '@/components/Wordmark';
 import { FOOTER_LINKS } from '@/lib/site';
+import { demoMode } from '@/lib/demo';
 import { CookieSettingsButton } from '@/components/ConsentBanner';
 
 export function Footer() {
@@ -14,7 +15,7 @@ export function Footer() {
       <div className="wrap">
         <nav aria-label="Footer" className="mb-12">
           <ul className="flex list-none flex-wrap gap-x-8 gap-y-3 text-label font-semibold text-white">
-            {FOOTER_LINKS.map(({ href, label }) => (
+            {FOOTER_LINKS.filter(({ href }) => !(demoMode() && href === '/blog')).map(({ href, label }) => (
               <li key={href}><Link href={href} className="no-underline hover:text-primary">{label}</Link></li>
             ))}
             <li><CookieSettingsButton className="cursor-pointer font-semibold hover:text-primary" /></li>

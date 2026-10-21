@@ -103,6 +103,23 @@ describe('where it may run', () => {
     await expect(seedDoctorDemo(db, NOW)).rejects.toThrow(/local/);
   });
 
+  test('the route refuses a foreign Host or another site, before touching the database', async () => {
+    const post = (host: string, headers: Record<string, string> = {}) =>
+      devRoute(new Request(`http://${host}/dev/doctor?do=seed`, { method: 'POST', headers: { host, ...headers } }));
+    for (const response of [
+      await post('evil.example'),
+      await post('localhost', { 'sec-fetch-site': 'cross-site' }),
+      await post('localhost', { 'sec-fetch-site': 'same-site' }),
+    ]) {
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ error: 'not_local' });
+    }
+    expect(await db.select().from(gps)).toHaveLength(0);
+    // Node's fetch (scripts/dev-doctor.mjs) sends a localhost Host and no sec-fetch-site.
+    expect((await post('localhost:3100')).status).toBe(200);
+    expect((await post('127.0.0.1:3100', { 'sec-fetch-site': 'same-origin' })).status).toBe(200);
+  });
+
   test('the route seeds, adds a request, and refuses anything else', async () => {
     const post = (action: string) => devRoute(new Request(`http://localhost/dev/doctor?do=${action}`, { method: 'POST' }));
     const seeded = await post('seed');

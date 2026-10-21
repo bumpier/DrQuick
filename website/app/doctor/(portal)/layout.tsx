@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { DoctorSidebar } from '@/components/doctor/DoctorSidebar';
-import { ConnectionNotice, OfferNotice, ShiftProvider } from '@/components/doctor/ShiftProvider';
+import { CallPanel } from '@/components/doctor/CallPanel';
+import { ConnectionNotice, ConsultationBar, OfferNotice, ShiftProvider } from '@/components/doctor/ShiftProvider';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Wordmark } from '@/components/Wordmark';
@@ -11,7 +12,8 @@ import { shiftState, type ShiftState } from '@/lib/doctor/shift';
 
 // Every signed-in portal page: the session is checked here, and again in every
 // page and server action, since a layout does not re-render on every action.
-// The shift lives here too, so an offer reaches the doctor on any page.
+// The shift lives here too, so an offer reaches the doctor on any page, and so
+// does the video call, so it survives the doctor opening another page.
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const doctor = await requireDoctor();
   const db = await getDb();
@@ -27,8 +29,13 @@ export default async function PortalLayout({ children }: { children: ReactNode }
           </header>
           <div className="mx-auto w-full max-w-[1080px] px-8 py-10 max-cols:px-4 max-cols:py-6">
             <ShiftProvider initial={initial}>
+              <ConsultationBar />
               <ConnectionNotice />
               <OfferNotice />
+              {/* Above the page, so the video is the first thing in a consultation
+                  and Earnings or Profile open under the bar that leads back to it.
+                  Mounted once here: moving it per page would end the call. */}
+              <CallPanel />
               {children}
             </ShiftProvider>
           </div>

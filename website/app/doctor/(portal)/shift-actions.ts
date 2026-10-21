@@ -4,7 +4,9 @@
 // for that doctor alone. Each answers with the state the screen should now
 // show, so a click never waits for the next poll. None of them sets a cookie
 // or revalidates a path: either would re-render the page mid-click.
+import { after } from 'next/server';
 import { getDb } from '@/lib/db';
+import { retireRoom } from '@/lib/video/calls';
 import { requireDoctor, type Doctor } from '@/lib/doctor-auth';
 import {
   acceptOffer, backOnline, completeConsultation, declineOffer, goOffline, goOnline, markNoShow, shiftState,
@@ -44,5 +46,18 @@ export const goOfflineAction = async () => act((db, d) => goOffline(db, d.id));
 export const backOnlineAction = async () => act((db, d) => backOnline(db, d.id));
 export const acceptAction = async (offerId: string) => act((db, d) => acceptOffer(db, d.id, String(offerId)));
 export const declineAction = async (offerId: string) => act((db, d) => declineOffer(db, d.id, String(offerId)));
-export const completeAction = async () => act((db, d) => completeConsultation(db, d.id), 'Consultation completed.');
-export const noShowAction = async () => act((db, d) => markNoShow(db, d.id), 'Recorded as a no-show.');
+// Ending a consultation closes its video call and clears its keys in the same
+// statement. The people in the call hold the keys, so its room, which is what
+// disconnects them, is deleted once the reply has gone; every poll retries
+// until the media server confirms it (lib/video/calls.ts).
+const ending = (end: typeof completeConsultation) => async (db: DB, doctor: Doctor): Promise<ShiftResult> => {
+  const result = await end(db, doctor.id);
+  if (result.ok && result.room) {
+    const room = result.room;
+    after(() => retireRoom(db, room).catch(() => {}));
+  }
+  return result;
+};
+
+export const completeAction = async () => act(ending(completeConsultation), 'Consultation completed.');
+export const noShowAction = async () => act(ending(markNoShow), 'Recorded as a no-show.');

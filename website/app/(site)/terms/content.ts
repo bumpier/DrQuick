@@ -14,7 +14,7 @@ This website is run by **[registered company name]**, **[registered address]**. 
 
 ## Dr Quick has not launched
 
-This website describes a service that is not yet open. Nobody is seen, and no consultation takes place, before Dr Quick is a CQC-registered clinical service at launch. Joining the waitlist does not create an account or commit you to anything.
+This website describes a service that is not yet open. Nobody is seen, and no consultation takes place, until Dr Quick is a CQC-registered clinical service at launch. Joining the waitlist does not create an account or commit you to anything.
 
 ${GP_FEE_ENABLED ? `## The GP sign-up fee
 

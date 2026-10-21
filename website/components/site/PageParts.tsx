@@ -14,7 +14,7 @@ export function PageHero({ title, lead, children, art }: {
   return (
     <header className="pt-4">
       <div className={cn('wrap grid gap-4 items-stretch', art && 'grid-cols-[1.15fr_.85fr] max-cols:grid-cols-1')}>
-        <div data-reveal="load" className="flex flex-col justify-center rounded-2xl bg-white shadow-card px-tile-lead-pad py-hero-t max-phone:px-6 max-phone:py-10">
+        <div data-reveal="load" className={cn('flex flex-col justify-center rounded-2xl bg-white shadow-card px-tile-lead-pad max-phone:px-6', art ? 'py-hero-t max-phone:py-10' : 'py-12 max-phone:py-10')}>
           <h1 tabIndex={-1} className="max-w-[16ch]">{title}</h1>
           <p className="text-lead leading-[1.55] text-ink-2 max-w-[48ch] mt-5">{lead}</p>
           {children && <div className="mt-8 flex flex-wrap gap-3">{children}</div>}
@@ -49,7 +49,7 @@ export function NumberedTile({ n, tile, tone = 'default', className }: {
 }) {
   const band = tone === 'band';
   return (
-    <Card variant={tone} data-reveal className={cn('tile justify-between gap-8 p-7', className)}>
+    <Card variant={tone} data-reveal className={cn('tile justify-start gap-8 p-7', className)}>
       <span aria-hidden="true" className={cn(
         'grid size-12 place-items-center rounded-full font-display text-xl font-extrabold',
         band ? 'bg-primary text-ink' : tone === 'default' ? 'bg-lime-wash text-ink' : 'bg-white text-ink',

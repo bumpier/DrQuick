@@ -40,8 +40,9 @@ const MAX_BODY = 30_000;
 export const MILESTONES = [25, 50, 75, 90, 100] as const;
 
 // Never tracked: the admin, the patient and doctor prototypes, the component
-// gallery, the unsubscribe link (its path can carry a token) and the API.
-const UNTRACKED = ['/admin', '/patient', '/doctor', '/dev', '/unsubscribe', '/api'];
+// gallery, the demo deployment's passcode page, the unsubscribe link (its path
+// can carry a token) and the API.
+const UNTRACKED = ['/admin', '/patient', '/doctor', '/dev', '/demo-access', '/unsubscribe', '/api'];
 
 export type Consent = 'granted' | 'denied' | null;
 export type Mode = 'off' | 'cookieless' | 'identified';

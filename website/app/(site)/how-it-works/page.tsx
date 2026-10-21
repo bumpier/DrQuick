@@ -3,7 +3,7 @@ import { Covers } from '@/components/Covers';
 import { Steps } from '@/components/Steps';
 import { UrgentBand } from '@/components/UrgentBand';
 import { Card } from '@/components/ui/card';
-import { SegmentedLink, SegmentedLinkGroup } from '@/components/ui/segmented-link';
+import { Button } from '@/components/ui/button';
 import { JoinTile, NumberedTile, PageHero, SiteSection, type Tone } from '@/components/site/PageParts';
 import { GP_COVERS, GP_STEPS, PATIENT_COVERS } from '@/app/landing-content';
 import { GP_CHECKS, PATIENT_JOURNEY } from './content';
@@ -35,10 +35,8 @@ export default function HowItWorksPage() {
         title="How Dr Quick works."
         lead="Tell us what’s wrong, see your price in full, and talk to a GMC-registered GP by secure video — matched to the next GP who is free, not a slot in a diary."
       >
-        <SegmentedLinkGroup aria-label="Jump to">
-          <SegmentedLink href="#patients">For patients</SegmentedLink>
-          <SegmentedLink href="#gps">For GPs</SegmentedLink>
-        </SegmentedLinkGroup>
+        <Button asChild variant="secondary"><a href="#patients">For patients</a></Button>
+        <Button asChild variant="secondary"><a href="#gps">For GPs</a></Button>
       </PageHero>
       <div className="pt-4"><UrgentBand /></div>
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { BookingFlow } from '@/components/patient/BookingFlow';
 import { BOOKING_SCREENS } from '@/lib/booking-flow';
+import { devVideoCalls } from '@/lib/video/calls';
 
 export const dynamic = 'force-static';
 export const dynamicParams = false;   // anything not listed is a 404, in development and production
@@ -17,6 +18,11 @@ export function generateStaticParams(): Array<{ step: string[] }> {
 // `params` is deliberately unused: the screen renders from the booking
 // reducer, seeded from usePathname(), identically on the server and the
 // client. The URL follows the reducer, never the reverse.
+//
+// The call is real only on a developer's machine with video calls set up,
+// where every page renders on request, and in the demo deployment
+// (lib/demo.ts), whose build bakes it in: this page is prerendered, so
+// devVideoCalls() is read at build there. The real site's build bakes in none.
 export default function Page(_props: { params: Promise<{ step?: string[] }> }) {
-  return <BookingFlow />;
+  return <BookingFlow videoCalls={devVideoCalls()} />;
 }

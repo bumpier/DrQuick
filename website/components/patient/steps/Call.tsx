@@ -12,7 +12,7 @@ import { CallClock, VideoFrame } from '../VideoFrame';
 // The consultation. The video is a placeholder that says what it is and that
 // nothing is kept; the clock counts up from the moment the patient
 // joined. Ending is confirmed, and it is not red: on this surface red is 999.
-export function Call() {
+export function Call({ videoCalls = false }: { videoCalls?: boolean }) {
   const { state, act, callSeconds } = useBooking();
   const gp = state.gp;
   if (!gp || state.callStartedAt === null) return <NothingYet screen="call" title="No consultation in progress" />;
@@ -22,7 +22,7 @@ export function Call() {
       screen="call"
       title="Your consultation"
       lead="This call is not recorded."
-      status={<VideoFrame gpRef={gp.ref} />}
+      status={<VideoFrame gpRef={gp.ref} videoCalls={videoCalls} />}
       dock={
         <ConfirmDialog
           trigger={

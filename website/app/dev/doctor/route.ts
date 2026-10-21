@@ -13,8 +13,25 @@ import { addWaitingRequest, seedDoctorDemo } from '@/lib/dev/seed-doctor';
 
 export const dynamic = 'force-dynamic';
 
+// The dev server also listens on the network: refuse a request that does not
+// name this machine or comes from another site, as app/dev/call/route.ts does.
+// Node's fetch (scripts/dev-doctor.mjs) sends a localhost Host and no sec-fetch-site.
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+function hostname(request: Request): string {
+  try {
+    return new URL(`http://${request.headers.get('host') ?? new URL(request.url).host}`).hostname;
+  } catch {
+    return '';
+  }
+}
+
 export async function POST(request: Request) {
   if (process.env.NODE_ENV === 'production') return new Response('Not found', { status: 404 });
+  const site = request.headers.get('sec-fetch-site');
+  if (!LOOPBACK.has(hostname(request)) || (site && site !== 'same-origin')) {
+    return NextResponse.json({ error: 'not_local' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
+  }
   const db = await getDb();
   if (!db) return NextResponse.json({ error: 'store_unavailable' }, { status: 503 });
 

@@ -7,10 +7,11 @@
 // Under /doctor so the dq_doctor cookie (path=/doctor) is sent. It answers 401
 // rather than redirecting, because a redirected fetch would return the sign-in
 // page with a 200. It never sets a cookie: that would re-render the page.
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { getDb } from '@/lib/db';
 import { currentDoctor } from '@/lib/doctor-auth';
 import { pulse } from '@/lib/doctor/shift';
+import { retryRoomDeletes, sweepCalls } from '@/lib/video/calls';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,13 @@ export async function POST(request: Request) {
   if (!db) return NextResponse.json({ error: 'store_unavailable' }, { status: 503, headers: NO_STORE });
 
   const state = await pulse(db, doctor.id);
+  // Once the reply has gone: close any video call whose consultation has ended,
+  // and retry deleting the rooms not yet confirmed gone (lib/video/calls.ts).
+  // The poll never waits on the media server.
+  after(async () => {
+    await sweepCalls(db).catch(() => {});
+    await retryRoomDeletes(db).catch(() => {});
+  });
   // The build id lets a long-open tab notice a deploy and reload when idle.
   return NextResponse.json({ state, build: process.env.NEXT_PUBLIC_BUILD_SHA ?? '' }, { headers: NO_STORE });
 }
