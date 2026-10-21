@@ -1,19 +1,32 @@
-// Admin sign-in for the blog editor. Server-only: node:crypto and next/headers
-// keep it out of any client bundle. No dependencies.
+// Admin sign-in. Server-only: node:crypto and next/headers keep it out of any
+// client bundle. No dependencies.
 //
-// Accounts come from ADMIN_USERS, entries separated by ";":
+// Accounts come from two places. ADMIN_USERS holds backstop Admins, entries
+// separated by ";":
 //   email|Display Name|scrypt:16384:<salt>:<hash>
 // made with `npm run admin:hash`. Colons, not dollar signs: Next expands
-// $NAME inside .env files, which would silently corrupt a salt. Removing an entry signs that admin out on
-// their next request, because every session is re-checked against the list.
+// $NAME inside .env files, which would silently corrupt a salt. The Team page
+// cannot remove these; they are the way back in. Everyone else is a row in
+// admin_users with a role (lib/admin/roles.ts). An address in both places is
+// the backstop entry.
 //
-// A session is base64url(JSON {email, exp}) + "." + HMAC-SHA256 over it with
-// ADMIN_SESSION_SECRET, in an httpOnly, SameSite=Strict cookie scoped to /admin.
+// A session is base64url(JSON payload) + "." + HMAC-SHA256 over it with
+// ADMIN_SESSION_SECRET, in an httpOnly, SameSite=Strict cookie scoped to
+// /admin. A backstop session carries {email, exp}; a team session carries
+// {uid, epoch, exp}. Every read re-checks the source, so removing a backstop
+// entry, or removing a member or changing their password (which bumps
+// session_epoch), signs them out on their next request, and a role change
+// applies at once.
 // The proxy (proxy.ts) only redirects when the cookie is missing; the real
-// check is requireAdmin() here, in every admin page and every server action.
+// check is a guard here, in every admin page, server action and route, and
+// each takes the area it serves: requireAdmin(area) for pages (a redirect),
+// actionAdmin(area) for server actions (null) and routeAdmin(area) for route
+// handlers (a 401 or 403 Response).
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { adminAccounts } from '@/lib/admin/backstop';
+import { can, type Admin, type Area } from '@/lib/admin/roles';
+import { accountByEmail, accountById } from '@/lib/admin/team';
 import { getDb } from '@/lib/db';
 import { hashPassword, verifyPassword } from '@/lib/password';
 import { hashKey, hit } from '@/lib/rate-limit';
@@ -22,7 +35,10 @@ import { readToken, signToken } from '@/lib/signed-token';
 export const SESSION_COOKIE = 'dq_admin';
 export const SESSION_HOURS = 8;
 
-export type Admin = { email: string; name: string };
+export type { Admin } from '@/lib/admin/roles';
+
+export const NOT_YOUR_ROLE = { ok: false, error: 'This is not part of your role. Ask an Admin if you need it.' } as const;
+export const NO_ACCESS_PATH = '/admin/no-access';
 
 export { hashPassword, verifyPassword } from '@/lib/password';
 export { adminAccounts } from '@/lib/admin/backstop';
@@ -33,10 +49,21 @@ export { adminAccounts } from '@/lib/admin/backstop';
 // which addresses are admins.
 const DECOY = hashPassword('decoy', Buffer.alloc(16));
 
-export function verifyCredentials(email: string, password: string): Admin | null {
-  const account = adminAccounts().get(email.trim().toLowerCase());
-  const ok = verifyPassword(password, account?.hash ?? DECOY);
-  return ok && account ? { email: account.email, name: account.name } : null;
+// Exactly one scrypt whatever the outcome, so the time never says whether an
+// address is an admin, a member or nobody. A backstop entry is checked against
+// its own hash only, even if a team row shares the address.
+export async function verifyCredentials(email: string, password: string): Promise<Admin | null> {
+  const key = email.trim().toLowerCase();
+  const backstop = adminAccounts().get(key);
+  if (backstop) {
+    return verifyPassword(password, backstop.hash)
+      ? { id: null, email: backstop.email, name: backstop.name, role: 'admin' }
+      : null;
+  }
+  const db = await getDb();
+  const row = db ? await accountByEmail(db, key) : null;
+  const ok = verifyPassword(password, row?.passwordHash ?? DECOY);
+  return ok && row?.passwordHash ? { id: row.id, email: row.email, name: row.name, role: row.role } : null;
 }
 
 /* ------------------------------------------------------------- sessions */
@@ -52,30 +79,74 @@ export function signSession(email: string, now = Date.now()): string | null {
   return signToken({ email, exp: now + SESSION_HOURS * 3600_000 }, key);
 }
 
-// The admin a token belongs to, if it is genuine, unexpired and the email is
-// still on the list.
-export function readSession(token: string | undefined, now = Date.now()): Admin | null {
+export function signAccountSession(id: string, epoch: number, now = Date.now()): string | null {
+  const key = secret();
+  if (!key) return null;
+  return signToken({ uid: id, epoch, exp: now + SESSION_HOURS * 3600_000 }, key);
+}
+
+function backstopAdmin(email: string): Admin | null {
+  const account = adminAccounts().get(email);
+  return account ? { id: null, email: account.email, name: account.name, role: 'admin' } : null;
+}
+
+// The admin a token belongs to, if it is genuine, unexpired and its source
+// still vouches for it: the email still on ADMIN_USERS, or the member still
+// active and on the epoch the token was signed with.
+export async function readSession(token: string | undefined, now = Date.now()): Promise<Admin | null> {
   const key = secret();
   if (!key) return null;
   const data = readToken(token, key, now);
-  if (!data || typeof data.email !== 'string') return null;
-  const account = adminAccounts().get(data.email);
-  return account ? { email: account.email, name: account.name } : null;
+  if (!data) return null;
+  if (typeof data.email === 'string') return backstopAdmin(data.email);
+  if (typeof data.uid !== 'string' || typeof data.epoch !== 'number') return null;
+  const db = await getDb();
+  if (!db) return null;
+  const row = await accountById(db, data.uid);
+  if (!row || row.status !== 'active' || row.sessionEpoch !== data.epoch) return null;
+  return backstopAdmin(row.email) ?? { id: row.id, email: row.email, name: row.name, role: row.role };
 }
 
 export async function currentAdmin(): Promise<Admin | null> {
   return readSession((await cookies()).get(SESSION_COOKIE)?.value);
 }
 
-export async function requireAdmin(): Promise<Admin> {
+// For pages and layouts: signed out goes to sign-in, outside the role to the
+// no-access page. With no area, any signed-in admin passes (Task 4 makes the
+// area required).
+export async function requireAdmin(area?: Area): Promise<Admin> {
   const admin = await currentAdmin();
   if (!admin) redirect('/admin/login');
+  if (area && !can(admin.role, area)) redirect(NO_ACCESS_PATH);
+  return admin;
+}
+
+// For server actions: signed out goes to sign-in; outside the role the action
+// gets null and answers NOT_YOUR_ROLE.
+export async function actionAdmin(area: Area): Promise<Admin | null> {
+  const admin = await currentAdmin();
+  if (!admin) redirect('/admin/login');
+  return can(admin.role, area) ? admin : null;
+}
+
+// For route handlers, which answer rather than redirect.
+export async function routeAdmin(area: Area): Promise<Admin | Response> {
+  const admin = await currentAdmin();
+  if (!admin) return new Response('Sign in first.', { status: 401 });
+  if (!can(admin.role, area)) return new Response('This is not part of your role.', { status: 403 });
   return admin;
 }
 
 // Only from a server action or route handler: cookies can be set nowhere else.
-export async function startSession(email: string): Promise<boolean> {
-  const token = signSession(email);
+export async function startSession(admin: Admin): Promise<boolean> {
+  let token: string | null;
+  if (admin.id === null) {
+    token = signSession(admin.email);
+  } else {
+    const db = await getDb();
+    const row = db ? await accountById(db, admin.id) : null;
+    token = row ? signAccountSession(row.id, row.sessionEpoch) : null;
+  }
   if (!token) return false;
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,

@@ -3,7 +3,10 @@
 // each one is still treated as an untrusted entry point.
 import { redirect } from 'next/navigation';
 import { endSession, loginAllowed, startSession, verifyCredentials } from '@/lib/admin-auth';
+import { audit } from '@/lib/admin/audit';
+import { recordSignIn } from '@/lib/admin/team';
 import { clientIp } from '@/lib/client-ip';
+import { getDb } from '@/lib/db';
 
 export type SignInState = { error: string | null; email: string };
 
@@ -25,10 +28,15 @@ export async function signIn(_prev: SignInState, form: FormData): Promise<SignIn
       : { error: 'Sign-in is unavailable right now. Try again shortly.', email };
   }
 
-  const admin = verifyCredentials(email, password);
+  const admin = await verifyCredentials(email, password);
   if (!admin) return { error: NOT_RECOGNISED, email };
-  if (!(await startSession(admin.email))) {
+  if (!(await startSession(admin))) {
     return { error: 'Sign-in is not set up on this server (ADMIN_SESSION_SECRET).', email };
+  }
+  const db = await getDb(); // loginAllowed already needed one
+  if (db) {
+    if (admin.id) await recordSignIn(db, admin.id);
+    await audit(db, admin, 'sign_in', admin.id, { backstop: admin.id === null });
   }
   redirect('/admin'); // throws, so it sits outside any try
 }

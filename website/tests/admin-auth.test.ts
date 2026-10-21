@@ -1,6 +1,10 @@
 import { test, expect, beforeAll, beforeEach, vi, describe } from 'vitest';
 import { resetDb, useTestDb } from './helpers/db';
 import { setDb, type DB } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { adminAuditLog, adminUsers } from '@/lib/db/schema';
+import { addMember, removeMember } from '@/lib/admin/team';
+import { addTestMember } from './helpers/admin';
 
 // next/headers is request-scoped; stand in a cookie jar and a header bag.
 const jar = new Map<string, { value: string; opts?: Record<string, unknown> }>();
@@ -18,8 +22,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 import {
-  SESSION_COOKIE, adminAccounts, hashPassword, loginAllowed, readSession, requireAdmin,
-  signSession, verifyCredentials, verifyPassword,
+  SESSION_COOKIE, actionAdmin, adminAccounts, hashPassword, loginAllowed, readSession, requireAdmin,
+  routeAdmin, signSession, verifyCredentials, verifyPassword,
 } from '@/lib/admin-auth';
 import { signIn, signOut } from '@/app/admin/actions';
 
@@ -51,44 +55,44 @@ describe('passwords', () => {
     expect([...adminAccounts().keys()]).toEqual(['editor@example.com', 'other@example.com']);
   });
 
-  test('credentials: right password in, wrong password and unknown email both out', () => {
-    expect(verifyCredentials(' EDITOR@example.com ', 'correct horse battery')).toEqual({ email: 'editor@example.com', name: 'Sam Editor' });
-    expect(verifyCredentials('editor@example.com', 'wrong')).toBeNull();
-    expect(verifyCredentials('nobody@example.com', 'correct horse battery')).toBeNull();
-    expect(verifyCredentials('nobody@example.com', 'decoy')).toBeNull();
+  test('credentials: right password in, wrong password and unknown email both out', async () => {
+    expect(await verifyCredentials(' EDITOR@example.com ', 'correct horse battery')).toEqual({ id: null, email: 'editor@example.com', name: 'Sam Editor', role: 'admin' });
+    expect(await verifyCredentials('editor@example.com', 'wrong')).toBeNull();
+    expect(await verifyCredentials('nobody@example.com', 'correct horse battery')).toBeNull();
+    expect(await verifyCredentials('nobody@example.com', 'decoy')).toBeNull();
   });
 });
 
 describe('sessions', () => {
-  test('a signed session reads back as its admin', () => {
-    expect(readSession(signSession('editor@example.com', 1000)!, 2000)).toEqual({ email: 'editor@example.com', name: 'Sam Editor' });
+  test('a signed session reads back as its admin', async () => {
+    expect(await readSession(signSession('editor@example.com', 1000)!, 2000)).toEqual({ id: null, email: 'editor@example.com', name: 'Sam Editor', role: 'admin' });
   });
 
-  test('a tampered payload or signature is refused', () => {
+  test('a tampered payload or signature is refused', async () => {
     const token = signSession('editor@example.com')!;
     const [payload, sig] = token.split('.');
     const forged = Buffer.from(JSON.stringify({ email: 'other@example.com', exp: Date.now() + 1e9 })).toString('base64url');
-    expect(readSession(`${forged}.${sig}`)).toBeNull();
-    expect(readSession(`${payload}.${sig.slice(0, -2)}xx`)).toBeNull();
-    expect(readSession('garbage')).toBeNull();
+    expect(await readSession(`${forged}.${sig}`)).toBeNull();
+    expect(await readSession(`${payload}.${sig.slice(0, -2)}xx`)).toBeNull();
+    expect(await readSession('garbage')).toBeNull();
   });
 
-  test('an expired session is refused', () => {
+  test('an expired session is refused', async () => {
     const token = signSession('editor@example.com', 0)!;
-    expect(readSession(token, 8 * 3600_000 + 1)).toBeNull();
+    expect(await readSession(token, 8 * 3600_000 + 1)).toBeNull();
   });
 
-  test('removing an admin from the list ends their session', () => {
+  test('removing an admin from the list ends their session', async () => {
     const token = signSession('other@example.com')!;
     vi.stubEnv('ADMIN_USERS', `editor@example.com|Sam Editor|${HASH}`);
-    expect(readSession(token)).toBeNull();
+    expect(await readSession(token)).toBeNull();
   });
 
-  test('with no secret, or a short one, nothing is signed and nothing reads', () => {
+  test('with no secret, or a short one, nothing is signed and nothing reads', async () => {
     const token = signSession('editor@example.com')!;
     vi.stubEnv('ADMIN_SESSION_SECRET', 'short');
     expect(signSession('editor@example.com')).toBeNull();
-    expect(readSession(token)).toBeNull();
+    expect(await readSession(token)).toBeNull();
   });
 
   test('requireAdmin sends a visitor with no session to sign in', async () => {
@@ -109,7 +113,7 @@ describe('sign in and out', () => {
       .rejects.toThrow('NEXT_REDIRECT /admin');
     const cookie = jar.get(SESSION_COOKIE)!;
     expect(cookie.opts).toMatchObject({ httpOnly: true, sameSite: 'strict', path: '/admin' });
-    expect(readSession(cookie.value)?.email).toBe('editor@example.com');
+    expect((await readSession(cookie.value))?.email).toBe('editor@example.com');
     await expect(requireAdmin()).resolves.toMatchObject({ name: 'Sam Editor' });
   });
 
@@ -145,5 +149,67 @@ describe('sign in and out', () => {
     jar.set(SESSION_COOKIE, { value: signSession('editor@example.com')! });
     await expect(signOut()).rejects.toThrow('NEXT_REDIRECT /admin/login');
     expect(jar.has(SESSION_COOKIE)).toBe(false);
+  });
+});
+
+describe('team accounts', () => {
+  const signInAs = (email: string, password: string) => {
+    const f = new FormData(); f.set('email', email); f.set('password', password);
+    return signIn({ error: null, email: '' }, f);
+  };
+  const as = (token: string) => jar.set(SESSION_COOKIE, { value: token });
+
+  test('an active member signs in with their own role; the sign-in is recorded and audited', async () => {
+    const m = await addTestMember(db, 'finance');
+    await expect(signInAs(m.email, 'correct horse battery')).rejects.toThrow('NEXT_REDIRECT /admin');
+    expect(await readSession(jar.get(SESSION_COOKIE)!.value)).toEqual({ id: m.id, email: m.email, name: 'Test Finance', role: 'finance' });
+    expect((await db.select().from(adminUsers))[0].lastSignInAt).toBeInstanceOf(Date);
+    expect(await db.select().from(adminAuditLog)).toMatchObject([{ adminEmail: m.email, action: 'sign_in', target: m.id }]);
+  });
+
+  test('an invited person, a removed person and a wrong password all get the same answer and no cookie', async () => {
+    await addTestMember(db, 'operations', { status: 'invited', passwordHash: null });
+    await addTestMember(db, 'marketing', { status: 'removed' });
+    for (const [email, pw] of [['operations@team.example', 'correct horse battery'], ['marketing@team.example', 'correct horse battery'], ['editor@example.com', 'nope']]) {
+      expect((await signInAs(email, pw)).error).toBe('Email or password not recognised.');
+    }
+    expect(jar.has(SESSION_COOKIE)).toBe(false);
+  });
+
+  test('ADMIN_USERS wins over a team row with the same address', async () => {
+    await addTestMember(db, 'marketing', { email: 'editor@example.com', passwordHash: hashPassword('another password here') });
+    expect(await verifyCredentials('editor@example.com', 'correct horse battery')).toMatchObject({ id: null, role: 'admin' });
+    expect(await verifyCredentials('editor@example.com', 'another password here')).toBeNull();
+  });
+
+  test('removal and a password change end a session on the next request; a role change applies without signing in again', async () => {
+    const m = await addTestMember(db, 'operations');
+    await db.update(adminUsers).set({ role: 'finance' }).where(eq(adminUsers.id, m.id));
+    expect((await readSession(m.token))?.role).toBe('finance');
+    await db.update(adminUsers).set({ sessionEpoch: 1 }).where(eq(adminUsers.id, m.id));
+    expect(await readSession(m.token)).toBeNull();
+    const n = await addTestMember(db, 'marketing');
+    await db.update(adminUsers).set({ status: 'removed' }).where(eq(adminUsers.id, n.id));
+    expect(await readSession(n.token)).toBeNull();
+  });
+
+  test('someone removed and added again cannot use their old session', async () => {
+    const m = await addTestMember(db, 'operations');
+    const lead = { id: null, email: 'editor@example.com', name: 'Sam Editor', role: 'admin' } as const;
+    await removeMember(db, lead, m.id);
+    await addMember(db, lead, { name: 'Back Again', email: m.email, role: 'operations' });
+    expect(await readSession(m.token)).toBeNull();
+  });
+
+  test('the guards: outside your role a page redirects, an action gets null, a route gets 403', async () => {
+    as((await addTestMember(db, 'marketing')).token);
+    await expect(requireAdmin('finance')).rejects.toThrow('NEXT_REDIRECT /admin/no-access');
+    await expect(requireAdmin('blog')).resolves.toMatchObject({ role: 'marketing' });
+    expect(await actionAdmin('finance')).toBeNull();
+    expect(((await routeAdmin('finance')) as Response).status).toBe(403);
+    expect(await routeAdmin('analytics')).toMatchObject({ role: 'marketing' });
+    jar.clear();
+    expect(((await routeAdmin('analytics')) as Response).status).toBe(401);
+    await expect(actionAdmin('blog')).rejects.toThrow('NEXT_REDIRECT /admin/login');
   });
 });
