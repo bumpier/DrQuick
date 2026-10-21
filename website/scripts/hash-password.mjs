@@ -1,4 +1,5 @@
-// Prints one ADMIN_USERS entry for the blog editor. No dependencies.
+// Prints one *backstop* ADMIN_USERS entry. It is always an Admin, and the Team
+// page cannot remove it. Everyone else is added from the Team page. No dependencies.
 //
 //   npm run admin:hash -- editor@example.com "Sam Editor"
 //

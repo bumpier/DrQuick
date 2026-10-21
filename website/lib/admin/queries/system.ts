@@ -12,8 +12,10 @@ import { rowsOf } from '@/lib/rate-limit';
 import { emailConfigured } from '@/lib/email';
 import { stripeConfigured } from '@/lib/finance/stripe-webhook';
 import { param, type Params } from '@/lib/admin/range';
+import { ROLE_LABELS, type Role } from '@/lib/admin/roles';
 
 const n = (v: unknown) => Number(v ?? 0);
+const roleLabel = (v: unknown) => ROLE_LABELS[v as Role] ?? String(v ?? '?');
 const dateOrNull = (v: unknown) => (v ? new Date(v as string | Date) : null);
 const DAY = 86_400_000;
 
@@ -267,6 +269,13 @@ export const AUDIT_LABELS: Record<string, string> = {
   doctor_pause: 'Paused a doctor',
   doctor_resume: 'Resumed a doctor',
   doctor_link_sent: 'Emailed a doctor a sign-in link',
+  sign_in: 'Signed in',
+  team_add: 'Added a team member',
+  team_role: 'Changed a role',
+  team_link: 'Sent a set-password link',
+  team_remove: 'Removed a team member',
+  team_accept: 'Accepted an invite',
+  team_password: 'Set a new password',
 };
 export const auditLabel = (action: string) => AUDIT_LABELS[action] ?? action.replace(/_/g, ' ');
 
@@ -282,6 +291,11 @@ export function summariseMeta(action: string, meta: Record<string, unknown> | nu
     case 'erase_person': return `${n(m.signupsRemoved)} ${n(m.signupsRemoved) === 1 ? 'sign-up' : 'sign-ups'} removed${m.via === 'settings' ? ', from Settings' : ''}`;
     case 'export_csv': return `${n(m.rows)} rows${m.status ? `, status ${String(m.status)}` : ''}${m.searched ? ', searched' : ''}`;
     case 'export_revenue_csv': return m.demo ? 'Demo data' : 'Real data';
+    case 'team_add': return `${roleLabel(m.role)}${m.linkShown ? ', link shown on screen' : ''}`;
+    case 'team_role': return `${roleLabel(m.from)} → ${roleLabel(m.to)}`;
+    case 'team_link': return m.linkShown ? 'Link shown on screen' : 'Emailed';
+    case 'team_remove': return roleLabel(m.role);
+    case 'sign_in': return m.backstop ? 'Backstop account' : '';
     case 'resend_confirmation':
     case 'resend_email': return [m.template, m.status].filter(Boolean).map(String).join(', ');
   }

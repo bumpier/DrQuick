@@ -78,7 +78,7 @@ describe('admin nav', () => {
       '/admin/analytics/traffic', '/admin/analytics/engagement', '/admin/analytics/funnels',
       '/admin/analytics/heatmaps', '/admin/analytics/visitors', '/admin/analytics/live',
       '/admin/finance/revenue', '/admin/finance/consultations', '/admin/finance/payouts',
-      '/admin/blog', '/admin/system/technical', '/admin/system/emails', '/admin/system/audit', '/admin/system/settings',
+      '/admin/blog', '/admin/system/team', '/admin/system/technical', '/admin/system/emails', '/admin/system/audit', '/admin/system/settings',
     ]);
   });
   test('lights the section a path belongs to', () => {

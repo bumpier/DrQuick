@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { DownloadIcon } from 'lucide-react';
-import { EmptyState } from '@/components/app/EmptyState';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { EraseByEmail } from '@/components/admin/SystemControls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { adminAccounts, requireAdmin } from '@/lib/admin-auth';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -20,8 +19,7 @@ const RETENTION: Array<{ what: string; kept: string }> = [
 const DOWNLOAD = 'inline-flex h-12 items-center gap-2 rounded-pill bg-white px-5 font-semibold text-ink no-underline ring-2 ring-ink ring-inset hover:bg-surface-mid';
 
 export default async function SettingsPage() {
-  const me = await requireAdmin('settings');
-  const admins = [...adminAccounts().values()].map(({ email, name }) => ({ email, name }));
+  await requireAdmin('settings');
 
   return (
     <>
@@ -30,20 +28,11 @@ export default async function SettingsPage() {
       <div className="grid grid-cols-2 gap-4 max-cols:grid-cols-1">
         <Card size="sm" className="min-w-0">
           <CardHeader>
-            <CardTitle>Admins</CardTitle>
-            <p className="text-fine text-ink-2">From ADMIN_USERS on the server. Add one with npm run admin:hash; removing an entry signs that admin out.</p>
+            <CardTitle>Team</CardTitle>
+            <p className="text-fine text-ink-2">Who can sign in, and what each person can do.</p>
           </CardHeader>
           <CardContent>
-            {admins.length === 0 ? <EmptyState>No admins configured.</EmptyState> : (
-              <ul className="grid gap-2">
-                {admins.map((a) => (
-                  <li key={a.email} className="flex flex-wrap items-baseline justify-between gap-x-3 border-b border-rule pb-2 last:border-0">
-                    <span className="font-semibold">{a.name}{a.email === me.email && <span className="font-normal text-ink-2"> (you)</span>}</span>
-                    <span className="text-fine break-all text-ink-2">{a.email}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <a href="/admin/system/team" className={DOWNLOAD}>Manage the team</a>
           </CardContent>
         </Card>
 

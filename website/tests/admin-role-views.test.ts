@@ -9,7 +9,7 @@ test('each role’s sidebar holds its own sections and no empty groups', () => {
   expect(shape('operations')).toEqual([['Home', ['Overview']], ['Waitlist', ['Patients', 'GPs']], ['System', ['Emails']]]);
   expect(shape('finance')).toEqual([['Home', ['Overview']], ['Finance', ['Revenue', 'Consultations', 'Payouts']]]);
   expect(shape('marketing')).toEqual([['Home', ['Overview']], ['Analytics', ['Traffic', 'Engagement', 'Funnels', 'Heatmaps', 'Visitors', 'Live']], ['Content', ['Blog']]]);
-  expect(shape('admin').find(([label]) => label === 'System')).toEqual(['System', ['Technical', 'Emails', 'Audit log', 'Settings']]);
+  expect(shape('admin').find(([label]) => label === 'System')).toEqual(['System', ['Team', 'Technical', 'Emails', 'Audit log', 'Settings']]);
 });
 
 test('each role’s overview tiles', () => {

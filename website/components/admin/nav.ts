@@ -5,7 +5,7 @@
 import {
   BanknoteIcon, ChartLineIcon, ClipboardListIcon, CpuIcon, FileTextIcon, FilterIcon,
   HandCoinsIcon, LayoutDashboardIcon, MailIcon, MousePointerClickIcon, RadioIcon, ScrollTextIcon,
-  SettingsIcon, StethoscopeIcon, TimerIcon, UserSearchIcon, UsersIcon, type LucideIcon,
+  SettingsIcon, StethoscopeIcon, TimerIcon, UserCogIcon, UserSearchIcon, UsersIcon, type LucideIcon,
 } from 'lucide-react';
 
 import { activeNavHref } from '@/components/app/nav';
@@ -46,6 +46,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     label: 'System',
     items: [
+      { href: '/admin/system/team', label: 'Team', icon: UserCogIcon, area: 'team' },
       { href: '/admin/system/technical', label: 'Technical', icon: CpuIcon, area: 'technical' },
       { href: '/admin/system/emails', label: 'Emails', icon: MailIcon, area: 'emails' },
       { href: '/admin/system/audit', label: 'Audit log', icon: ScrollTextIcon, area: 'audit' },
