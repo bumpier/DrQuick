@@ -9,9 +9,10 @@
 //    lib/admin-auth.ts.
 //  - An active person's reset is never shown on screen, only emailed. Showing
 //    it would let whoever clicked "send reset" sign in as them.
-//  - The last-Admin check runs in the change's own transaction, holding a lock
-//    on the active Admin rows, so two Admins removing each other at once
-//    cannot both pass it.
+//  - The last-Admin check runs in the change's own transaction. It takes the
+//    lock on the active Admin rows first, in id order, and only then reads the
+//    target, so concurrent changes queue behind each other: two Admins removing
+//    each other at once cannot both pass the check, and cannot deadlock.
 //
 // This file must not import lib/admin-auth.ts, which imports it.
 import { createHash, randomBytes } from 'node:crypto';
@@ -206,14 +207,19 @@ export async function setPasswordWithLink(db: DB, token: string, password: strin
 
 type Tx = Parameters<Parameters<DB['transaction']>[0]>[0];
 
+// Locks every active Admin row, in id order, and returns their ids. Call it
+// first in a change that may remove an Admin, before touching the target, so
+// every such transaction takes its locks in the same order and they queue
+// rather than deadlock.
+const lockActiveAdmins = async (tx: Tx): Promise<string[]> =>
+  (await tx.select({ id: adminUsers.id }).from(adminUsers)
+    .where(and(eq(adminUsers.role, 'admin'), eq(adminUsers.status, 'active')))
+    .orderBy(adminUsers.id).for('update')).map((r) => r.id);
+
 // Whether, without this person, someone could still sign in as an Admin: an
-// active Admin row or a backstop account. Locks the active Admin rows until
-// the transaction ends, so concurrent changes queue behind each other.
-async function anotherAdminRemains(tx: Tx, targetId: string): Promise<boolean> {
-  const active = await tx.select({ id: adminUsers.id }).from(adminUsers)
-    .where(and(eq(adminUsers.role, 'admin'), eq(adminUsers.status, 'active'))).for('update');
-  return active.filter((r) => r.id !== targetId).length + adminAccounts().size > 0;
-}
+// active Admin row or a backstop account.
+const anotherAdminRemains = (activeAdmins: string[], targetId: string) =>
+  activeAdmins.filter((a) => a !== targetId).length + adminAccounts().size > 0;
 
 export async function changeRole(db: DB, actor: Admin, id: unknown, role: unknown): Promise<RoleChange> {
   if (typeof id === 'string' && actor.id === id) return { ok: false, error: 'self' };
@@ -221,11 +227,12 @@ export async function changeRole(db: DB, actor: Admin, id: unknown, role: unknow
   if (typeof id !== 'string' || !UUID.test(id)) return { ok: false, error: 'not_found' };
 
   return db.transaction(async (tx) => {
+    const activeAdmins = await lockActiveAdmins(tx);
     const [target] = await tx.select().from(adminUsers).where(eq(adminUsers.id, id)).for('update');
     if (!target || target.status === 'removed') return { ok: false, error: 'not_found' } as const;
     const from = target.role as Role;
     if (from === role) return { ok: true, id, from, to: role } as const;
-    if (from === 'admin' && target.status === 'active' && !(await anotherAdminRemains(tx, id))) {
+    if (from === 'admin' && target.status === 'active' && !anotherAdminRemains(activeAdmins, id)) {
       return { ok: false, error: 'last_admin' } as const;
     }
     await tx.update(adminUsers).set({ role }).where(eq(adminUsers.id, id));
@@ -238,9 +245,10 @@ export async function removeMember(db: DB, actor: Admin, id: unknown, now = new 
   if (typeof id !== 'string' || !UUID.test(id)) return { ok: false, error: 'not_found' };
 
   return db.transaction(async (tx) => {
+    const activeAdmins = await lockActiveAdmins(tx);
     const [target] = await tx.select().from(adminUsers).where(eq(adminUsers.id, id)).for('update');
     if (!target || target.status === 'removed') return { ok: false, error: 'not_found' } as const;
-    if (target.role === 'admin' && target.status === 'active' && !(await anotherAdminRemains(tx, id))) {
+    if (target.role === 'admin' && target.status === 'active' && !anotherAdminRemains(activeAdmins, id)) {
       return { ok: false, error: 'last_admin' } as const;
     }
     await tx.update(adminUsers).set({
