@@ -20,7 +20,7 @@ import { DEMO_ACCESS_PATH, demoConfigured, hasDemoSession, safeNext } from '@/li
 type Area = { root: string; cookie: string; signIn: string; open: readonly string[] };
 
 const AREAS: readonly Area[] = [
-  { root: '/admin', cookie: 'dq_admin', signIn: '/admin/login', open: ['/admin/login'] },
+  { root: '/admin', cookie: 'dq_admin', signIn: '/admin/login', open: ['/admin/login', '/admin/set-password'] },
   {
     root: '/doctor', cookie: 'dq_doctor', signIn: '/doctor/login',
     // The three pages a doctor needs before they have a session, and the

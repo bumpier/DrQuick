@@ -30,6 +30,7 @@ describe('the admin', () => {
 
   test('the sign-in page and a visitor with the cookie pass', () => {
     expect(sentTo('/admin/login')).toBeNull();
+    expect(sentTo('/admin/set-password')).toBeNull();
     expect(sentTo('/admin/finance/payouts', 'dq_admin=x')).toBeNull();
   });
 });
