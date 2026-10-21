@@ -9,6 +9,12 @@
 
 export const GP_SIGNUP_FEE_PENCE = 5000;
 
+// Whether a GP is asked for the fee at all. Off until there is traction
+// (the user's decision, 2026-10-19): the sign-up then stores the application
+// and stops, with no Stripe, no fee copy and no fee status. Setting this to
+// true restores the whole flow; nothing else needs to change.
+export const GP_FEE_ENABLED = false;
+
 const POUNDS = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const PENNIES = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 

@@ -1,6 +1,6 @@
 import type { FaqItem } from '@/components/Faq';
 import { COMMISSION_TIERS, gpSharePercent, platformSharePercent } from '@/lib/finance/commission';
-import { GP_FEE_LABEL, GP_FEE_REFUND } from '@/lib/gp-fee';
+import { GP_FEE_ENABLED, GP_FEE_LABEL, GP_FEE_REFUND } from '@/lib/gp-fee';
 
 // Typed copy for the landing page, transcribed verbatim from the flat page.
 // Compliance sentences live here and are guarded by tests; do not paraphrase.
@@ -98,11 +98,13 @@ export const GP_FAQ: FaqItem[] = [
   },
   {
     q: 'What is the sign-up fee?',
-    a: (
+    a: GP_FEE_ENABLED ? (
       <p>
         {GP_FEE_LABEL}, paid once by card when you sign up. {GP_FEE_REFUND} The payment is taken by Stripe, so
         Dr Quick never sees your card details.
       </p>
+    ) : (
+      <p>There isn’t one. Signing up is free.</p>
     ),
   },
   { q: 'What indemnity do I need?', a: <p>Your own. Private telehealth is not covered by the NHS clinical negligence schemes, so you need cover from a medical defence organisation for this work. We check it before your first consultation and we do not provide it for you.</p> },

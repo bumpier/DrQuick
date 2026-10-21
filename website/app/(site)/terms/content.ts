@@ -2,6 +2,7 @@
 // entity is undecided (PRODUCT.md), so the operator's name and address are
 // bracketed placeholders, and these terms need legal review before launch.
 // Terms for consultations are a separate document, written before launch.
+import { GP_FEE_ENABLED } from '@/lib/gp-fee';
 import { CONTACT_EMAIL } from '@/lib/site';
 
 export const TERMS_UPDATED = '1 October 2026';
@@ -15,11 +16,13 @@ This website is run by **[registered company name]**, **[registered address]**. 
 
 This website describes a service that is not yet open. Nobody is seen, and no consultation takes place, before Dr Quick is a CQC-registered clinical service at launch. Joining the waitlist does not create an account or commit you to anything.
 
-## The GP sign-up fee
+${GP_FEE_ENABLED ? `## The GP sign-up fee
 
 A GP who signs up pays a one-off sign-up fee by card, through Stripe. The amount is shown in full before you pay. It is refunded in full, to the card it was paid with, if we cannot verify your GMC registration or we do not take you on.
 
-Paying the fee does not make you an employee or a contractor of Dr Quick, and it is not a promise of work. You consult only once your checks are complete and you have accepted the contractor terms. **[Further terms for the fee, including what happens if you withdraw — to be confirmed by legal review.]**
+Paying the fee does not make you an employee or a contractor of Dr Quick, and it is not a promise of work. You consult only once your checks are complete and you have accepted the contractor terms. **[Further terms for the fee, including what happens if you withdraw — to be confirmed by legal review.]**` : `## GP sign-up
+
+Signing up as a GP is free. It does not make you an employee or a contractor of Dr Quick, and it is not a promise of work. You consult only once your checks are complete and you have accepted the contractor terms.`}
 
 ## Not medical advice, and not for emergencies
 

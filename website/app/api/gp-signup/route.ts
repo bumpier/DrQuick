@@ -40,6 +40,8 @@ import { hashKey, hit } from '@/lib/rate-limit';
 import { cleanAttribution, recordFeeCheckout, startGpSignup } from '@/lib/waitlist';
 import { firstInvalidField, normaliseGpSignup } from '@/lib/gp-signup';
 import { checkoutConfigured, createFeeCheckout, expireFeeCheckout } from '@/lib/stripe';
+import { sendSignupEmails } from '@/lib/email';
+import { GP_FEE_ENABLED } from '@/lib/gp-fee';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -85,7 +87,7 @@ export async function POST(request: Request) {
 
   // Checked before anything is stored: a doctor's details are not kept for a
   // sign-up that cannot be completed.
-  if (!checkoutConfigured()) {
+  if (GP_FEE_ENABLED && !checkoutConfigured()) {
     console.error('GP sign-up refused: STRIPE_SECRET_KEY is not set.');
     return json(503, { ok: false, error: 'payments_unavailable' });
   }
@@ -108,6 +110,12 @@ export async function POST(request: Request) {
     const started = await startGpSignup(db, { ...details, source, ...cleanAttribution(payload) });
     if (started.alreadyPaid) return json(200, { ok: true, alreadyPaid: true });
     signup = started.signup;
+    // No fee to take: the application is stored and that is the end of it.
+    // The confirmation and the team alert go out once, for a new application.
+    if (!GP_FEE_ENABLED) {
+      if (started.created) await sendSignupEmails(db, signup);
+      return json(200, { ok: true, signedUp: true });
+    }
   } catch (err) {
     console.error('GP sign-up write failed:', (err as Error).message);
     return json(502, { ok: false, error: 'store_write_failed' });

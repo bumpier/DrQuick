@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getAttribution, onFirstView, track } from '@/lib/analytics/track';
-import { GP_FEE_LABEL, GP_FEE_REFUND } from '@/lib/gp-fee';
+import { GP_FEE_ENABLED, GP_FEE_LABEL, GP_FEE_REFUND } from '@/lib/gp-fee';
 import {
   GP_MESSAGES, MAX_EMAIL, MAX_NAME,
   firstInvalidField, normaliseGpSignup,
@@ -24,6 +24,7 @@ const MESSAGES = {
   paymentsOff: 'Sign-up payments aren’t switched on yet. Nothing was taken. Try again soon.',
   checkoutFailed: 'We couldn’t open the payment page. Nothing was taken. Try again in a moment.',
   alreadyPaid: 'This email address has already signed up and paid. We’ll be in touch before we open.',
+  signedUp: 'Thanks, you’re signed up. We’ll check your GMC registration and be in touch before we open.',
 } as const;
 
 const toStripe = (url: string) => window.location.assign(url);
@@ -140,7 +141,7 @@ export function GpSignupForm({ source, inputId, onRedirect = toStripe }: {
           ...getAttribution(),
         }),
       });
-      const body = (await res.json().catch(() => ({}))) as { error?: string; url?: string; alreadyPaid?: boolean };
+      const body = (await res.json().catch(() => ({}))) as { error?: string; url?: string; alreadyPaid?: boolean; signedUp?: boolean };
 
       if (res.status === 429) return stop('rate_limited', MESSAGES.rateLimited);
       if (!res.ok) {
@@ -158,6 +159,13 @@ export function GpSignupForm({ source, inputId, onRedirect = toStripe }: {
         throw new Error(`http_${res.status}`);
       }
 
+      if (body.signedUp) {
+        t('form_success', { already: false });
+        say({ kind: 'ok', message: MESSAGES.signedUp });
+        statusRef.current?.focus();
+        setDone(true);
+        return;
+      }
       if (body.alreadyPaid) {
         t('form_success', { already: true });
         say({ kind: 'ok', message: MESSAGES.alreadyPaid });
@@ -230,17 +238,20 @@ export function GpSignupForm({ source, inputId, onRedirect = toStripe }: {
         {/* The price, at the moment of deciding: the amount, that it is paid
             once, and how it comes back, directly above the button that leads
             to paying it. */}
-        <div className="fee mt-5 rounded-lg bg-lime-wash px-4 py-3.5" id={feeId}>
-          <p className="flex items-baseline justify-between gap-4 font-bold">
-            <span>Sign-up fee, paid once</span>
-            <span className="font-display text-headline-sm font-extrabold tabular-nums">{GP_FEE_LABEL}</span>
-          </p>
-          <p className="mt-1 text-fine text-ink-2">{GP_FEE_REFUND}</p>
-        </div>
+        {GP_FEE_ENABLED && (
+          <div className="fee mt-5 rounded-lg bg-lime-wash px-4 py-3.5" id={feeId}>
+            <p className="flex items-baseline justify-between gap-4 font-bold">
+              <span>Sign-up fee, paid once</span>
+              <span className="font-display text-headline-sm font-extrabold tabular-nums">{GP_FEE_LABEL}</span>
+            </p>
+            <p className="mt-1 text-fine text-ink-2">{GP_FEE_REFUND}</p>
+          </div>
+        )}
 
         {/* `.btn` stays on the element for the sizing rules in globals.css. */}
-        <Button className="btn submit" size="lg" type="submit" disabled={busy} aria-busy={busy || undefined} aria-describedby={feeId}>
-          {busy ? 'Opening Stripe…' : 'Continue to payment'}
+        <Button className="btn submit" size="lg" type="submit" disabled={busy} aria-busy={busy || undefined}
+          aria-describedby={GP_FEE_ENABLED ? feeId : undefined}>
+          {GP_FEE_ENABLED ? (busy ? 'Opening Stripe…' : 'Continue to payment') : (busy ? 'Signing up…' : 'Sign up')}
         </Button>
       </div></div>
       <p ref={statusRef} className="status" id={statusId} role="status" aria-live="polite" tabIndex={-1}>
@@ -257,7 +268,7 @@ export function GpSignupForm({ source, inputId, onRedirect = toStripe }: {
       </p>
       <div className="capture"><div>
         <p className="note">
-          You pay by card on Stripe; Dr Quick never sees your card details. Your details are used to check the GMC register and to contact you about launching.{' '}
+          {GP_FEE_ENABLED && 'You pay by card on Stripe; Dr Quick never sees your card details. '}Your details are used to check the GMC register and to contact you about launching.{' '}
           <a href="/privacy" className="font-semibold text-primary-ink underline underline-offset-2">Privacy</a>
         </p>
       </div></div>

@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 import { test, expect, beforeAll, beforeEach, vi } from 'vitest';
+
+// These tests are of the fee flow, which is off at launch (GP_FEE_ENABLED).
+vi.mock('@/lib/gp-fee', async (orig) => ({ ...(await orig<typeof import('@/lib/gp-fee')>()), GP_FEE_ENABLED: true }));
 import { render, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { eq } from 'drizzle-orm';
