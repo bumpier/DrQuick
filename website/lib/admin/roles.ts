@@ -19,7 +19,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const ROLE_SUMMARIES: Record<Role, string> = {
   admin: 'Everything, including the team',
   operations: 'The waitlist and emails',
-  finance: 'Finance',
+  finance: 'Revenue, consultations and payouts',
   marketing: 'Analytics and the blog',
 };
 

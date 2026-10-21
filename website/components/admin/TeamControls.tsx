@@ -58,7 +58,7 @@ export function AddMemberCard() {
       <CardHeader><CardTitle>Add a person</CardTitle></CardHeader>
       <CardContent className="grid gap-4">
         <form
-          className="grid grid-cols-[1fr_1fr_minmax(0,16rem)_auto] items-end gap-4 max-cols:grid-cols-1"
+          className="grid w-full max-w-none grid-cols-[1fr_1fr_minmax(0,16rem)_auto] items-end gap-4 max-cols:grid-cols-1"
           onSubmit={(e) => { e.preventDefault(); submit(); }}
         >
           <div className="grid gap-1.5">

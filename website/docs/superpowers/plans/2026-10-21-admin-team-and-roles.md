@@ -49,7 +49,7 @@ All paths are relative to `website/`. Run every command from `website/`.
 - Produces (all exported from `lib/admin/roles.ts`, a module with **no imports at all**, because `lib/db/schema.ts` and client components both import it):
   - `ROLES = ['admin', 'operations', 'finance', 'marketing'] as const`, `type Role`
   - `ROLE_LABELS: Record<Role, string>`
-  - `ROLE_SUMMARIES: Record<Role, string>`: `admin: 'Everything, including the team'`, `operations: 'The waitlist and emails'`, `finance: 'Finance'`, `marketing: 'Analytics and the blog'`
+  - `ROLE_SUMMARIES: Record<Role, string>`: `admin: 'Everything, including the team'`, `operations: 'The waitlist and emails'`, `finance: 'Revenue, consultations and payouts'`, `marketing: 'Analytics and the blog'`
   - `AREAS = ['overview', 'waitlist', 'waitlist_export', 'erase', 'emails', 'analytics', 'finance', 'blog', 'team', 'settings', 'technical', 'audit'] as const`, `type Area`
   - `can(role: Role, area: Area): boolean`
   - `isRole(value: unknown): value is Role`
