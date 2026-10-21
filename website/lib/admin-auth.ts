@@ -11,50 +11,27 @@
 // ADMIN_SESSION_SECRET, in an httpOnly, SameSite=Strict cookie scoped to /admin.
 // The proxy (proxy.ts) only redirects when the cookie is missing; the real
 // check is requireAdmin() here, in every admin page and every server action.
-import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { adminAccounts } from '@/lib/admin/backstop';
 import { getDb } from '@/lib/db';
+import { hashPassword, verifyPassword } from '@/lib/password';
 import { hashKey, hit } from '@/lib/rate-limit';
 import { readToken, signToken } from '@/lib/signed-token';
 
 export const SESSION_COOKIE = 'dq_admin';
 export const SESSION_HOURS = 8;
-const SCRYPT_N = 16384;
-const KEYLEN = 64;
 
 export type Admin = { email: string; name: string };
-type Account = Admin & { hash: string };
+
+export { hashPassword, verifyPassword } from '@/lib/password';
+export { adminAccounts } from '@/lib/admin/backstop';
 
 /* ------------------------------------------------------------ passwords */
-
-const b64 = (buf: Buffer) => buf.toString('base64url');
-
-export function hashPassword(password: string, salt = randomBytes(16)): string {
-  const key = scryptSync(password.normalize('NFKC'), salt, KEYLEN, { N: SCRYPT_N });
-  return `scrypt:${SCRYPT_N}:${b64(salt)}:${b64(key)}`;
-}
-
-export function verifyPassword(password: string, stored: string): boolean {
-  const [scheme, n, salt, hash] = stored.split(':');
-  if (scheme !== 'scrypt' || !n || !salt || !hash) return false;
-  const expected = Buffer.from(hash, 'base64url');
-  const actual = scryptSync(password.normalize('NFKC'), Buffer.from(salt, 'base64url'), expected.length, { N: Number(n) });
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
-}
 
 // An unknown email still costs one scrypt, so the response time never says
 // which addresses are admins.
 const DECOY = hashPassword('decoy', Buffer.alloc(16));
-
-export function adminAccounts(env = process.env.ADMIN_USERS ?? ''): Map<string, Account> {
-  const accounts = new Map<string, Account>();
-  for (const entry of env.split(';')) {
-    const [email, name, hash] = entry.split('|').map((s) => s.trim());
-    if (email && name && hash?.startsWith('scrypt:')) accounts.set(email.toLowerCase(), { email: email.toLowerCase(), name, hash });
-  }
-  return accounts;
-}
 
 export function verifyCredentials(email: string, password: string): Admin | null {
   const account = adminAccounts().get(email.trim().toLowerCase());

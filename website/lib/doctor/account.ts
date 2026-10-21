@@ -9,6 +9,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { and, eq, gt, isNull, lte, ne, sql } from 'drizzle-orm';
 import { hashPassword } from '@/lib/admin-auth';
+import { PASSWORD_MAX, PASSWORD_MIN } from '@/lib/password';
 import type { DB } from '@/lib/db';
 import { doctorTokens, gps, waitlistSignups, type GpAccountStatus } from '@/lib/db/schema';
 import { normaliseEmail, type GpRow } from '@/lib/doctor-auth';
@@ -18,8 +19,7 @@ import { hashKey, hit } from '@/lib/rate-limit';
 import { siteUrl } from '@/lib/site-url';
 
 export const LINK_MINUTES = 60;
-export const PASSWORD_MIN = 12;
-export const PASSWORD_MAX = 256;
+export { PASSWORD_MIN, PASSWORD_MAX } from '@/lib/password';
 
 // The waitlist pipeline is where the team approves a GP; the account follows it.
 export function accountStatusFor(signupStatus: string): GpAccountStatus {

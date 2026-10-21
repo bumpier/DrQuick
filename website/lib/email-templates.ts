@@ -79,6 +79,26 @@ export function doctorSetPassword(name: string, url: string, minutes: number, is
   };
 }
 
+// The one-time link that sets an admin password. `invite` is who added the
+// person and the role they were given; null means a reset for someone already
+// on the team.
+export function adminSetPassword(name: string, url: string, hours: number, invite: { by: string; role: string } | null): Email {
+  const paras = [
+    `Hello ${esc(name)},`,
+    invite
+      ? `${esc(invite.by)} has added you to the Dr Quick admin as ${esc(invite.role)}.`
+      : 'Use the link below to choose a new password for the Dr Quick admin.',
+    `<a href="${esc(url)}" style="color:#2F6B0F;font-weight:700">Choose your password</a>`,
+    `The link works once and for ${hours} hours.`,
+  ];
+  const footer = 'If you were not expecting this, ignore this email. Nothing changes until the link is used.';
+  return {
+    subject: invite ? 'You have been added to the Dr Quick admin' : 'Reset your Dr Quick admin password',
+    html: layout(invite ? 'Set up your sign-in' : 'Reset your password', paras, footer),
+    text: `${strip(paras.filter((p) => !p.startsWith('<a ')).join('\n\n'))}\n\nChoose your password: ${url}\n\n${footer}\n`,
+  };
+}
+
 // Sent when the team marks a GP Active. The portal is where they go online.
 export function doctorApproved(name: string, portalUrl: string, hasAccount: boolean): Email {
   const paras = [

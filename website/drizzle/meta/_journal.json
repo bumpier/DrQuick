@@ -43,6 +43,13 @@
       "when": 1791902531068,
       "tag": "0005_consultation_calls",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792580353187,
+      "tag": "0006_admin_team",
+      "breakpoints": true
     }
   ]
 }

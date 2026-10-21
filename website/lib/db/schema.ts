@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 // Relative, not '@/': drizzle-kit reads this file outside the app's bundler.
+import { ROLES } from '../admin/roles';
 import { FEE_STATUSES, type FeeStatus } from '../gp-fee';
 
 const created = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
@@ -126,6 +127,36 @@ export const adminAuditLog = pgTable('admin_audit_log', {
   meta: jsonb('meta').$type<Record<string, unknown>>(),
   createdAt: created(),
 }, (t) => [index('audit_created').on(t.createdAt)]);
+
+// People who sign in to the admin with a password of their own. The
+// ADMIN_USERS accounts in the environment stay as a backstop and have no row.
+// No foreign keys: a removed person keeps their row so the audit trail still
+// names a real id.
+export const ADMIN_USER_STATUSES = ['invited', 'active', 'removed'] as const;
+export type AdminUserStatus = (typeof ADMIN_USER_STATUSES)[number];
+
+export const adminUsers = pgTable('admin_users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull(),
+  name: text('name').notNull(),
+  role: text('role', { enum: ROLES }).notNull(),
+  status: text('status', { enum: ADMIN_USER_STATUSES }).notNull().default('invited'),
+  passwordHash: text('password_hash'),
+  sessionEpoch: integer('session_epoch').notNull().default(0),
+  createdBy: text('created_by').notNull(),
+  createdAt: created(),
+  lastSignInAt: timestamp('last_sign_in_at', { withTimezone: true }),
+  removedAt: timestamp('removed_at', { withTimezone: true }),
+}, (t) => [uniqueIndex('admin_users_email').on(t.email)]);
+
+// One-time set-password links; only the SHA-256 of the token is stored.
+export const adminTokens = pgTable('admin_tokens', {
+  tokenHash: text('token_hash').primaryKey(),
+  adminUserId: uuid('admin_user_id').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: created(),
+}, (t) => [index('admin_tokens_user').on(t.adminUserId)]);
 
 export const appErrors = pgTable('app_errors', {
   id: bigserial('id', { mode: 'number' }).primaryKey(),
