@@ -9,6 +9,7 @@ import {
   consultationOffers, consultations, doctorTokens, emailLog, events, gps, sessions, visitors, waitlistSignups,
   type PendingDetails, type WaitlistRole,
 } from '@/lib/db/schema';
+import { GP_FEE_ENABLED } from '@/lib/gp-fee';
 import { expireFeeCheckout } from '@/lib/stripe';
 
 export type Signup = typeof waitlistSignups.$inferSelect;
@@ -92,7 +93,7 @@ export type GpStartInput = { email: string; source: string; name: string; mobile
 // stranger rewrite an application. What a later post typed is kept beside the
 // checkout it started (recordFeeCheckout) and takes effect only if that
 // checkout is paid (lib/gp-fee-store.ts).
-export async function startGpSignup(db: DB, input: GpStartInput): Promise<{ signup: Signup; alreadyPaid: boolean }> {
+export async function startGpSignup(db: DB, input: GpStartInput): Promise<{ signup: Signup; alreadyPaid: boolean; created: boolean }> {
   const inserted = await db.insert(waitlistSignups).values({
     role: 'gp',
     email: input.email,
@@ -101,7 +102,7 @@ export async function startGpSignup(db: DB, input: GpStartInput): Promise<{ sign
     gmc: input.gmc,
     source: input.source,
     status: 'new',
-    feeStatus: 'unpaid',
+    feeStatus: GP_FEE_ENABLED ? 'unpaid' : null,
     visitorId: input.visitorId ?? null,
     utmSource: input.utmSource ?? null,
     utmMedium: input.utmMedium ?? null,
@@ -110,17 +111,18 @@ export async function startGpSignup(db: DB, input: GpStartInput): Promise<{ sign
     landingPath: input.landingPath ?? null,
     unsubscribeToken: newToken(),
   }).onConflictDoNothing().returning();
-  if (inserted[0]) return { signup: inserted[0], alreadyPaid: false };
+  if (inserted[0]) return { signup: inserted[0], alreadyPaid: false, created: true };
 
   const mine = and(eq(waitlistSignups.role, 'gp'), eq(waitlistSignups.email, input.email));
   const [existing] = await db.select().from(waitlistSignups).where(mine);
-  if (existing.feeStatus === 'paid') return { signup: existing, alreadyPaid: true };
+  if (existing.feeStatus === 'paid') return { signup: existing, alreadyPaid: true, created: false };
 
-  // A GP from before the fee existed has no fee status; they owe it now.
-  if (existing.feeStatus) return { signup: existing, alreadyPaid: false };
+  // A GP from before the fee existed has no fee status; they owe it now, once
+  // the fee is switched on.
+  if (existing.feeStatus || !GP_FEE_ENABLED) return { signup: existing, alreadyPaid: false, created: false };
   const [updated] = await db.update(waitlistSignups).set({ feeStatus: 'unpaid', updatedAt: new Date() })
     .where(mine).returning();
-  return { signup: updated, alreadyPaid: false };
+  return { signup: updated, alreadyPaid: false, created: false };
 }
 
 // How many started checkouts a sign-up remembers the typed details of.

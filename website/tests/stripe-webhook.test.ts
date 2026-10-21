@@ -1,4 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
+
+// These tests are of the fee flow, which is off at launch (GP_FEE_ENABLED).
+vi.mock('@/lib/gp-fee', async (orig) => ({ ...(await orig<typeof import('@/lib/gp-fee')>()), GP_FEE_ENABLED: true }));
 import { eq } from 'drizzle-orm';
 import { resetDb, useTestDb } from './helpers/db';
 import { setDb, type DB } from '@/lib/db';

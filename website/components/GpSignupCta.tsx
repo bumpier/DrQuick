@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { GP_FEE_LABEL, GP_FEE_REFUND } from '@/lib/gp-fee';
+import { GP_FEE_ENABLED, GP_FEE_LABEL, GP_FEE_REFUND } from '@/lib/gp-fee';
 
 // The GP capture, where a four-field form used to sit: one button that opens
 // the sign-up pop-up (components/GpSignupDialog.tsx listens for
@@ -30,9 +30,11 @@ export function GpSignupCta({ source, id, reveal, more }: {
           </a>
         )}
       </div>
-      <p className="note max-w-[46ch] text-[.9375rem]">
-        <b className="font-bold text-ink">{GP_FEE_LABEL} one-off sign-up fee.</b> {GP_FEE_REFUND}
-      </p>
+      {GP_FEE_ENABLED && (
+        <p className="note max-w-[46ch] text-[.9375rem]">
+          <b className="font-bold text-ink">{GP_FEE_LABEL} one-off sign-up fee.</b> {GP_FEE_REFUND}
+        </p>
+      )}
     </div>
   );
 }
