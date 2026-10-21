@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { InfoTile, JoinTile, NumberedTile, PageHero, SiteSection, TextLink } from '@/components/site/PageParts';
 import { PATIENT_COVERS } from '@/app/landing-content';
 import { COMMISSION_TIERS, gpSharePercent } from '@/lib/finance/commission';
+import { GP_FEE_ENABLED } from '@/lib/gp-fee';
 
 export const dynamic = 'force-static';
 
@@ -67,7 +68,7 @@ export default function PricingPage() {
             Keep {GP_START}% of every consultation, <span className="text-primary">rising to {GP_TOP}%.</span>
           </p>
           <p className="text-body text-band-muted max-w-[40ch]">
-            Your share of the price the patient pays, and more when demand is high. What a consultation pays is shown in full before you accept it. Signing up carries a one-off fee, shown before you pay.{' '}
+            Your share of the price the patient pays, and more when demand is high. What a consultation pays is shown in full before you accept it.{GP_FEE_ENABLED ? ' Signing up carries a one-off fee, shown before you pay.' : ''}{' '}
             <a href="/?role=gp#gps" className="font-semibold text-white underline underline-offset-4 decoration-2 hover:text-primary">See the GP page</a>
           </p>
         </Card>

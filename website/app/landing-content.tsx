@@ -118,10 +118,9 @@ export const GP_FAQ: FaqItem[] = [
       <p>
         We use your name, email address, mobile number and GMC reference number to check you on the
         GMC register and to contact you about launching. That is all — we do not sell them, and we ask
-        for nothing else today. The only company we pass anything to is Stripe, which takes the sign-up
-        fee: it receives your email address and your card details, and the card details never reach us.
+        for nothing else today.{GP_FEE_ENABLED ? ' The only company we pass anything to is Stripe, which takes the sign-up fee: it receives your email address and your card details, and the card details never reach us.' : ''}{' '}
         We keep your details until launch and for no more than twelve months after that, then delete
-        them; a record of the payment is kept for as long as the law requires. You can ask us to delete
+        them{GP_FEE_ENABLED ? '; a record of the payment is kept for as long as the law requires' : ''}. You can ask us to delete
         your details sooner at any time, and if you think we have handled them badly you can complain to
         the Information Commissioner’s Office.
         {/* DEPLOY / LEGAL: UK GDPR Art 13 also requires the data controller's registered

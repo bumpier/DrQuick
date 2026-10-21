@@ -7,6 +7,7 @@
 // waitlist, app/api/gp-signup/route.ts and lib/stripe.ts for the GP sign-up and
 // its fee, and lib/analytics/track.ts with app/api/collect/route.ts for the
 // analytics (retention: scripts/prune-analytics.mjs).
+import { GP_FEE_ENABLED } from '@/lib/gp-fee';
 import { CONTACT_EMAIL } from '@/lib/site';
 
 export const PRIVACY_UPDATED = '1 October 2026';
@@ -22,7 +23,7 @@ Dr Quick has not launched. This notice covers the waitlist and the analytics on 
 
 **If you join the patient waitlist:** your email address, that you joined as a patient, which form you used, and when.
 
-**If you sign up as a GP:** your name, email address, mobile number and GMC reference number, that you signed up as a GP, which form you used, and when. When you pay the sign-up fee we also keep that you paid it, how much, when, and Stripe’s reference for the payment. Your card details go to Stripe and never reach us.
+**If you sign up as a GP:** your name, email address, mobile number and GMC reference number, that you signed up as a GP, which form you used, and when.${GP_FEE_ENABLED ? ' When you pay the sign-up fee we also keep that you paid it, how much, when, and Stripe’s reference for the payment. Your card details go to Stripe and never reach us.' : ''}
 
 If you accepted analytics cookies, we also link your sign-up to the anonymous visitor ID described below, so we can see how you found us and what you read before joining. Whether or not you accepted, your sign-up records which campaign link, referring site and page brought you to the form.
 
@@ -48,7 +49,7 @@ Analytics data is deleted after 13 months. The one exception: if you joined the 
 ## Why we use it
 
 - **Patients:** to tell you when Dr Quick opens. Nothing else.
-- **GPs:** to check you on the GMC register, to contact you about launching, and to take your sign-up fee and refund it where we have said we will.
+- **GPs:** to check you on the GMC register${GP_FEE_ENABLED ? ', to contact you about launching, and to take your sign-up fee and refund it where we have said we will' : ' and to contact you about launching'}.
 
 Our lawful basis is **[lawful basis — to be confirmed]**. We never sell your details, and we pass them on only as described next.
 
@@ -56,11 +57,11 @@ Our lawful basis is **[lawful basis — to be confirmed]**. We never sell your d
 
 Your details are stored with **[database and hosting providers — to be confirmed]**, who process them only on our instructions.
 
-**Stripe** takes the GP sign-up fee. If you pay it, Stripe receives your email address and your card details and handles them under [its own privacy policy](https://stripe.com/gb/privacy). **[Stripe’s role and the transfer safeguards — to be confirmed by legal review.]**
+${GP_FEE_ENABLED ? `**Stripe** takes the GP sign-up fee. If you pay it, Stripe receives your email address and your card details and handles them under [its own privacy policy](https://stripe.com/gb/privacy). **[Stripe’s role and the transfer safeguards — to be confirmed by legal review.]**` : ''}
 
 ## How long we keep it
 
-Until launch, and for no more than twelve months after that. Then we delete it. You can ask us to delete it sooner at any time. The record of a sign-up fee payment is the exception: it is kept for as long as tax law requires, **[period — to be confirmed]**.
+Until launch, and for no more than twelve months after that. Then we delete it. You can ask us to delete it sooner at any time.${GP_FEE_ENABLED ? ' The record of a sign-up fee payment is the exception: it is kept for as long as tax law requires, **[period — to be confirmed]**.' : ''}
 
 ## Your rights
 

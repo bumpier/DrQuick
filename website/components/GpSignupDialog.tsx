@@ -5,6 +5,7 @@ import { CommissionLadder } from '@/components/CommissionLadder';
 import { GpSignupForm, type GpSignupSource } from '@/components/GpSignupForm';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { COMMISSION_TIERS, gpSharePercent } from '@/lib/finance/commission';
+import { GP_FEE_ENABLED } from '@/lib/gp-fee';
 
 const SOURCES: readonly GpSignupSource[] = ['hero-gp', 'recap-gp', 'nav-gp'];
 
@@ -132,13 +133,16 @@ export function GpSignupDialog() {
         </div>
 
         <div className="p-6 md:p-10">
-          <ol className="flex items-center gap-2 text-fine font-bold" aria-label="Sign-up steps">
-            <li aria-current="step" className="rounded-pill bg-primary px-3 py-1.5 text-ink">1. Your details</li>
-            <li className="rounded-pill bg-fill px-3 py-1.5 text-ink-2">2. Payment</li>
-          </ol>
-          <DialogTitle className="mt-5 font-display text-headline-sm font-extrabold md:text-headline">Sign up as a GP</DialogTitle>
+          {/* With the fee off (GP_FEE_ENABLED) there is one step, so no steps. */}
+          {GP_FEE_ENABLED && (
+            <ol className="mb-5 flex items-center gap-2 text-fine font-bold" aria-label="Sign-up steps">
+              <li aria-current="step" className="rounded-pill bg-primary px-3 py-1.5 text-ink">1. Your details</li>
+              <li className="rounded-pill bg-fill px-3 py-1.5 text-ink-2">2. Payment</li>
+            </ol>
+          )}
+          <DialogTitle className="font-display text-headline-sm font-extrabold md:text-headline">Sign up as a GP</DialogTitle>
           <DialogDescription className="mt-2 text-body text-ink-2">
-            Four details, then one payment on Stripe’s secure page.
+            {GP_FEE_ENABLED ? 'Four details, then one payment on Stripe’s secure page.' : 'Four details and you’re signed up. There’s no fee.'}
           </DialogDescription>
           {notice && (
             <p className="mt-5 rounded-lg bg-surface-mid px-4 py-3 text-fine font-semibold text-ink" data-notice="">{notice}</p>
