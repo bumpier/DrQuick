@@ -1,9 +1,10 @@
+import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { resetDb, useTestDb } from './helpers/db';
 import { addTestMember } from './helpers/admin';
 import { setDb, type DB } from '@/lib/db';
-import { adminAuditLog, waitlistSignups } from '@/lib/db/schema';
+import { adminAuditLog, visitors, waitlistSignups } from '@/lib/db/schema';
 
 let db: DB;
 beforeAll(async () => { db = await useTestDb(); });
@@ -19,6 +20,10 @@ vi.mock('next/headers', () => ({
 }));
 vi.mock('next/navigation', () => ({
   redirect: (to: string) => { throw new Error(`NEXT_REDIRECT ${to}`); },
+  notFound: () => { throw new Error('NEXT_NOT_FOUND'); },
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => '/admin/analytics/visitors',
+  useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
@@ -81,4 +86,31 @@ test('a page outside your role sends you to the no-access page', async () => {
   await as('marketing');
   const { default: RevenuePage } = await import('@/app/admin/(panel)/finance/revenue/page');
   await expect(RevenuePage({ searchParams: Promise.resolve({}) })).rejects.toThrow('NEXT_REDIRECT /admin/no-access');
+});
+
+test('the visitor pages show a sign-up email to an Admin and never to Marketing', async () => {
+  const vid = '11111111-2222-4333-8444-555555555555';
+  await db.insert(visitors).values({ id: vid, firstSeen: new Date(), lastSeen: new Date() });
+  await joinWaitlist(db, { role: 'gp', email: 'dr.who@example.com', source: 'hero-gp', name: 'Dr Who', gmc: '7123457', mobile: '07700 900124', visitorId: vid });
+  const { default: List } = await import('@/app/admin/(panel)/analytics/visitors/page');
+  const { default: One } = await import('@/app/admin/(panel)/analytics/visitors/[id]/page');
+  const html = async () => ({
+    list: renderToStaticMarkup(await List({ searchParams: Promise.resolve({}) })),
+    one: renderToStaticMarkup(await One({ params: Promise.resolve({ id: vid }) })),
+  });
+
+  await as('marketing');
+  const marketing = await html();
+  expect(marketing.list).toContain(vid.slice(0, 8)); // the page rendered, with the short id
+  expect(marketing.one).toContain(vid.slice(0, 8));
+  expect(marketing.list + marketing.one).not.toContain('dr.who@example.com');
+  expect(marketing.list + marketing.one).not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i); // no address of any kind
+
+  await resetDb(db); // the visitor and sign-up go with it
+  await db.insert(visitors).values({ id: vid, firstSeen: new Date(), lastSeen: new Date() });
+  await joinWaitlist(db, { role: 'gp', email: 'dr.who@example.com', source: 'hero-gp', name: 'Dr Who', gmc: '7123457', mobile: '07700 900124', visitorId: vid });
+  await as('admin');
+  const ops = await html();
+  expect(ops.list).toContain('dr.who@example.com');
+  expect(ops.one).toContain('dr.who@example.com');
 });
