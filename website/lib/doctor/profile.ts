@@ -3,7 +3,7 @@
 // is what the team verified, so neither is editable here; changing either is
 // for the team. Server-only: the rules the form also reads are in profile-rules.
 import { eq, sql } from 'drizzle-orm';
-import { hashPassword, verifyPassword } from '@/lib/admin-auth';
+import { hashPassword, verifyPassword } from '@/lib/password';
 import type { DB } from '@/lib/db';
 import { gps } from '@/lib/db/schema';
 import type { GpRow } from '@/lib/doctor-auth';

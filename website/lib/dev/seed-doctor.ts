@@ -17,7 +17,7 @@
 // stock phrases.
 import { randomUUID } from 'node:crypto';
 import { eq, inArray, like, or } from 'drizzle-orm';
-import { hashPassword } from '@/lib/admin-auth';
+import { hashPassword } from '@/lib/password';
 import type { DB } from '@/lib/db';
 import { demoDeployment } from '@/lib/demo';
 import { LOOPBACK_HOSTS, databaseHost, demoDatabaseProblem } from '@/lib/demo/database';

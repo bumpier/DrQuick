@@ -57,6 +57,11 @@ test('a mismatch and a short password are refused and the link still works', asy
   expect(jar.has(SESSION_COOKIE)).toBe(false);
 });
 
+test('a short password on a dead link gets the dead-link message, so the link check runs first', async () => {
+  expect((await setPassword({ error: null }, form('not-a-token', 'short'))).error)
+    .toBe('This link has expired or has already been used. Ask an Admin to send you a new one.');
+});
+
 test('an unknown or used link is refused', async () => {
   expect((await setPassword({ error: null }, form('not-a-token', 'a long enough password'))).error)
     .toBe('This link has expired or has already been used. Ask an Admin to send you a new one.');

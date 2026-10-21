@@ -5,6 +5,9 @@ export const TEMPLATE_LABELS: Record<string, string> = {
   patient_welcome: 'Patient welcome',
   gp_received: 'GP application received',
   admin_new_gp: 'New GP alert (team)',
+  admin_set_password: 'Admin set-password link',
+  doctor_set_password: 'Doctor set-password link',
+  doctor_approved: 'Doctor approved',
 };
 export const templateLabel = (t: string) => TEMPLATE_LABELS[t] ?? t;
 

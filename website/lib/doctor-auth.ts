@@ -14,7 +14,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
-import { hashPassword, verifyPassword } from '@/lib/admin-auth';
+import { hashPassword, verifyPassword } from '@/lib/password';
 import { getDb, type DB } from '@/lib/db';
 import { gps } from '@/lib/db/schema';
 import { hashKey, hit } from '@/lib/rate-limit';

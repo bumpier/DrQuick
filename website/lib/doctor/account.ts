@@ -8,7 +8,7 @@
 // has signed up and the link is the only proof of ownership.
 import { createHash, randomBytes } from 'node:crypto';
 import { and, eq, gt, isNull, lte, ne, sql } from 'drizzle-orm';
-import { hashPassword } from '@/lib/admin-auth';
+import { hashPassword } from '@/lib/password';
 import { PASSWORD_MAX, PASSWORD_MIN } from '@/lib/password';
 import type { DB } from '@/lib/db';
 import { doctorTokens, gps, waitlistSignups, type GpAccountStatus } from '@/lib/db/schema';

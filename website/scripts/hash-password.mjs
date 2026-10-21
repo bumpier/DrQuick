@@ -5,7 +5,7 @@
 //
 // It asks for the password without echoing it. Join several entries with ";"
 // and set the result as ADMIN_USERS (Vercel env, or .env.local for dev).
-// The format must match hashPassword() in lib/admin-auth.ts.
+// The format must match hashPassword() in lib/password.ts.
 import { randomBytes, scryptSync } from 'node:crypto';
 import { stdin, stdout, argv, exit } from 'node:process';
 

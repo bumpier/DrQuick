@@ -54,7 +54,7 @@ export default async function TeamPage() {
                     </TableCell>
                     <TableCell data-label="Email" className="whitespace-normal break-all text-ink-2">{m.email}</TableCell>
                     <TableCell data-label="Role" className="whitespace-normal">
-                      {mine ? ROLE_LABELS[m.role as Role] : <RoleControl id={m.id} role={m.role as Role} />}
+                      {mine ? ROLE_LABELS[m.role as Role] : <RoleControl key={`${m.id}:${m.role}`} id={m.id} role={m.role as Role} />}
                     </TableCell>
                     <TableCell data-label="Status" className="whitespace-normal text-ink-2">{status}</TableCell>
                     <TableCell data-label="Actions" className="whitespace-normal">

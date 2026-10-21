@@ -188,6 +188,27 @@ describe('no browser code reaches the video call’s server half', () => {
   });
 });
 
+// The admin's server half: sign-in, the team store, the backstop accounts and
+// the password hashing use node:crypto, next/headers and the database, and
+// tell a browser nothing it may hold. 'use client' files never import them.
+describe('no browser code reaches the admin’s server half', () => {
+  const clientFiles = (dir: string): string[] => readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((entry) => {
+    const path = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) return clientFiles(path);
+    return /\.tsx?$/.test(entry.name) && /^\s*['"]use client['"]/.test(readFileSync(join(ROOT, path), 'utf8')) ? [path] : [];
+  });
+
+  test('every client component, and all it imports, stays clear of admin-auth, the team store, the backstop and the password helpers', () => {
+    const entries = [...clientFiles('components'), ...clientFiles('app')];
+    expect(entries).toContain('components/admin/TeamControls.tsx');
+    const { files, unresolved } = walkImports(entries, { serverActionsAsReferences: true });
+    expect(unresolved).toEqual([]);
+    expect(files.filter((file) => ['lib/admin-auth.ts', 'lib/admin/team.ts', 'lib/admin/backstop.ts', 'lib/password.ts'].includes(file))).toEqual([]);
+    // The walk reaches the pure role table the client may use, so it is not vacuous.
+    expect(files).toContain('lib/admin/roles.ts');
+  });
+});
+
 // The demo patient's camera and its worker are for the investor demo only.
 // The hook loads them with a dynamic import behind the build's NEXT_PUBLIC_DEMO
 // flag, so the real site's build drops them; a static import anywhere would put

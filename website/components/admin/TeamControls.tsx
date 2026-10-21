@@ -107,7 +107,11 @@ export function RoleControl({ id, role }: { id: string; role: Role }) {
         size="sm"
         disabled={pending || value === role}
         aria-busy={pending || undefined}
-        onClick={() => start(async () => report(await changeRoleAction(id, value)))}
+        onClick={() => start(async () => {
+          const result = await changeRoleAction(id, value);
+          if (!result.ok) setValue(role); // a refusal leaves the person's role as it was, and so the control
+          report(result);
+        })}
       >
         Save role
       </Button>
