@@ -22,7 +22,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 const BASE = '/admin/analytics/engagement';
 
 export default async function EngagementPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('analytics');
   const now = new Date();
   const params = await searchParams;
   const query = flatParams(params);

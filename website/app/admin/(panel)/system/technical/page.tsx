@@ -51,7 +51,7 @@ const bytes = (b: number | null) => {
 };
 
 export default async function TechnicalPage() {
-  await requireAdmin();
+  await requireAdmin('technical');
   const now = new Date();
   const db = await getDb();
   const env = envChecklist();

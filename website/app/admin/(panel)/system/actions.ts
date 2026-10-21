@@ -1,10 +1,10 @@
 'use server';
-// The System pages' server actions. Like every admin action: requireAdmin()
+// The System pages' server actions. Like every admin action: actionAdmin(area)
 // first, the input validated from scratch, one audit row, and no email
 // address of the person acted on in the audit (a sign-up id or a count).
 import { revalidatePath } from 'next/cache';
 import { eq } from 'drizzle-orm';
-import { requireAdmin } from '@/lib/admin-auth';
+import { NOT_YOUR_ROLE, actionAdmin } from '@/lib/admin-auth';
 import { audit } from '@/lib/admin/audit';
 import { getSignup } from '@/lib/admin/queries/waitlist';
 import { getDb } from '@/lib/db';
@@ -24,7 +24,8 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // now (so an erased person can never be written to). A new email_log row
 // records the attempt; the old one stays as history.
 export async function resendEmailAction(logId: number): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  const admin = await actionAdmin('emails');
+  if (!admin) return NOT_YOUR_ROLE;
   const db = await getDb();
   if (!db) return NO_DB;
   const id = Number(logId);
@@ -55,7 +56,8 @@ export async function resendEmailAction(logId: number): Promise<ActionResult> {
 // hand: every sign-up for it (both roles), the linked analytics and the email
 // log. The audit keeps only how many sign-ups went.
 export async function eraseByEmailAction(rawEmail: string): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  const admin = await actionAdmin('erase');
+  if (!admin) return NOT_YOUR_ROLE;
   const db = await getDb();
   if (!db) return NO_DB;
   const email = normaliseEmail(rawEmail);

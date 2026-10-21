@@ -12,7 +12,7 @@ import { siteUrl } from '@/lib/site-url';
 export const metadata: Metadata = { title: 'Patient' };
 
 export default async function PatientPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin();
+  await requireAdmin('waitlist');
   const { id } = await params;
   const back = { href: '/admin/waitlist/patients', label: 'All patients' };
   const db = await getDb();

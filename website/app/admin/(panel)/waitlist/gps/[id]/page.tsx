@@ -13,7 +13,7 @@ import { siteUrl } from '@/lib/site-url';
 export const metadata: Metadata = { title: 'GP application' };
 
 export default async function GpPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin();
+  await requireAdmin('waitlist');
   const { id } = await params;
   const back = { href: '/admin/waitlist/gps', label: 'All GP applications' };
   const db = await getDb();

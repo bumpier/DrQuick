@@ -23,7 +23,7 @@ export const metadata: Metadata = { title: 'Overview' };
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function OverviewPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('overview');
   const now = new Date();
   const params = await searchParams;
   const range = parseRange(params, now);

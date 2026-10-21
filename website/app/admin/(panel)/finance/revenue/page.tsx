@@ -50,7 +50,7 @@ function change(a: number | null, b: number | null): string {
 }
 
 export default async function RevenuePage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('finance');
   const now = new Date();
   const params = await searchParams;
   const query = flatParams(params);

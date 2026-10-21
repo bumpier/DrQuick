@@ -10,7 +10,7 @@ import { requireAdmin } from '@/lib/admin-auth';
 // server action, since a layout does not re-render on every action. The rail is
 // the shadcn sidebar; below 900px it becomes a sheet behind the top bar's button.
 export default async function PanelLayout({ children }: { children: ReactNode }) {
-  const admin = await requireAdmin();
+  const admin = await requireAdmin('overview');
   return (
     <TooltipProvider>
       <SidebarProvider>

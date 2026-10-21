@@ -22,7 +22,7 @@ const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 const mono = (path: string) => <span className="font-mono">{path}</span>;
 
 export default async function TrafficPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('analytics');
   const now = new Date();
   const range = parseRange(await searchParams, now);
   const header = <AdminPageHeader title="Traffic" description="How many people came to the site, where from, and which pages they saw." />;

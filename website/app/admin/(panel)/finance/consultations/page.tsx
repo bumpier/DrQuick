@@ -26,7 +26,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 const BASE = '/admin/finance/consultations';
 
 export default async function ConsultationsPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('finance');
   const now = new Date();
   const params = await searchParams;
   const query = flatParams(params);

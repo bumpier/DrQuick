@@ -1,7 +1,7 @@
 // GET /admin/finance/revenue/export[?demo=1] — the Revenue page's monthly
 // table as CSV: the last twelve months, then their total and the year to date.
 // Pounds as plain decimals so a spreadsheet reads them as numbers.
-import { currentAdmin } from '@/lib/admin-auth';
+import { routeAdmin } from '@/lib/admin-auth';
 import { audit } from '@/lib/admin/audit';
 import { dbSource, revenueLedger } from '@/lib/admin/queries/finance';
 import { csvCell } from '@/lib/csv';
@@ -23,8 +23,8 @@ const line = (label: string, f: Figures) => [
 ].join(',');
 
 export async function GET(request: Request) {
-  const admin = await currentAdmin();
-  if (!admin) return new Response('Sign in first.', { status: 401 });
+  const admin = await routeAdmin('finance');
+  if (admin instanceof Response) return admin;
   const demo = new URL(request.url).searchParams.get('demo') === '1';
   const db = await getDb();
   if (!db && !demo) return new Response('The database is not configured on this server.', { status: 503 });

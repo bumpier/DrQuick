@@ -24,7 +24,7 @@ function targetHref(action: string, target: string | null, meta: Record<string, 
 }
 
 export default async function AuditPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('audit');
   const params = await searchParams;
   const query = flatParams(params);
   const header = (

@@ -3,6 +3,6 @@ import { requireAdmin } from '@/lib/admin-auth';
 
 // /admin/analytics has no page of its own; Traffic is its front door.
 export default async function AnalyticsIndex() {
-  await requireAdmin();
+  await requireAdmin('analytics');
   redirect('/admin/analytics/traffic');
 }

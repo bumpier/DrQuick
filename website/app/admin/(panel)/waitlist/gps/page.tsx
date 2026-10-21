@@ -25,7 +25,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 const BASE = '/admin/waitlist/gps';
 
 export default async function GpsPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('waitlist');
   const params = await searchParams;
   const query = flatParams(params);
   const view = query.view === 'table' ? 'table' : 'board';

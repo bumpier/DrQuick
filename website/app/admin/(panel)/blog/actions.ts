@@ -1,11 +1,12 @@
 'use server';
 // The editor's server actions. Each is an untrusted POST (Next checks only that
-// it is same-origin), so each starts with requireAdmin() and validates its
+// it is same-origin), so each starts with actionAdmin('blog') and validates its
 // input from scratch. Publishing re-runs the compliance check here, so a post
 // that names a medicine or claims CQC registration cannot go live even if the
 // browser's check is bypassed.
 import { revalidatePath } from 'next/cache';
-import { requireAdmin } from '@/lib/admin-auth';
+import { NOT_YOUR_ROLE, actionAdmin } from '@/lib/admin-auth';
+import type { Admin } from '@/lib/admin/roles';
 import { publicText, validatePost, type BlogPost, type FieldError, type PostInput } from '@/lib/blog';
 import { deletePost, getPost, savePost, setStatus, type StoreError } from '@/lib/blog-store';
 import { checkCopy, type Hit } from '@/lib/compliance';
@@ -38,8 +39,7 @@ function refreshPublic(...slugs: Array<string | undefined>) {
   revalidatePath('/sitemap.xml');
 }
 
-async function write(id: string | null, raw: Partial<PostInput>): Promise<EditorResult & { previousSlug?: string }> {
-  const admin = await requireAdmin();
+async function write(admin: Admin, id: string | null, raw: Partial<PostInput>): Promise<EditorResult & { previousSlug?: string }> {
   const { input, errors } = validatePost(raw);
   if (!input) return { ok: false, error: 'Check the highlighted fields.', fieldErrors: errors };
   let previousSlug: string | undefined;
@@ -58,20 +58,23 @@ async function write(id: string | null, raw: Partial<PostInput>): Promise<Editor
 
 // Save the content. A published post stays published, and its public page updates.
 export async function savePostAction(id: string | null, raw: Partial<PostInput>): Promise<EditorResult> {
-  const result = await write(id, raw);
+  const admin = await actionAdmin('blog');
+  if (!admin) return NOT_YOUR_ROLE;
+  const result = await write(admin, id, raw);
   if (result.ok && result.post?.status === 'published') refreshPublic(result.previousSlug, result.post.slug);
   return { ok: result.ok, post: result.post, error: result.error, fieldErrors: result.fieldErrors };
 }
 
 export async function publishPostAction(id: string | null, raw: Partial<PostInput>): Promise<EditorResult> {
-  await requireAdmin();
+  const admin = await actionAdmin('blog');
+  if (!admin) return NOT_YOUR_ROLE;
   const { input, errors } = validatePost(raw);
   if (!input) return { ok: false, error: 'Check the highlighted fields.', fieldErrors: errors };
   const hits = checkCopy(publicText(input));
   if (hits.length > 0) {
     return { ok: false, hits, error: 'This post breaks the copy rules, so it can’t be published. Fix the highlighted phrases, or save it as a draft.' };
   }
-  const saved = await write(id, input);
+  const saved = await write(admin, id, input);
   if (!saved.ok || !saved.post) return saved;
   const published = await setStatus(saved.post.id, 'published');
   if (!published.ok) return storeFailure(published.error);
@@ -80,7 +83,7 @@ export async function publishPostAction(id: string | null, raw: Partial<PostInpu
 }
 
 export async function unpublishPostAction(id: string): Promise<EditorResult> {
-  await requireAdmin();
+  if (!(await actionAdmin('blog'))) return NOT_YOUR_ROLE;
   const result = await setStatus(id, 'draft');
   if (!result.ok) return storeFailure(result.error);
   refreshPublic(result.value.slug);
@@ -88,7 +91,7 @@ export async function unpublishPostAction(id: string): Promise<EditorResult> {
 }
 
 export async function deletePostAction(id: string): Promise<EditorResult> {
-  await requireAdmin();
+  if (!(await actionAdmin('blog'))) return NOT_YOUR_ROLE;
   const result = await deletePost(id);
   if (!result.ok) return storeFailure(result.error);
   if (result.value.status === 'published') refreshPublic(result.value.slug);

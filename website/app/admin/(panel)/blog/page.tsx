@@ -12,7 +12,7 @@ import { listAll } from '@/lib/blog-store';
 export const metadata: Metadata = { title: 'Blog' };
 
 export default async function AdminBlogPage() {
-  await requireAdmin();
+  await requireAdmin('blog');
   const result = await listAll();
 
   return (

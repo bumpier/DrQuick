@@ -26,7 +26,7 @@ const SAFE_PATH = /^\/(?!\/)[^\s?#\\]*$/;
 const framable = (p: string) => SAFE_PATH.test(p) && !/^\/(admin|api)(\/|$)/.test(p);
 
 export default async function HeatmapsPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('analytics');
   const now = new Date();
   const params = await searchParams;
   const query = flatParams(params);

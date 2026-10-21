@@ -1,12 +1,12 @@
 'use server';
 // The waitlist's server actions. Each is an untrusted POST (Next checks only
-// that it is same-origin), so each starts with requireAdmin(), validates its
+// that it is same-origin), so each starts with actionAdmin(area), validates its
 // input from scratch and writes one admin_audit_log row. The audit never holds
 // the address of the person acted on, only the sign-up id.
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { and, eq, inArray } from 'drizzle-orm';
-import { requireAdmin } from '@/lib/admin-auth';
+import { NOT_YOUR_ROLE, actionAdmin } from '@/lib/admin-auth';
 import { audit } from '@/lib/admin/audit';
 import { getSignup, statusesFor } from '@/lib/admin/queries/waitlist';
 import { getDb } from '@/lib/db';
@@ -33,7 +33,8 @@ function refresh(role: string, id?: string) {
 }
 
 export async function setStatusAction(id: string, status: string): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  const admin = await actionAdmin('waitlist');
+  if (!admin) return NOT_YOUR_ROLE;
   const db = await getDb();
   if (!db) return NO_DB;
   const signup = await getSignup(db, String(id));
@@ -81,7 +82,8 @@ export async function setStatusAction(id: string, status: string): Promise<Actio
 // application; resume puts them back. Neither says anything to the doctor: the
 // portal tells them when they next look.
 export async function setDoctorPausedAction(id: string, paused: boolean): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  const admin = await actionAdmin('waitlist');
+  if (!admin) return NOT_YOUR_ROLE;
   const db = await getDb();
   if (!db) return NO_DB;
   const signup = await getSignup(db, String(id), 'gp');
@@ -97,7 +99,8 @@ export async function setDoctorPausedAction(id: string, paused: boolean): Promis
 // The same one-time link a GP can ask for themselves at /doctor/register, sent
 // on their behalf: to set up the portal, or because they are locked out.
 export async function sendDoctorLinkAction(id: string): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  const admin = await actionAdmin('waitlist');
+  if (!admin) return NOT_YOUR_ROLE;
   const db = await getDb();
   if (!db) return NO_DB;
   const signup = await getSignup(db, String(id), 'gp');
@@ -117,7 +120,8 @@ export async function sendDoctorLinkAction(id: string): Promise<ActionResult> {
 }
 
 export async function saveNotesAction(id: string, notes: string): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  const admin = await actionAdmin('waitlist');
+  if (!admin) return NOT_YOUR_ROLE;
   const db = await getDb();
   if (!db) return NO_DB;
   const text = String(notes ?? '');
@@ -132,7 +136,8 @@ export async function saveNotesAction(id: string, notes: string): Promise<Action
 }
 
 export async function bulkUnsubscribeAction(ids: string[]): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  const admin = await actionAdmin('waitlist');
+  if (!admin) return NOT_YOUR_ROLE;
   const db = await getDb();
   if (!db) return NO_DB;
   const clean = [...new Set((Array.isArray(ids) ? ids : []).map(String).filter((id) => UUID.test(id)))].slice(0, 1000);
@@ -149,7 +154,8 @@ export async function bulkUnsubscribeAction(ids: string[]): Promise<ActionResult
 }
 
 export async function resendConfirmationAction(id: string): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  const admin = await actionAdmin('waitlist');
+  if (!admin) return NOT_YOUR_ROLE;
   const db = await getDb();
   if (!db) return NO_DB;
   const signup = await getSignup(db, String(id));
@@ -168,7 +174,8 @@ export async function resendConfirmationAction(id: string): Promise<ActionResult
 // returns to the list with a notice. The confirm dialog is in the browser; this
 // action is the real gate.
 export async function erasePersonAction(id: string): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  const admin = await actionAdmin('erase');
+  if (!admin) return NOT_YOUR_ROLE;
   const db = await getDb();
   if (!db) return NO_DB;
   const signup = await getSignup(db, String(id));

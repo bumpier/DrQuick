@@ -22,7 +22,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 const BASE = '/admin/system/emails';
 
 export default async function EmailsPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('emails');
   const params = await searchParams;
   const query = flatParams(params);
   const header = (

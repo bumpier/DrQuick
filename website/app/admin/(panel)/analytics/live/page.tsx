@@ -16,7 +16,7 @@ import { siteUrl } from '@/lib/site-url';
 export const metadata: Metadata = { title: 'Live' };
 
 export default async function LivePage() {
-  await requireAdmin();
+  await requireAdmin('analytics');
   const header = (
     <AdminPageHeader title="Live" description="Who is on the site right now: visits active in the last five minutes." actions={<AutoRefresh seconds={10} />} />
   );

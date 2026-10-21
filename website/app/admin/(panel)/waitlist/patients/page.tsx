@@ -21,7 +21,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 const BASE = '/admin/waitlist/patients';
 
 export default async function PatientsPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('waitlist');
   const params = await searchParams;
   const query = flatParams(params);
   const list = parseListQuery('patient', params);

@@ -40,7 +40,7 @@ function Sort({ label, column, query, className }: { label: string; column: Visi
 }
 
 export default async function VisitorsPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('analytics');
   const params = await searchParams;
   const query = flatParams(params);
   const q = parseVisitorQuery(params);

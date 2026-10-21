@@ -26,7 +26,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export default async function VisitorPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin();
+  await requireAdmin('analytics');
   const { id } = await params;
   const back = { href: '/admin/analytics/visitors', label: 'All visitors' };
   const db = await getDb();

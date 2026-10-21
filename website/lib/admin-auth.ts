@@ -112,12 +112,11 @@ export async function currentAdmin(): Promise<Admin | null> {
 }
 
 // For pages and layouts: signed out goes to sign-in, outside the role to the
-// no-access page. With no area, any signed-in admin passes (Task 4 makes the
-// area required).
-export async function requireAdmin(area?: Area): Promise<Admin> {
+// no-access page.
+export async function requireAdmin(area: Area): Promise<Admin> {
   const admin = await currentAdmin();
   if (!admin) redirect('/admin/login');
-  if (area && !can(admin.role, area)) redirect(NO_ACCESS_PATH);
+  if (!can(admin.role, area)) redirect(NO_ACCESS_PATH);
   return admin;
 }
 

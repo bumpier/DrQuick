@@ -23,7 +23,7 @@ type Props = {
 };
 
 export default async function PayoutPage({ params, searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('finance');
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const demo = isDemo(query);
   const back = { href: withQuery('/admin/finance/payouts', { demo: demo ? '1' : undefined }), label: 'Payouts' };

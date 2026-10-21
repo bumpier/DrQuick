@@ -96,7 +96,7 @@ describe('sessions', () => {
   });
 
   test('requireAdmin sends a visitor with no session to sign in', async () => {
-    await expect(requireAdmin()).rejects.toThrow('NEXT_REDIRECT /admin/login');
+    await expect(requireAdmin('overview')).rejects.toThrow('NEXT_REDIRECT /admin/login');
   });
 });
 
@@ -114,7 +114,7 @@ describe('sign in and out', () => {
     const cookie = jar.get(SESSION_COOKIE)!;
     expect(cookie.opts).toMatchObject({ httpOnly: true, sameSite: 'strict', path: '/admin' });
     expect((await readSession(cookie.value))?.email).toBe('editor@example.com');
-    await expect(requireAdmin()).resolves.toMatchObject({ name: 'Sam Editor' });
+    await expect(requireAdmin('overview')).resolves.toMatchObject({ name: 'Sam Editor' });
   });
 
   test('a wrong password and an unknown email get the same answer, and no cookie', async () => {

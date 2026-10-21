@@ -21,7 +21,7 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 const BASE = '/admin/analytics/funnels';
 
 export default async function FunnelsPage({ searchParams }: Props) {
-  await requireAdmin();
+  await requireAdmin('analytics');
   const now = new Date();
   const params = await searchParams;
   const query = flatParams(params);

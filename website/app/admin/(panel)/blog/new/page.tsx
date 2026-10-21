@@ -5,6 +5,6 @@ import { requireAdmin } from '@/lib/admin-auth';
 export const metadata: Metadata = { title: 'New post' };
 
 export default async function NewPostPage() {
-  await requireAdmin();
+  await requireAdmin('blog');
   return <PostEditor />;
 }
